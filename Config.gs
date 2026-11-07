@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ====================================================================
  * APLIKASI TANDA TANGAN ELEKTRONIK (TTE) BERBASIS QR-CODE
  * File: Config.gs
@@ -31,6 +31,7 @@ const CONFIG = {
   KOP_COLOR: "#4682B4", // Steel Blue khas BAN PDM
   KOP_LOGO_URL: "https://upload.wikimedia.org/wikipedia/commons/4/44/Logo_BAN-PDM.png", // Logo resmi BAN PDM transparan resolusi tinggi
   KOP_LOGO_FILE_ID: "1i0mlAsPH68rhdMFfpEwliokxIk0p_6-Z", // ID file logo dari Google Drive (fallback)
+  FAVICON_TTE_URL: "https://cdn-icons-png.flaticon.com/512/2921/2921222.png", // Favicon resmi portal TTE (Digital Signature & Verified Seal)
   KOTA_SURAT: "Kupang",
   
   // Nama-nama Sheet Database

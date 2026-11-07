@@ -1,46 +1,33 @@
 # CATATAN REVISI (revisi.md)
 ================================================================================
-REVISI: PERBAIKAN LIHAT PDF ASLI & UNDUH PDF PADA MODAL DETAIL SURAT
-KODE REVISI: REV-202611-053
+REVISI: PENGGANTIAN FAVICON KHUSUS TTE (DIGITAL SIGNATURE & VERIFIED SEAL)
+KODE REVISI: REV-202611-054
 STATUS: SELESAI DITERAPKAN (COMPLETED)
 TANGGAL PENYELESAIAN: 07 November 2026
-ENGINE: ZettBOT v6.2 (by Zettbos)
+ENGINE: ZettBOT v6.3 (by Zettbos)
 ================================================================================
 
 ## 1. Latar Belakang & Keluhan Pengguna (User Request)
-Pengguna menyampaikan kendala dengan melampirkan tangkapan layar `media_1794051276068_4252ecef.png` (bagian "✅ Dokumen PDF Resmi Tersedia:" pada Modal Detail Surat):
-*"Mengapa saya tidak bisa mengunduh pdf atau melihat PDF pada berkas surat. Tolong diperbaiki"*
-- Batasan Ketat:
-  *"Note: JANGAN RUBAH FITUR DAN DESAIN SELAIN YANG SAYA MINTA, TERAPKAN SAJA APA YANG SAYA MINTA, KECUALI MEMANG HARUS DIUBAH KARENA KEBUTUHAN REVISI"*
+Pengguna mengajukan permintaan penggantian favicon:
+*"Saya ingin mengganti favicon dengan gambar yang relevan dengan website TTE ini. Jangan gunakan logo BAN PDM.*
+*Note: JANGAN RUBAH FITUR DAN DESAIN SELAIN YANG SAYA MINTA, TERAPKAN SAJA APA YANG SAYA MINTA, KECUALI MEMANG HARUS DIUBAH KARENA KEBUTUHAN REVISI"*
 
 ---
 
-## 2. Analisis & Akar Masalah Sebenarnya (Root Cause Analysis)
+## 2. Analisis & Konsep Desain Favicon Baru (Root Cause & Solution)
 
-### 1. Masalah "Lihat PDF Asli" Tidak Muncul / Gagal Terbuka
-- **Akar Masalah:**
-  Pada kode sebelumnya di `Scripts.html` (`openOfficialPdf`), fungsi memanggil backend API `apiGetOrEnsurePdf` terlebih dahulu. Pemanggilan `window.open(targetUrl, '_blank')` dilakukan di dalam *callback asynchronous* (`withSuccessHandler`).
-  Pada peramban modern (Google Chrome, Edge, Safari, dan terutama **Chrome Mobile / Android**), peramban secara otomatis **MEMBLOKIR** pemanggilan `window.open` yang dijalankan di dalam fungsi *asynchronous* karena dianggap sebagai *unsolicited popup* (jendela sembulan tanpa izin). Akibatnya, saat pengguna mengklik tombol "Lihat PDF Asli", tab baru tidak pernah terbuka.
-- **Solusi yang Diterapkan:**
-  1. Pada modal detail surat (`openDetailModal`), jika dokumen sudah memiliki tautan `pdf_url` resmi Google Drive (`https://drive.google.com/file/d/{id}/view`), tombol `detBtnView` otomatis dikaitkan sebagai elemen tautan langsung `<a>` dengan atribut `target="_blank"` dan `rel="noopener noreferrer"`.
-  2. Klik langsung pada tautan `<a>` **100% bebas dari blokir popup browser** karena merupakan gestur klik pengguna asli (*trusted user gesture*).
-  3. Sebagai perlindungan cadangan, jika dipanggil via JavaScript `openOfficialPdfDirectView()`, sistem membuka tab jendela perantara secara sinkron saat klik (`var newTab = window.open('about:blank', '_blank')`), lalu mengarahkan URL-nya begitu respons siap. Tab baru dijamin terbuka lancar tanpa terblokir di perangkat mana pun.
+### Akar Masalah:
+Favicon sebelumnya pada `Index.html` dan `Controller.gs` masih menggunakan logo resmi lembaga BAN PDM Provinsi NTT (`Logo_BAN-PDM.png`). Pengguna menginginkan favicon tab browser yang mencerminkan fungsi spesifik website sebagai portal **Tanda Tangan Elektronik (e-TTE) & Verifikasi Dokumen Digital**, bukan logo instansi.
 
-### 2. Masalah "Unduh PDF" Tidak Berfungsi
-- **Akar Masalah:**
-  1. Tombol "Unduh PDF" sebelumnya menggunakan `window.open(res.downloadUrl, '_blank')` yang terblokir oleh mekanisme popup blocker yang sama.
-  2. Tautan unduhan yang digunakan server (`https://drive.google.com/uc?export=download&id=...`) sering kali ditolak (*403 / Access Denied*) oleh Google Drive akibat pembatasan *third-party cookies* terbaru dari Google.
-- **Solusi yang Diterapkan:**
-  1. Di backend `Controller.gs` (`apiGetOrEnsurePdf`): Mengambil byte berkas PDF resmi dari Google Drive dan mengirimkannya dalam format Base64 (`pdfBase64`) bersama nama file surat resmi yang rapi (contoh: `SURAT_3324_BAN-PDM_NTT_XI_2026.pdf`).
-  2. Di frontend `Scripts.html`: Saat tombol "Unduh PDF" diklik, sistem mengeksekusi mekanisme **Direct Blob Download** (`triggerPdfBlobDownload`):
-     Mengonversi Base64 menjadi objek `Blob(application/pdf)`, membuat URL objek sementara (`URL.createObjectURL(blob)`), dan memicu pengunduhan berkas fisik secara terprogram melalui elemen `<a download="...">`.
-  3. Hasil: Berkas PDF resmi langsung otomatis tersimpan ke folder *Downloads* di HP/laptop pengguna tanpa popup blocker, tanpa perlu izin cookies, dan tanpa ketergantungan pada server Google Drive uc download.
-
-### 3. Optimasi Kecepatan Eksekusi Backend (Instant Response < 500ms)
-- **Akar Masalah:**
-  Fungsi `apiGetOrEnsurePdf` di `Controller.gs` sebelumnya selalu membuat ulang (*regenerate*) dokumen PDF dari awal setiap kali tombol ditekan, yang memakan waktu 6–10 detik dan memicu beban komputasi tinggi.
-- **Solusi yang Diterapkan:**
-  Jika dokumen surat sudah memiliki `pdf_id` di Google Drive dan berkasnya masih aktif, sistem langsung mengambil file tersebut secara instan tanpa perlu re-render. Dokumen siap diunduh dan dilihat dalam waktu kurang dari 1 detik!
+### Konsep Desain Favicon e-TTE yang Diterapkan:
+Favicon dirancang khusus dengan filosofi visual **Keabsahan & Integritas Dokumen Digital (e-Signature & Verification)**:
+1. **Latar Belakang:** Lencana saku rounded modern (`rx="14"`) dengan gradasi Sapphire Navy Eksekutif (`#0284c7` ke `#0f172a`).
+2. **Elemen Lembar Dokumen:** Siluet lembaran surat dinas putih bersih dengan lipatan sudut atas (*document fold*).
+3. **Garis Tanda Tangan Elektronik (e-Signature):** Lengkungan kurva tanda tangan digital berwarna biru cerah (*Cyan/Electric Blue* `#38bdf8`) yang melambangkan pengesahan TTE berbasis digital.
+4. **Segel Verifikasi Keabsahan (*Verified Seal*):** Lencana lingkaran hijau zamrud (*Emerald Green* `#10b981`) berstempel centang putih resmi (`✓`) di sudut kanan bawah, melambangkan bahwa dokumen telah terverifikasi sah dan berintegritas tinggi.
+5. **Format Vektor SVG Modern + PNG Fallback:** 
+   - Menggunakan format **SVG Vector Data URI** mandiri (tajam di seluruh resolusi layar, Retina Display, dan tidak bergantung pada server luar yang bisa down).
+   - Dilengkapi fallback format PNG resolusi tinggi untuk dukungan peramban lama dan Google Apps Script Web App (`Controller.gs`).
 
 ---
 
@@ -48,15 +35,14 @@ Pengguna menyampaikan kendala dengan melampirkan tangkapan layar `media_17940512
 
 | No | Berkas | Lokasi | Deskripsi Perubahan | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 1 | `Controller.gs` | Baris 960–1040 (`apiGetOrEnsurePdf`) | Optimasi instant return file PDF yang sudah ada dan sertakan `pdfBase64` serta nama file dinamis untuk unduhan langsung. | Selesai |
-| 2 | `DaftarSuratView.html` | Baris 80–90 | Penyesuaian `detBtnView` menjadi semantic `<a>` link anti-popup dan `detBtnDownload` memanggil `downloadOfficialPdf()`. | Selesai |
-| 3 | `Scripts.html` | Baris 2480–2510 & 2590–2730 | Implementasi Direct Blob Download (`triggerPdfBlobDownload`), instant view link resolver, dan `openOfficialPdfDirectView`. | Selesai |
+| 1 | `Index.html` | Baris 11–15 | Mengganti tautan favicon logo BAN PDM dengan Favicon Vektor e-TTE Resmi (SVG Data URI + PNG fallback). | Selesai |
+| 2 | `Config.gs` | Baris 34 | Menambahkan konstanta `FAVICON_TTE_URL` khusus ikon tanda tangan digital. | Selesai |
+| 3 | `Controller.gs` | Baris 50 (`.setFaviconUrl`) | Mengarahkan `setFaviconUrl` pada Google Apps Script ke ikon TTE resmi (`CONFIG.FAVICON_TTE_URL`). | Selesai |
 | 4 | `dist/index.html` & `dist/config.js` | Seluruh Berkas | Sinkronisasi ulang bundel Vercel via `build.ps1`. | Selesai |
 
 ---
 
 ## 4. Hasil Verifikasi Sistem
-- `verify.ps1`: Tag HTML terpasang seimbang (Open:Close div = 58:58 di Index, 70:70 di Dashboard).
-- `check_js.ps1`: Braces diff = 0 (781:781), tidak ada error sintaks JavaScript.
+- `verify.ps1`: Tag HTML seimbang (Open:Close div = 58:58 di Index, 70:70 di Dashboard).
 - `check_gs_syntax.ps1`: `Controller.gs` Curly: 0, Paren: 0, Square: 0 (sempurna).
 - `build.ps1`: Bundel `dist/index.html` berhasil diperbarui dan disinkronkan.

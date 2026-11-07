@@ -47,7 +47,7 @@ function doGet(e) {
   
   return template.evaluate()
     .setTitle(CONFIG.APP_NAME + " - " + CONFIG.INSTITUTION_NAME)
-    .setFaviconUrl(CONFIG.KOP_LOGO_URL)
+    .setFaviconUrl(CONFIG.FAVICON_TTE_URL || "https://cdn-icons-png.flaticon.com/512/2921/2921222.png")
     .addMetaTag("viewport", "width=device-width, initial-scale=1.0")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
