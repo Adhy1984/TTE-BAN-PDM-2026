@@ -46,6 +46,6 @@ const CONFIG = {
   QR_SIZE: "250x250",
   QR_API_BASE: "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=",
   
-  // Token kadaluarsa sesi (dalam menit)
-  SESSION_EXPIRY_MINUTES: 180
+  // Token kadaluarsa sesi (dalam menit) - Maksimal 10 Menit demi keamanan
+  SESSION_EXPIRY_MINUTES: 10
 };

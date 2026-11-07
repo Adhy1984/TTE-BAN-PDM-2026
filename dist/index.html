@@ -4734,7 +4734,7 @@
         <div style="font-size:48px;margin-bottom:12px;">📭</div>
         <div style="font-size:1rem;font-weight:600;">Belum ada surat yang sesuai filter</div>
         <p style="font-size:.85rem;margin-top:6px;">Buat surat pertama Anda dengan klik tombol "Buat Surat Baru"</p>
-        <button class="btn btn-primary" style="margin-top:16px;" onclick="switchTab('buatSurat')">✍️ Buat Surat
+        <button class="btn btn-primary" id="btnEmptyBuatSurat" style="margin-top:16px;" onclick="switchTab('buatSurat')">✍️ Buat Surat
             Baru</button>
     </div>
 
@@ -6360,6 +6360,21 @@
     }
 
     function switchTab(tabName) {
+        // RBAC Security Guard: Cegah akses tab di luar hak peran (role)
+        if (APP && APP.user) {
+            var role = (APP.user.role || '').toLowerCase();
+            if (tabName === 'buatSurat' && role !== 'admin' && role !== 'operator') {
+                console.warn('[RBAC Security] Akses ditolak: Role ' + role + ' tidak diizinkan membuka Buat Surat.');
+                tabName = (role === 'pejabat') ? 'approval' : 'dashboard';
+            } else if (tabName === 'approval' && role !== 'pejabat' && role !== 'admin') {
+                console.warn('[RBAC Security] Akses ditolak: Role ' + role + ' tidak diizinkan membuka Persetujuan TTE.');
+                tabName = 'dashboard';
+            } else if (tabName === 'kelolaUser' && role !== 'admin') {
+                console.warn('[RBAC Security] Akses ditolak: Role ' + role + ' tidak diizinkan membuka Kelola Pengguna.');
+                tabName = 'dashboard';
+            }
+        }
+
         document.querySelectorAll('.nav-tab').forEach(function (t) { t.classList.remove('active'); });
         var activeTab = document.querySelector('[data-tab="' + tabName + '"]');
         if (activeTab) activeTab.classList.add('active');
@@ -6548,7 +6563,7 @@
 
                     // Simpan sesi autentikasi ke localStorage agar tidak logout saat refresh / new tab
                     try {
-                        var ttlSecs = (res.expiresIn && res.expiresIn > 0) ? res.expiresIn : 10800; // default 3 jam
+                        var ttlSecs = (res.expiresIn && res.expiresIn > 0) ? res.expiresIn : 600; // default 10 menit
                         localStorage.setItem('APP_AUTH_SESSION', JSON.stringify({
                             token: res.token,
                             user: res.user,
@@ -6561,13 +6576,24 @@
 
                     initAppShell();
                     showPage('APP');
+                    startIdleAutoLogout();
 
                     // Buka tab tujuan jika ada di URL parameter, default 'dashboard'
                     var targetTab = 'dashboard';
                     try {
                         var params = new URLSearchParams(window.location.search);
                         var requestedTab = params.get('tab');
-                        if (requestedTab) targetTab = requestedTab;
+                        if (requestedTab) {
+                            if (requestedTab === 'buatSurat' && res.user.role !== 'admin' && res.user.role !== 'operator') {
+                                targetTab = (res.user.role === 'pejabat') ? 'approval' : 'dashboard';
+                            } else if (requestedTab === 'approval' && res.user.role !== 'pejabat' && res.user.role !== 'admin') {
+                                targetTab = 'dashboard';
+                            } else if (requestedTab === 'kelolaUser' && res.user.role !== 'admin') {
+                                targetTab = 'dashboard';
+                            } else {
+                                targetTab = requestedTab;
+                            }
+                        }
                     } catch (e) { }
 
                     switchTab(targetTab);
@@ -6585,7 +6611,8 @@
             .apiLogin(username, password);
     }
 
-    function doLogout() {
+    function doLogout(logoutMessage) {
+        stopIdleAutoLogout();
         var currentToken = APP.token;
         APP.token = null;
         APP.user = null;
@@ -6593,6 +6620,13 @@
             localStorage.removeItem('APP_AUTH_SESSION');
         } catch (e) {
             console.warn('Gagal menghapus sesi login:', e);
+        }
+
+        // Bersihkan parameter rute tab di URL peramban saat logout
+        if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+            try {
+                window.history.replaceState(null, '', window.location.pathname);
+            } catch (e) { }
         }
 
         // Hapus sesi di CacheService server Google Apps Script
@@ -6609,7 +6643,7 @@
         document.getElementById('inputPassword').value = '';
         document.getElementById('loginError').style.display = 'none';
         showPage('LOGIN');
-        showToast('Anda berhasil keluar dari sistem.', 'success');
+        showToast(logoutMessage || 'Anda berhasil keluar dari sistem.', 'success');
     }
 
     /**
@@ -6647,11 +6681,12 @@
             APP.user = session.user;
             initAppShell();
             showPage('APP');
+            startIdleAutoLogout();
 
             var tabToOpen = targetTab || 'dashboard';
             // Validasi hak akses tab berdasarkan peran (role) pengguna
             if (tabToOpen === 'buatSurat' && APP.user.role !== 'admin' && APP.user.role !== 'operator') {
-                tabToOpen = 'dashboard';
+                tabToOpen = (APP.user.role === 'pejabat') ? 'approval' : 'dashboard';
             } else if (tabToOpen === 'approval' && APP.user.role !== 'pejabat' && APP.user.role !== 'admin') {
                 tabToOpen = 'dashboard';
             } else if (tabToOpen === 'kelolaUser' && APP.user.role !== 'admin') {
@@ -6663,6 +6698,102 @@
         } catch (e) {
             console.warn('Gagal restore auth session:', e);
             return false;
+        }
+    }
+
+    // ====================================================================
+    // SECTION 3B: IDLE AUTO-LOGOUT MONITOR (MAKSIMAL 10 MENIT TIDAK AKTIF)
+    // ====================================================================
+    var _idleCheckInterval = null;
+    var _lastActivityTimestamp = Date.now();
+    var IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 menit
+
+    function recordUserActivity() {
+        _lastActivityTimestamp = Date.now();
+    }
+
+    function startIdleAutoLogout() {
+        stopIdleAutoLogout();
+        _lastActivityTimestamp = Date.now();
+
+        // Throttled activity listener (catat aktivitas pengguna dengan efisien)
+        var throttleTimer = null;
+        function handleUserActivity() {
+            if (!throttleTimer) {
+                recordUserActivity();
+                throttleTimer = setTimeout(function () {
+                    throttleTimer = null;
+                }, 5000);
+            }
+        }
+
+        var events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+        events.forEach(function (evt) {
+            window.addEventListener(evt, handleUserActivity, { passive: true });
+        });
+        window._idleActivityHandler = handleUserActivity;
+
+        // Pemeriksaan interval periodik setiap 15 detik
+        _idleCheckInterval = setInterval(function () {
+            if (!APP || !APP.token) {
+                stopIdleAutoLogout();
+                return;
+            }
+            var now = Date.now();
+            var elapsed = now - _lastActivityTimestamp;
+
+            // Cek kadaluwarsa token dari localStorage
+            var tokenExpired = false;
+            try {
+                var raw = localStorage.getItem('APP_AUTH_SESSION');
+                if (raw) {
+                    var sess = JSON.parse(raw);
+                    if (sess && sess.expiresAt && now > sess.expiresAt) {
+                        tokenExpired = true;
+                    }
+                }
+            } catch (e) { }
+
+            if (elapsed >= IDLE_TIMEOUT_MS || tokenExpired) {
+                console.warn('[ZettBOT Security] Auto-logout dipicu: Sesi tidak aktif selama 10 menit.');
+                stopIdleAutoLogout();
+                doLogout('Sesi Anda telah berakhir otomatis setelah 10 menit tidak aktif demi keamanan.');
+            }
+        }, 15000);
+
+        // Handler saat pengguna berpindah tab atau meminimalkan browser
+        document.addEventListener('visibilitychange', window._idleVisibilityHandler = function () {
+            if (document.visibilityState === 'visible' && APP && APP.token) {
+                var now = Date.now();
+                var elapsed = now - _lastActivityTimestamp;
+                var raw = localStorage.getItem('APP_AUTH_SESSION');
+                var sess = null;
+                try { if (raw) sess = JSON.parse(raw); } catch (e) { }
+
+                if (elapsed >= IDLE_TIMEOUT_MS || (sess && sess.expiresAt && now > sess.expiresAt)) {
+                    console.warn('[ZettBOT Security] Tab dibuka kembali setelah > 10 menit tidak aktif.');
+                    stopIdleAutoLogout();
+                    doLogout('Sesi Anda telah berakhir otomatis setelah 10 menit tidak aktif demi keamanan.');
+                }
+            }
+        });
+    }
+
+    function stopIdleAutoLogout() {
+        if (_idleCheckInterval) {
+            clearInterval(_idleCheckInterval);
+            _idleCheckInterval = null;
+        }
+        if (window._idleActivityHandler) {
+            var events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+            events.forEach(function (evt) {
+                window.removeEventListener(evt, window._idleActivityHandler);
+            });
+            window._idleActivityHandler = null;
+        }
+        if (window._idleVisibilityHandler) {
+            document.removeEventListener('visibilitychange', window._idleVisibilityHandler);
+            window._idleVisibilityHandler = null;
         }
     }
 
@@ -8398,11 +8529,20 @@
         document.getElementById('daftarSuratTableWrap').style.display = 'none';
         document.getElementById('daftarSuratEmpty').style.display = 'none';
 
+        function showDaftarSuratEmpty() {
+            var el = document.getElementById('daftarSuratEmpty');
+            if (el) el.style.display = 'block';
+            var btnEmpty = document.getElementById('btnEmptyBuatSurat');
+            if (btnEmpty) {
+                btnEmpty.style.display = (APP.user && APP.user.role === 'pejabat') ? 'none' : 'inline-block';
+            }
+        }
+
         google.script.run
             .withSuccessHandler(function (res) {
                 document.getElementById('daftarSuratLoading').style.display = 'none';
                 if (!res || !res.success || !res.data || res.data.length === 0) {
-                    document.getElementById('daftarSuratEmpty').style.display = 'block';
+                    showDaftarSuratEmpty();
                     if (res && !res.success && res.message) {
                         showToast(res.message, 'error');
                     }
@@ -8429,14 +8569,14 @@
                     });
                 }
                 if (list.length === 0) {
-                    document.getElementById('daftarSuratEmpty').style.display = 'block';
+                    showDaftarSuratEmpty();
                     return;
                 }
                 renderDaftarSuratTable(list);
             })
             .withFailureHandler(function (err) {
                 document.getElementById('daftarSuratLoading').style.display = 'none';
-                document.getElementById('daftarSuratEmpty').style.display = 'block';
+                showDaftarSuratEmpty();
                 showToast('Gagal memuat data: ' + (err && err.message ? err.message : err), 'error');
             })
             .apiGetSuratList(APP.token, status, kategori);

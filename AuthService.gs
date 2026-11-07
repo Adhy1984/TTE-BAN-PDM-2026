@@ -20,9 +20,9 @@ function createSessionToken(userObj) {
     createdAt: new Date().getTime()
   };
 
-  const expiryMinutes = (typeof CONFIG !== "undefined" && CONFIG.SESSION_EXPIRY_MINUTES) ? CONFIG.SESSION_EXPIRY_MINUTES : 180;
-  // CacheService maksimal 21600 detik (6 jam)
-  const expirySeconds = Math.min(Math.max(expiryMinutes * 60, 300), 21600);
+  const expiryMinutes = (typeof CONFIG !== "undefined" && CONFIG.SESSION_EXPIRY_MINUTES) ? CONFIG.SESSION_EXPIRY_MINUTES : 10;
+  // CacheService maksimal 21600 detik (6 jam), default 10 menit (600 detik)
+  const expirySeconds = Math.min(Math.max(expiryMinutes * 60, 60), 21600);
 
   const cache = CacheService.getScriptCache();
   cache.put(token, JSON.stringify(payload), expirySeconds);
@@ -115,7 +115,7 @@ function authenticateUser(username, password) {
     success: true,
     message: "Login berhasil!",
     token: token,
-    expiresIn: ((typeof CONFIG !== "undefined" && CONFIG.SESSION_EXPIRY_MINUTES) ? CONFIG.SESSION_EXPIRY_MINUTES : 180) * 60,
+    expiresIn: ((typeof CONFIG !== "undefined" && CONFIG.SESSION_EXPIRY_MINUTES) ? CONFIG.SESSION_EXPIRY_MINUTES : 10) * 60,
     user: {
       id: user.id_user,
       username: user.username,
