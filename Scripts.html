@@ -113,6 +113,20 @@
                                 return res.json();
                             })
                             .then(function (jsonResult) {
+                                if (jsonResult && jsonResult.success === false &&
+                                    typeof jsonResult.message === 'string' &&
+                                    (jsonResult.message.indexOf('Sesi tidak valid') !== -1 || jsonResult.message.indexOf('telah berakhir') !== -1)) {
+                                    console.warn('[ZettBOT Security] Sesi backend berakhir:', jsonResult.message);
+                                    if (typeof APP !== 'undefined' && APP && APP.token) {
+                                        if (typeof showToast === 'function') {
+                                            showToast('Sesi login telah berakhir demi keamanan. Silakan login kembali.', 'warning');
+                                        }
+                                        if (typeof doLogout === 'function') {
+                                            doLogout();
+                                            return;
+                                        }
+                                    }
+                                }
                                 if (typeof successHandler === 'function') {
                                     successHandler(jsonResult);
                                 }
@@ -444,9 +458,11 @@
 
                     // Simpan sesi autentikasi ke localStorage agar tidak logout saat refresh / new tab
                     try {
+                        var ttlSecs = (res.expiresIn && res.expiresIn > 0) ? res.expiresIn : 10800; // default 3 jam
                         localStorage.setItem('APP_AUTH_SESSION', JSON.stringify({
                             token: res.token,
                             user: res.user,
+                            expiresAt: Date.now() + (ttlSecs * 1000),
                             timestamp: Date.now()
                         }));
                     } catch (e) {
@@ -480,6 +496,7 @@
     }
 
     function doLogout() {
+        var currentToken = APP.token;
         APP.token = null;
         APP.user = null;
         try {
@@ -487,6 +504,17 @@
         } catch (e) {
             console.warn('Gagal menghapus sesi login:', e);
         }
+
+        // Hapus sesi di CacheService server Google Apps Script
+        if (currentToken) {
+            try {
+                google.script.run
+                    .withSuccessHandler(function () { })
+                    .withFailureHandler(function () { })
+                    .apiLogout(currentToken);
+            } catch (ignore) { }
+        }
+
         document.getElementById('inputUsername').value = '';
         document.getElementById('inputPassword').value = '';
         document.getElementById('loginError').style.display = 'none';
@@ -507,12 +535,20 @@
                 return false;
             }
 
-            // Validasi kadaluwarsa token jika exp tercantum di payload base64
+            // Validasi kadaluwarsa token via expiresAt
+            if (session.expiresAt && Date.now() > session.expiresAt) {
+                localStorage.removeItem('APP_AUTH_SESSION');
+                return false;
+            }
+
+            // Fallback validasi kadaluwarsa token jika exp tercantum di payload base64 legacy
             try {
-                var payload = JSON.parse(atob(session.token));
-                if (payload && payload.exp && Date.now() > payload.exp) {
-                    localStorage.removeItem('APP_AUTH_SESSION');
-                    return false;
+                if (session.token.indexOf('TTE_SESS_') !== 0) {
+                    var payload = JSON.parse(atob(session.token));
+                    if (payload && payload.exp && Date.now() > payload.exp) {
+                        localStorage.removeItem('APP_AUTH_SESSION');
+                        return false;
+                    }
                 }
             } catch (ignore) { }
 

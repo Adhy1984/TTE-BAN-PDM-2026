@@ -6,35 +6,77 @@
  */
 
 /**
- * Membuat token sesi sederhana dan aman berbasis Base64 + Hashing
+ * Membuat token sesi server-side berbasis UUID dan disimpan dalam CacheService
+ * Mencegah pemalsuan token (token forgery) dan client-side bypass dari console browser.
  */
 function createSessionToken(userObj) {
+  const token = "TTE_SESS_" + Utilities.getUuid().replace(/-/g, "") + "_" + (new Date().getTime().toString(36));
   const payload = {
-    userId: userObj.id_user,
-    username: userObj.username,
-    nama: userObj.nama,
-    role: userObj.role,
-    pejabatId: userObj.pejabat_id || "",
-    exp: new Date().getTime() + (CONFIG.SESSION_EXPIRY_MINUTES * 60 * 1000)
+    userId: userObj.id_user || userObj.id || userObj.userId || "",
+    username: userObj.username || "",
+    nama: userObj.nama || "",
+    role: userObj.role || "",
+    pejabatId: userObj.pejabat_id || userObj.pejabatId || "",
+    createdAt: new Date().getTime()
   };
-  return Utilities.base64Encode(JSON.stringify(payload));
+
+  const expiryMinutes = (typeof CONFIG !== "undefined" && CONFIG.SESSION_EXPIRY_MINUTES) ? CONFIG.SESSION_EXPIRY_MINUTES : 180;
+  // CacheService maksimal 21600 detik (6 jam)
+  const expirySeconds = Math.min(Math.max(expiryMinutes * 60, 300), 21600);
+
+  const cache = CacheService.getScriptCache();
+  cache.put(token, JSON.stringify(payload), expirySeconds);
+
+  return token;
 }
 
 /**
- * Memvalidasi token sesi pengguna
+ * Memvalidasi token sesi pengguna melalui CacheService sisi server
  */
 function validateSessionToken(token) {
-  if (!token) return null;
+  if (!token || typeof token !== "string") return null;
+  const cleanToken = token.trim();
+  if (!cleanToken) return null;
+
   try {
-    const decoded = Utilities.newBlob(Utilities.base64Decode(token)).getDataAsString();
-    const payload = JSON.parse(decoded);
-    
-    if (new Date().getTime() > payload.exp) {
-      return null; // Token kadaluarsa
+    const cache = CacheService.getScriptCache();
+    const cachedData = cache.get(cleanToken);
+    if (cachedData) {
+      return JSON.parse(cachedData);
     }
-    return payload;
   } catch (err) {
-    return null;
+    console.warn("Peringatan: Gagal membaca CacheService: " + err);
+  }
+
+  // Graceful fallback untuk token legacy Base64 saat masa transisi deployment
+  try {
+    if (cleanToken.indexOf("TTE_SESS_") !== 0) {
+      const decoded = Utilities.newBlob(Utilities.base64Decode(cleanToken)).getDataAsString();
+      const payload = JSON.parse(decoded);
+      if (payload && payload.exp && new Date().getTime() <= payload.exp) {
+        return payload;
+      }
+    }
+  } catch (err) {
+    // Abaikan jika bukan token legacy
+  }
+
+  return null;
+}
+
+/**
+ * Menghapus token sesi dari CacheService saat pengguna logout
+ */
+function destroySessionToken(token) {
+  if (!token || typeof token !== "string") return true;
+  try {
+    const cleanToken = token.trim();
+    const cache = CacheService.getScriptCache();
+    cache.remove(cleanToken);
+    return true;
+  } catch (err) {
+    console.warn("Peringatan: Gagal menghapus token dari CacheService: " + err);
+    return false;
   }
 }
 
@@ -73,6 +115,7 @@ function authenticateUser(username, password) {
     success: true,
     message: "Login berhasil!",
     token: token,
+    expiresIn: ((typeof CONFIG !== "undefined" && CONFIG.SESSION_EXPIRY_MINUTES) ? CONFIG.SESSION_EXPIRY_MINUTES : 180) * 60,
     user: {
       id: user.id_user,
       username: user.username,

@@ -142,6 +142,9 @@ function doPost(e) {
       case "apiSimpanDisposisi":
         result = apiSimpanDisposisi(args[0], args[1], args[2]);
         break;
+      case "apiLogout":
+        result = apiLogout(args[0]);
+        break;
       default:
         result = { success: false, message: "Aksi API tidak dikenali: " + action };
     }
@@ -182,6 +185,19 @@ function apiLogin(username, password) {
     return authenticateUser(username, password);
   } catch (err) {
     return { success: false, message: "Error login: " + err.message };
+  }
+}
+
+/**
+ * API: Mengakhiri Sesi Pengguna (Logout)
+ * Menghapus token dari CacheService di server
+ */
+function apiLogout(sessionToken) {
+  try {
+    destroySessionToken(sessionToken);
+    return { success: true, message: "Sesi berhasil diakhiri." };
+  } catch (err) {
+    return { success: false, message: "Error logout: " + err.message };
   }
 }
 
