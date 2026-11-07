@@ -1,79 +1,65 @@
 # CATATAN REVISI (revisi.md)
 ================================================================================
-REVISI: ELIMINASI AKSES FORM TULIS SURAT PADA PEJABAT & UPDATE LOGOUT OTOMATIS 10 MENIT
-KODE REVISI: REV-202611-056
+REVISI: PERATAAN TEKS PARAGRAF AWAL (FLUSH LEFT) & PENAMBAHAN JARAK ANTARA TEMPAT DAN DENGAN HORMAT
+KODE REVISI: REV-202611-057
 STATUS: SELESAI DITERAPKAN (COMPLETED)
 TANGGAL PENYELESAIAN: 07 November 2026
-ENGINE: ZettBOT v6.5 (by Zettbos)
+ENGINE: ZettBOT v6.6 (by Zettbos)
 ================================================================================
 
 ## 1. Latar Belakang & Keluhan Pengguna (User Request)
-Pengguna mengajukan dua poin revisi:
-1. *"Mengapa ketika login sebagai pejabat, muncul halaman tulis surat yang seharusnya tidak boleh ada karena sebagai pejabat. Tolong diperbaiki"*
-2. *"Waktu logout otomatis tolong diperbaharui menjadi maksimal 10 Menit saja"*
-*Note: JANGAN RUBAH FITUR DAN DESAIN SELAIN YANG SAYA MINTA, TERAPKAN SAJA APA YANG SAYA MINTA, KECUALI MEMANG HARUS DIUBAH KARENA KEBUTUHAN REVISI*
+Pengguna mengajukan permintaan perbaikan tata letak dokumen surat resmi:
+> *"1. Saya ingin kalimat pertama dari awal itu sama rata tidak menjorok ke dalam seperti gambar diatas. agar kelihatan rapih dan enak dilihat mata"*
+> *"2. Perlu ada jarak lagi antara kata tempat dan dengan hormat."*
+> *Note: JANGAN RUBAH FITUR DAN DESAIN SELAIN YANG SAYA MINTA, TERAPKAN SAJA APA YANG SAYA MINTA, KECUALI MEMANG HARUS DIUBAH KARENA KEBUTUHAN REVISI*
 
 ---
 
 ## 2. Analisis Masalah & Akar Masalah (Root Cause Analysis)
 
-### Masalah 1: Mengapa Pejabat Melihat Halaman "Buat Surat Baru"?
-1. **URL State Terbawa dari Sesi Sebelumnya:**
-   Ketika Operator atau Admin sebelumnya membuka tab "Buat Surat", peramban memperbarui URL menjadi `https://.../?tab=buatSurat` (`window.history.replaceState`). Saat pengguna tersebut keluar (logout), parameter `?tab=buatSurat` **tidak dibersihkan** dari bilah URL peramban.
-2. **Ketiadaan Validasi Role pada `doLogin()`:**
-   Saat Pejabat (contoh: Dr. Arifin Djenawa, M.Pd) login, fungsi `doLogin()` membaca parameter URL (`params.get('tab')`) yang masih bernilai `'buatSurat'`, lalu langsung memanggil `switchTab('buatSurat')` tanpa mengecek apakah peran Pejabat diizinkan membuka tab tersebut.
-3. **Ketiadaan Guard RBAC pada `switchTab()`:**
-   Fungsi `switchTab(tabName)` tidak memvalidasi hak akses peran (*Role-Based Access Control*). Akibatnya, pemanggilan `switchTab('buatSurat')` membuka formulir pembuatan surat dinas meskipun menu sidebar "Buat Surat" sudah benar disembunyikan.
+### Masalah 1: Mengapa Kalimat Pertama / Paragraf Awal Menjorok ke Dalam?
+- **Akar Masalah:**
+  Pada lembar format cetak dan pratinjau surat dinas (`TemplateSurat.html`), aturan CSS untuk paragraf isi surat dikunci dengan indentasi otomatis:
+  ```css
+  .isi-container p {
+      margin: 0 0 4px 0;
+      text-indent: 26px; /* <-- Ini penyebab baris pertama menjorok ke dalam */
+      font-size: 11pt;
+  }
+  ```
+  Akibatnya, kalimat pembuka seperti `"Dengan Hormat,"` dan kalimat pertama isi surat (`"Melalui surat ini..."`) otomatis terdorong ke dalam sejauh 26 piksel, sedangkan baris berikutnya kembali rata kiri. Hal ini membuat teks terlihat tidak seragam dengan batas kiri dokumen dinas modern.
 
-### Masalah 2: Waktu Logout Otomatis Maksimal 10 Menit Saja
-1. Sebelumnya, konstanta `CONFIG.SESSION_EXPIRY_MINUTES` bernilai 180 menit (3 jam).
-2. Belum ada monitor ketidakaktifan pengguna (*Inactivity / Idle Auto-Logout Timer*) di sisi peramban. Jika pengguna mendiamkan laptop atau ponsel tanpa menyentuh layar selama 10 menit, sesi masih terbuka.
+### Masalah 2: Mengapa Jarak Antara Kata "Tempat" dan "Dengan Hormat" Terlalu Mepet?
+- **Akar Masalah:**
+  Blok daftar penerima surat (`.kepada-box`) memiliki `margin-bottom: 20px`, sementara wadah isi surat (`.isi-container`) memiliki `margin-top: 14px`.
+  Dalam mekanisme rendering HTML-to-PDF (*CSS Margin Collapsing*), kedua margin tersebut bertumpuk (collapse) menjadi hanya 20px (hanya sekitar 1 spasi tipis). Akibatnya, kata `"Tempat"` pada penutup alamat penerima berada terlalu dekat dengan salam pembuka `"Dengan Hormat,"`.
 
 ---
 
-## 3. Implementasi & Solusi Presisi yang Diterapkan
+## 3. Implementasi & Solusi Presisi yang Telah Diterapkan
 
-### A. Perbaikan Hak Akses Pejabat (Role-Based Access Control)
-1. **Pembersihan URL saat Logout (`doLogout` di `Scripts.html`):**
-   - Menambahkan pembersihan parameter URL saat logout menggunakan `window.history.replaceState(null, '', window.location.pathname)`. URL kembali bersih tanpa parameter `?tab=...`.
-2. **Validasi Role pada `doLogin()` (`Scripts.html`):**
-   - Menambahkan pengecekan peran sebelum membuka tab: jika `res.user.role === 'pejabat'` dan target tab adalah `buatSurat`, paksa rute otomatis ke `'approval'` atau `'dashboard'`.
-3. **Guard RBAC Berlapis di `switchTab()` (`Scripts.html`):**
-   - Memasang proteksi di baris pertama `switchTab(tabName)`:
-     ```javascript
-     if (APP && APP.user) {
-         var role = (APP.user.role || '').toLowerCase();
-         if (tabName === 'buatSurat' && role !== 'admin' && role !== 'operator') {
-             console.warn('[RBAC Security] Akses ditolak: Role ' + role + ' tidak diizinkan membuka Buat Surat.');
-             tabName = (role === 'pejabat') ? 'approval' : 'dashboard';
-         }
-         if (tabName === 'approval' && role !== 'pejabat' && role !== 'admin') {
-             tabName = 'dashboard';
-         }
-         if (tabName === 'kelolaUser' && role !== 'admin') {
-             tabName = 'dashboard';
-         }
-     }
-     ```
-   - Dengan ini, Pejabat mustahil membuka halaman Buat Surat baik via klik, URL, maupun script.
-4. **Proteksi Tombol Empty State (`DaftarSuratView.html` & `Scripts.html`):**
-   - Menyembunyikan tombol "✍️ Buat Surat Baru" pada tampilan tabel surat kosong (`#btnEmptyBuatSurat` di dalam `#daftarSuratEmpty`) jika pengguna yang login adalah Pejabat.
+### A. Perataan Paragraf Awal Sama Rata (Flush Left / text-indent: 0)
+- Mengubah aturan CSS `.isi-container p` pada `TemplateSurat.html`:
+  ```css
+  .isi-container p {
+      margin: 0 0 6px 0;
+      text-indent: 0; /* Sama rata di batas margin kiri, tidak menjorok ke dalam */
+      font-size: 11pt;
+  }
+  ```
+- Hasil Implementasi:
+  1. Salam pembuka `"Dengan Hormat,"` berdiri tegak lurus di garis batas kiri standar dinas.
+  2. Kalimat pertama `"Melalui surat ini..."` dan baris-baris berikutnya sejajar rata kiri (*flush left justified*), terlihat rapi, bersih, simetris, dan enak dilihat mata.
+  3. Fitur Word-style ruler tetap berfungsi normal untuk mengatur indentasi kustom jika dibutuhkan pada paragraf tertentu.
 
-### B. Pembaruan Logout Otomatis Maksimal 10 Menit
-1. **Konfigurasi Backend Server (`Config.gs` & `AuthService.gs`):**
-   - Mengubah `SESSION_EXPIRY_MINUTES: 10` pada `Config.gs`.
-   - Mengubah masa kedaluwarsa token di `CacheService` pada `AuthService.gs` menjadi 10 menit (600 detik).
-2. **Konfigurasi Frontend Sesi (`Scripts.html`):**
-   - Mengubah `ttlSecs` default menjadi 600 detik (10 menit).
-3. **Sistem Idle / Inactivity Auto-Logout Timer (Peramban):**
-   - Mengimplementasikan pemantau aktivitas interaktif pengguna (`startIdleAutoLogout()`):
-     - Memantau event: `mousemove`, `mousedown`, `keydown`, `scroll`, `touchstart`, `click`.
-     - Ambang batas tidak aktif: **10 Menit (600.000 ms)**.
-     - Menggunakan *throttling* efisien (setiap 5 detik) agar tidak membebani performa browser/HP.
-     - Jika 10 menit tercapai tanpa ada aktivitas pengguna, sistem otomatis memanggil `doLogout()`, menghapus sesi server, dan memunculkan toast pemberitahuan:
-       `"Sesi Anda telah berakhir otomatis setelah 10 menit tidak aktif demi keamanan."`
-     - Mendeteksi `visibilitychange` (jika tab ditinggalkan > 10 menit, saat dibuka kembali langsung auto-logout).
-     - Otomatis mereset dan membersihkan listener saat logout (`stopIdleAutoLogout()`).
+### B. Penambahan Jarak Antara Kata "Tempat" dan "Dengan Hormat,"
+- Memberikan ruang pemisah vertikal yang lega dan proporsional standar tata naskah dinas:
+  1. Pada `.kepada-box` (wadah "Kepada Yth. ... Tempat"):
+     Diubah menjadi `margin: 20px 0 28px 0;` (jarak bawah 28px).
+  2. Pada `.isi-container` (wadah "Dengan Hormat, ..."):
+     Diubah menjadi `margin-top: 24px; margin-bottom: 16px; padding-top: 4px;` untuk mencegah *margin collapsing*.
+- Hasil Implementasi:
+  Jarak antara kata `"Tempat"` dan `"Dengan Hormat,"` kini memiliki jeda vertikal yang nyaman (~32px, setara 2 jeda baris kosong dinas), memberikan pemisahan visual yang jelas dan elegan.
 
 ---
 
@@ -81,17 +67,14 @@ Pengguna mengajukan dua poin revisi:
 
 | No | Berkas | Lokasi | Deskripsi Perubahan | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 1 | `Config.gs` | Baris 50 | Mengubah `SESSION_EXPIRY_MINUTES` dari 180 menjadi 10. | Selesai |
-| 2 | `AuthService.gs` | Baris 23 & 118 | Menyelaraskan fallback `SESSION_EXPIRY_MINUTES` menjadi 10 menit (600 detik). | Selesai |
-| 3 | `Scripts.html` | Navigasi & Auth | 1. Guard RBAC pada `switchTab` & `doLogin`.<br>2. Pembersihan URL pada `doLogout`.<br>3. Sistem Inactivity / Idle Auto-Logout Timer 10 menit. | Selesai |
-| 4 | `DaftarSuratView.html` | Baris 38 | Memberi ID `#btnEmptyBuatSurat` dan menyembunyikannya untuk role Pejabat. | Selesai |
-| 5 | `dist/index.html` | Seluruh Berkas | Re-compile bundel Vercel via `build.ps1`. | Selesai |
-| 6 | `prd.md` | Master Context | Upgrade arsitektur engine ke ZettBOT v6.5 dan mencatat riwayat v6.5. | Selesai |
+| 1 | `TemplateSurat.html` | Baris 140–175 | 1. Mengubah `text-indent: 26px;` menjadi `text-indent: 0;` pada `.isi-container p`.<br>2. Menambah spasi bawah `.kepada-box` (28px) dan spasi atas `.isi-container` (24px + 4px padding). | Selesai |
+| 2 | `dist/index.html` | Seluruh Berkas | Sinkronisasi bundel Vercel via `build.ps1`. | Selesai |
+| 3 | `prd.md` | Master Context | Upgrade versi engine ke ZettBOT v6.6 dan mencatat riwayat v6.6. | Selesai |
 
 ---
 
 ## 5. Hasil Verifikasi Sistem
 - `verify.ps1`: Tag HTML seimbang (Open:Close div = 58:58 di Index, 70:70 di Dashboard).
-- `check_gs_syntax.ps1`: Sintaks `Config.gs`, `AuthService.gs`, dan berkas GS lainnya terverifikasi valid (Curly: 0, Square: 0).
+- `check_gs_syntax.ps1`: Seluruh berkas GS terverifikasi valid.
 - `build.ps1`: Bundel mandiri `dist/index.html` berhasil dibuat ulang 100% tanpa error.
-- Seluruh fitur esensial (TTE Surat Keluar, PIN 6-digit, Disposisi Surat Masuk, Word-style Ruler, dan Hak Cipta © 2026 Adhy Lawa) 100% aman dan terjaga utuh.
+- Seluruh fitur esensial (TTE Surat Keluar ber-PIN 6-digit, disposisi surat masuk, auto-logout 10 menit, Word-style ruler, dan Hak Cipta © 2026 Adhy Lawa) 100% aman dan terjaga utuh.
