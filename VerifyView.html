@@ -1,0 +1,139 @@
+<!-- Halaman Verifikasi Publik — terbuka langsung saat QR Code di-scan -->
+<div style="min-height:100vh;background:linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 50%,#d1fae5 100%);padding:24px 16px;">
+
+    <!-- Header Instansi Minimal -->
+    <div style="max-width:720px;margin:0 auto 20px auto;text-align:center;">
+        <div
+            style="display:inline-flex;align-items:center;gap:10px;background:white;padding:10px 20px;border-radius:24px;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+            <span style="font-size:20px;">🏛️</span>
+            <span style="font-size:.85rem;font-weight:700;color:#0f172a;" id="verifyInstitutionName">SISTEM e-TTE
+                RESMI</span>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="verifyLoading" class="verify-card" style="text-align:center;padding:60px 32px;">
+        <div style="font-size:48px;margin-bottom:16px;animation:spin 1.5s linear infinite;display:inline-block;">⏳</div>
+        <div style="font-size:1rem;font-weight:600;color:#475569;">Memverifikasi keaslian dokumen...</div>
+        <div style="font-size:.85rem;color:#94a3b8;margin-top:6px;">Harap tunggu sebentar</div>
+    </div>
+
+    <!-- Valid State -->
+    <div id="verifyValid" class="verify-card" style="display:none;">
+        <div class="verify-header">
+            <div class="verify-icon-box">✅</div>
+            <h2>DOKUMEN ASLI & SAH</h2>
+            <p>Dokumen ini telah diverifikasi secara elektronik oleh sistem resmi instansi</p>
+        </div>
+        <div class="verify-body">
+
+            <!-- Badge ID Dokumen -->
+            <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 16px;margin-bottom:20px;font-family:monospace;font-size:.85rem;color:#166534;text-align:center;font-weight:700;"
+                id="verDocId">—</div>
+
+            <!-- Detail Dokumen -->
+            <div class="cert-row">
+                <span class="cert-label">📋 Nomor Surat</span>
+                <span class="cert-value" id="verNomor">—</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">📅 Tanggal Surat</span>
+                <span class="cert-value" id="verTanggal">—</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">📌 Perihal</span>
+                <span class="cert-value" id="verPerihal">—</span>
+            </div>
+            <div class="cert-row" style="align-items:flex-start;">
+                <span class="cert-label">📬 Ditujukan Kepada</span>
+                <span class="cert-value" id="verKepada"
+                    style="white-space:pre-line;word-break:break-word;line-height:1.7;">—</span>
+            </div>
+
+            <!-- Separator -->
+            <div style="margin:16px 0;border-top:2px dashed #d1fae5;"></div>
+            <div
+                style="font-size:.8rem;font-weight:700;color:#065f46;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">
+                🖊️ Data Penandatangan Elektronik</div>
+
+            <div class="cert-row">
+                <span class="cert-label">👤 Nama Pejabat</span>
+                <span class="cert-value" style="color:#065f46;font-weight:700;" id="verNamaPejabat">—</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">🏷️ Jabatan</span>
+                <span class="cert-value" id="verJabatan">—</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">🆔 NIP</span>
+                <span class="cert-value" style="font-family:monospace;" id="verNip">—</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">🏛️ Instansi</span>
+                <span class="cert-value" id="verInstansi">—</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">⏱️ Waktu Pengesahan Resmi</span>
+                <span class="cert-value" style="color:#059669;font-weight:700;" id="verWaktuTtd">—</span>
+            </div>
+
+            <!-- Hash Integritas -->
+            <div style="margin-top:16px;">
+                <div style="font-size:.775rem;color:#94a3b8;font-weight:600;margin-bottom:6px;">🔒 Hash Integritas
+                    Dokumen (SHA-256):</div>
+                <div class="hash-box" id="verHash">—</div>
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;">
+                <a id="verBtnView" href="#" target="_blank" class="btn btn-success"
+                    style="flex:1;justify-content:center;">
+                    👁️ Lihat Dokumen PDF Asli
+                </a>
+            </div>
+
+            <p style="font-size:.75rem;color:#94a3b8;text-align:center;margin-top:16px;line-height:1.6;">
+                Dokumen ini telah ditandatangani secara elektronik menggunakan sistem e-TTE Resmi.<br>
+                Verifikasi ini menjamin keaslian dan integritas isi dokumen.
+            </p>
+        </div>
+    </div>
+
+    <!-- Invalid State -->
+    <div id="verifyInvalid" class="verify-card" style="display:none;">
+        <div class="verify-header invalid">
+            <div class="verify-icon-box">❌</div>
+            <h2>DOKUMEN TIDAK TERVERIFIKASI</h2>
+            <p>Dokumen ini tidak terdaftar atau tidak sah dalam sistem resmi kami</p>
+        </div>
+        <div class="verify-body" style="text-align:center;padding:32px;">
+            <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+            <div style="font-size:1rem;font-weight:700;color:#dc2626;margin-bottom:10px;" id="verInvalidMsg">Dokumen
+                tidak ditemukan dalam basis data resmi.</div>
+            <p style="font-size:.875rem;color:#64748b;line-height:1.6;">
+                Harap waspada! Kemungkinan dokumen ini:<br>
+                • Telah dipalsukan atau dimanipulasi<br>
+                • QR Code telah dirusak atau diganti<br>
+                • Bukan dokumen resmi instansi kami
+            </p>
+            <div
+                style="margin-top:20px;padding:14px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca;font-size:.825rem;color:#991b1b;">
+                Jika Anda menerima dokumen ini sebagai dokumen resmi, segera laporkan kepada instansi terkait untuk
+                penyelidikan lebih lanjut.
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>

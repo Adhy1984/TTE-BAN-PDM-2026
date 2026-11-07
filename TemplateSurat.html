@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Surat Resmi Kedinasan -
+        <?= nomorSurat ?>
+    </title>
+    <style type="text/css">
+        @page {
+            size: 210mm 297mm;
+            /* Standard ISO A4 Portrait */
+            margin: 7mm 20mm 12mm 20mm;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            line-height: 1.42;
+            color: #111827;
+            background: #ffffff;
+        }
+
+        /* KOP SURAT PERSIS CONTOH mapping_2025_st_visitasi.php */
+        .kop-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .kop-table td {
+            padding: 0;
+        }
+
+        .kop-table td.kop-logo {
+            width: 105px;
+            vertical-align: middle;
+            text-align: center;
+            padding-right: 20px;
+        }
+
+        .kop-logo img {
+            height: 92px;
+            width: auto;
+            max-width: 105px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .kop-table td.kop-text {
+            vertical-align: middle;
+            text-align: left;
+            padding-left: 4px;
+        }
+
+        .kop-line1 {
+            font-size: 20px;
+            font-weight: bold;
+            color: <?!= kopColor ?>;
+            line-height: 1.15;
+            margin: 0;
+        }
+
+        .kop-line2 {
+            font-size: 10px;
+            font-weight: bold;
+            color: <?!= kopColor ?>;
+            line-height: 1.25;
+            margin: 2px 0 2px 0;
+            letter-spacing: -0.2px;
+        }
+
+        .kop-line3 {
+            font-size: 20px;
+            font-weight: bold;
+            color: <?!= kopColor ?>;
+            line-height: 1.15;
+            margin: 0 0 2px 0;
+        }
+
+        .kop-alamat {
+            font-size: 9.5px;
+            color: #333333;
+            line-height: 1.35;
+            margin: 0;
+        }
+
+        .kop-hr {
+            border: none;
+            border-top: 2px solid #000000;
+            margin: 5px 0 8px 0;
+        }
+
+        /* BLOK METADATA & TANGGAL */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+            font-size: 11pt;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .info-table td {
+            vertical-align: top;
+            padding: 1px 0;
+            font-size: 11pt;
+        }
+
+        .meta-sub-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .meta-sub-table td {
+            vertical-align: top;
+            padding: 1px 0;
+            font-size: 11pt;
+        }
+
+        .meta-label {
+            width: 80px;
+        }
+
+        .meta-sep {
+            width: 14px;
+        }
+
+        /* KEPADA YTH */
+        .kepada-box {
+            margin: 20px 0 20px 0;
+            font-size: 11pt;
+            line-height: 1.4;
+        }
+
+        .kepada-title {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .kepada-item {
+            margin-bottom: 1px;
+            padding-left: 14px;
+        }
+
+        .kepada-di {
+            margin-top: 3px;
+        }
+
+        /* ISI SURAT */
+        .isi-container {
+            font-size: 11pt;
+            line-height: 1.45;
+            text-align: justify;
+            margin-top: 14px;
+            margin-bottom: 14px;
+        }
+
+        .isi-container p {
+            margin: 0 0 4px 0;
+            text-indent: 26px;
+            font-size: 11pt;
+        }
+
+        .isi-container p.no-indent {
+            text-indent: 0 !important;
+        }
+
+        .isi-container ul,
+        .isi-container ol {
+            margin: 3px 0 4px 0;
+            padding-left: 28px;
+        }
+
+        .isi-container li {
+            margin-bottom: 2px;
+            text-indent: 0;
+            font-size: 11pt;
+        }
+
+        /* BLOK TANDA TANGAN ELEKTRONIK */
+        .ttd-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            page-break-inside: avoid;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+        }
+
+        .ttd-box {
+            width: 45%;
+            text-align: left;
+            font-size: 11pt;
+            line-height: 1.3;
+        }
+
+        .ttd-jabatan {
+            font-size: 11pt;
+            margin-bottom: 6px;
+        }
+
+        .ttd-qr {
+            margin: 8px 0;
+            height: 75px;
+            min-height: 75px;
+        }
+
+        .ttd-qr img {
+            width: 75px;
+            height: 75px;
+            display: block;
+        }
+
+        .ttd-nama {
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 11pt;
+            margin-top: 6px;
+        }
+
+        /* FOOTNOTE RESMI TTE (RUNNING FOOTER - MUNCUL DI SETIAP HALAMAN) */
+        .footer-tte {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            font-size: 8pt;
+            color: #64748b;
+            font-style: italic;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 4px;
+            line-height: 1.3;
+            background: #ffffff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- KOP SURAT RESMI (FORMAT mapping_2025_st_visitasi.php) -->
+    <table class="kop-table" align="center">
+        <tr>
+            <td class="kop-logo" valign="middle" style="padding-right:20px;width:105px;text-align:center;">
+                <? if (logoBase64) { ?>
+                <img src="<?!= logoBase64 ?>" alt="Logo BAN PDM" style="height:92px;width:auto;max-width:105px;object-fit:contain;display:block;margin:0 auto;">
+                <? } ?>
+            </td>
+            <td class="kop-text" valign="middle" style="padding-left:4px;">
+                <div class="kop-line1">
+                    <?!= kopLine1 ?>
+                </div>
+                <div class="kop-line2">
+                    <?!= kopLine2 ?>
+                </div>
+                <div class="kop-line3">
+                    <?!= kopLine3 ?>
+                </div>
+                <? if (kopAddress) { ?>
+                <div class="kop-alamat">
+                    <?!= kopAddress ?>
+                </div>
+                <? } ?>
+                <? if (kopContact) { ?>
+                <div class="kop-alamat">
+                    <?!= kopContact ?>
+                </div>
+                <? } ?>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="padding-top:6px;">
+                <hr class="kop-hr">
+            </td>
+        </tr>
+    </table>
+
+    <!-- METADATA SURAT & TANGGAL RESMI -->
+    <table class="info-table">
+        <tr>
+            <td width="65%" valign="top">
+                <table class="meta-sub-table">
+                    <tr>
+                        <td class="meta-label">Nomor</td>
+                        <td class="meta-sep">:</td>
+                        <td>
+                            <?= nomorSurat ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Lampiran</td>
+                        <td class="meta-sep">:</td>
+                        <td>
+                            <?= lampiranSurat ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="meta-label">Perihal</td>
+                        <td class="meta-sep">:</td>
+                        <td>
+                            <?= perihalSurat ?>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td width="35%" valign="top" align="right">
+                <?= tanggalSurat ?>
+            </td>
+        </tr>
+    </table>
+
+    <!-- KEPADA YTH (DAFTAR PENERIMA DOKUMEN) -->
+    <div class="kepada-box">
+        <div class="kepada-title">Kepada Yth.</div>
+        <? for (var k = 0; k < kepadaList.length; k++) { ?>
+        <div class="kepada-item">
+            <?= kepadaList[k] ?>
+        </div>
+        <? } ?>
+        <div class="kepada-di">di -</div>
+        <div style="padding-left: 16px;">Tempat</div>
+    </div>
+
+    <!-- BADAN ISI SURAT (PRESERVASI RICH TEXT HTML CKEDITOR) -->
+    <div class="isi-container">
+        <? if (salamPembukaHtml) { ?>
+        <?!= salamPembukaHtml ?>
+        <? } ?>
+        <?!= isiHtml ?>
+        <? if (salamPenutupHtml) { ?>
+        <?!= salamPenutupHtml ?>
+        <? } ?>
+    </div>
+
+    <!-- BLOK TANDA TANGAN ELEKTRONIK (TTE) -->
+    <table class="ttd-table">
+        <tr>
+            <td width="55%">&nbsp;</td>
+            <td class="ttd-box">
+                <div class="ttd-jabatan">
+                    <?!= jabatanTtd ?>
+                </div>
+                <div class="ttd-qr" style="height: 75px; min-height: 75px; margin: 8px 0;">
+                    <? if (qrBase64) { ?>
+                    <img src="<?!= qrBase64 ?>" width="75" height="75" alt="QR Code TTE">
+                    <? } else { ?>
+                    <!-- Ruang kosong proporsional untuk QR Code TTE saat pratinjau -->
+                    <div style="height: 75px; width: 75px;"></div>
+                    <? } ?>
+                </div>
+                <div class="ttd-nama">
+                    <?= namaPejabat ?>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- CATATAN FOOTER VERIFIKASI KEABSAHAN -->
+    <div class="footer-tte">
+        Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang diterbitkan oleh
+        sistem e-TTE resmi.
+    </div>
+
+</body>
+
+</html>

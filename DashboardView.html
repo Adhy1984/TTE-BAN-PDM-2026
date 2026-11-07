@@ -1,0 +1,184 @@
+<!-- Dashboard View -->
+<div id="dashboardContent">
+
+    <!-- Greeting Banner (Executive Ocean Deep Gradient with Floating Ambient Orbs) -->
+    <div class="anim-fade-up anim-delay-1"
+        style="background:linear-gradient(135deg,#0369a1 0%,#0284c7 60%,#38bdf8 100%);border-radius:18px;padding:28px 34px;margin-bottom:24px;color:white;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;box-shadow:0 10px 25px -5px rgba(2,132,199,0.3);border:1px solid rgba(255,255,255,0.25);position:relative;overflow:hidden;">
+        <!-- Latar Ornamen Halus Bernapas (Floating Ambient Orbs) -->
+        <div class="floating-orb-1" style="position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.02) 70%);border-radius:50%;pointer-events:none;"></div>
+        <div class="floating-orb-2" style="position:absolute;right:100px;bottom:-60px;width:150px;height:150px;background:radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.01) 70%);border-radius:50%;pointer-events:none;"></div>
+
+        <div style="position:relative;z-index:2;">
+            <h2 style="font-size:1.45rem;font-weight:800;letter-spacing:-0.01em;" id="dashGreeting">Selamat Datang! 👋</h2>
+            <p style="color:rgba(255,255,255,.92);font-size:.925rem;margin-top:4px;font-weight:500;" id="dashSubGreeting">Portal Tanda Tangan Elektronik Resmi Instansi</p>
+        </div>
+        <div style="text-align:right;position:relative;z-index:2;">
+            <div style="font-size:.825rem;color:rgba(255,255,255,.95);background:rgba(255,255,255,0.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.3);font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.08);" id="dashTanggal">—</div>
+        </div>
+    </div>
+
+    <!-- Stat Cards Berwarna-Warni & Modern (Vibrant Gradient KPI Cards) -->
+    <div class="dashboard-kpi-grid anim-fade-up anim-delay-2" id="statsGrid">
+        
+        <!-- KPI 1: Total Surat Keluar (Ocean Sky Gradient) -->
+        <div class="kpi-card kpi-blue">
+            <div class="kpi-content">
+                <div class="kpi-label">TOTAL SURAT KELUAR</div>
+                <div class="kpi-value" id="statTotal">—</div>
+                <div class="kpi-sub">Draf & Surat Dinas Resmi</div>
+            </div>
+            <div class="kpi-icon-pill">
+                <span>📄</span>
+            </div>
+        </div>
+
+        <!-- KPI 2: Total Surat Masuk (Warm Amber Gold Gradient) -->
+        <div class="kpi-card kpi-amber">
+            <div class="kpi-content">
+                <div class="kpi-label">TOTAL SURAT MASUK</div>
+                <div class="kpi-value" id="statSuratMasuk">—</div>
+                <div class="kpi-sub">Arsip & Disposisi Instansi</div>
+            </div>
+            <div class="kpi-icon-pill">
+                <span>📥</span>
+            </div>
+        </div>
+
+        <!-- KPI 3: Menunggu TTE Pejabat (Royal Violet Gradient) -->
+        <div class="kpi-card kpi-purple">
+            <div class="kpi-content">
+                <div class="kpi-label">MENUNGGU TTE PEJABAT</div>
+                <div class="kpi-value" id="statMenunggu">—</div>
+                <div class="kpi-sub">Antrean Tanda Tangan</div>
+            </div>
+            <div class="kpi-icon-pill">
+                <span>⏳</span>
+            </div>
+        </div>
+
+        <!-- KPI 4: Selesai Ditandatangani (Fresh Emerald Teal Gradient) -->
+        <div class="kpi-card kpi-emerald">
+            <div class="kpi-content">
+                <div class="kpi-label">SUDAH DITANDATANGANI</div>
+                <div class="kpi-value" id="statTtd">—</div>
+                <div class="kpi-sub">Dokumen Sah Ber-QR Code</div>
+            </div>
+            <div class="kpi-icon-pill">
+                <span>✅</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Hidden element untuk statTolak agar script lama tetap aman jika memanggilnya -->
+    <span id="statTolak" style="display:none;">0</span>
+
+    <!-- Visualisasi Grafik Data Dokumen Modern (Interactive Charts) -->
+    <div class="charts-grid anim-fade-up anim-delay-3">
+        
+        <!-- Grafik 1: Rekapitulasi Surat Bulanan -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div class="chart-card-title">
+                    <span class="chart-icon-badge" style="background:#e0f2fe;color:#0284c7;">📊</span>
+                    <span>Rekapitulasi Surat Bulanan</span>
+                </div>
+                <span class="chart-badge-pill" style="background:#f1f5f9;color:#475569;" id="chartYearBadge">Tahun 2026</span>
+            </div>
+            <div class="chart-scroll-wrap" id="chartKomparasiScrollWrap">
+                <div class="chart-scroll-inner">
+                    <canvas id="chartKomparasiSurat"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grafik 2: Distribusi Klasifikasi Dokumen (Surat Keluar, Surat Masuk, Surat Keterangan, Surat Keputusan) -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div class="chart-card-title">
+                    <span class="chart-icon-badge" style="background:#fef3c7;color:#d97706;">🍩</span>
+                    <span>Distribusi Klasifikasi Dokumen</span>
+                </div>
+                <span class="chart-badge-pill" style="background:#e0f2fe;color:#0284c7;">Interaktif</span>
+            </div>
+            <div class="chart-canvas-wrap">
+                <canvas id="chartKategoriSurat"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Info Alert untuk Operator/Admin jika ada surat ditolak oleh Pejabat -->
+    <div id="alertSuratDitolak" class="anim-fade-up anim-delay-2"
+        style="display:none;background:linear-gradient(135deg,#fff1f2 0%,#ffe4e6 100%);border:1px solid #fecdd3;border-left:4px solid #e11d48;border-radius:14px;padding:16px 22px;margin-bottom:24px;align-items:center;gap:14px;box-shadow:0 4px 14px rgba(225,29,72,0.08);">
+        <span class="bell-anim" style="font-size:28px;">⚠️</span>
+        <div>
+            <strong style="color:#9f1239;font-size:.95rem;">Perhatian: Ada Surat Ditolak oleh Pejabat!</strong>
+            <p style="font-size:.875rem;color:#be123c;margin-top:2px;" id="alertDitolakCount">—</p>
+        </div>
+        <button class="btn btn-sm btn-tactile" style="margin-left:auto;background:linear-gradient(135deg,#e11d48 0%,#be123c 100%);color:#fff;border:none;box-shadow:0 2px 8px rgba(225,29,72,0.3);padding:8px 16px;border-radius:8px;font-weight:600;cursor:pointer;" onclick="filterSuratDitolak()">Periksa & Perbaiki →</button>
+    </div>
+
+    <!-- Info Alert untuk Pejabat jika ada surat menunggu -->
+    <div id="alertPendingSign" class="anim-fade-up anim-delay-2"
+        style="display:none;background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:14px;padding:16px 22px;margin-bottom:24px;align-items:center;gap:14px;box-shadow:0 4px 14px rgba(245,158,11,0.08);">
+        <span class="bell-anim" style="font-size:28px;">🔔</span>
+        <div>
+            <strong style="color:#92400e;font-size:.95rem;">Ada surat menunggu tanda tangan Anda!</strong>
+            <p style="font-size:.875rem;color:#78350f;margin-top:2px;" id="alertPendingCount">—</p>
+        </div>
+        <button class="btn btn-primary btn-sm btn-tactile" style="margin-left:auto;background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);border:none;box-shadow:0 2px 8px rgba(217,119,6,0.3);" onclick="switchTab('approval')">Tinjau Sekarang →</button>
+    </div>
+
+    <!-- Info Alert untuk Pejabat jika ada Surat Masuk menunggu Disposisi -->
+    <div id="alertPendingDisposisi" class="anim-fade-up anim-delay-2"
+        style="display:none;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:1px solid #bfdbfe;border-left:4px solid #0284c7;border-radius:14px;padding:16px 22px;margin-bottom:24px;align-items:center;gap:14px;box-shadow:0 4px 14px rgba(2,132,199,0.08);">
+        <span class="bell-anim" style="font-size:28px;">📬</span>
+        <div>
+            <strong style="color:#0369a1;font-size:.95rem;">Ada Surat Masuk Menunggu Disposisi Anda!</strong>
+            <p style="font-size:.875rem;color:#075985;margin-top:2px;" id="alertPendingDisposisiCount">—</p>
+        </div>
+        <button class="btn btn-primary btn-sm btn-tactile" style="margin-left:auto;background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);border:none;box-shadow:0 2px 8px rgba(2,132,199,0.3);" onclick="switchTab('suratMasuk')">Buat Disposisi Sekarang →</button>
+    </div>
+
+    <!-- Info Alert untuk Pejabat jika Seluruh Surat Masuk Selesai Didisposisikan -->
+    <div id="alertDisposisiSelesai" class="anim-fade-up anim-delay-2"
+        style="display:none;background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);border:1px solid #a7f3d0;border-left:4px solid #10b981;border-radius:14px;padding:16px 22px;margin-bottom:24px;align-items:center;gap:14px;box-shadow:0 4px 14px rgba(16,185,129,0.08);">
+        <span style="font-size:28px;">✅</span>
+        <div>
+            <strong style="color:#065f46;font-size:.95rem;">Seluruh Surat Masuk Telah Selesai Didisposisikan!</strong>
+            <p style="font-size:.875rem;color:#047857;margin-top:2px;" id="alertDisposisiSelesaiCount">Semua berkas surat masuk telah Anda telaah & didisposisikan.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm btn-tactile" style="margin-left:auto;background:#ffffff;border:1px solid #a7f3d0;color:#047857;font-weight:600;box-shadow:0 2px 6px rgba(16,185,129,0.15);" onclick="switchTab('suratMasuk')">📋 Buka Arsip Surat Masuk</button>
+    </div>
+
+    <!-- Panduan Singkat Penggunaan (Interactive Step Cards with Hover Depth) -->
+    <div class="card anim-fade-up anim-delay-4">
+        <div class="card-header">
+            <div class="card-title">📘 Panduan Singkat Penggunaan</div>
+        </div>
+        <div class="dashboard-guide-grid">
+            <div class="guide-step-card" style="padding:18px 16px;min-width:0;background:linear-gradient(180deg,#ffffff 0%,#f0f9ff 100%);border-radius:14px;border:1px solid #bae6fd;border-left:4px solid #0284c7;box-shadow:0 4px 12px rgba(2,132,199,0.06);">
+                <div class="step-badge" style="width:32px;height:32px;background:#0284c7;color:#ffffff;border-radius:8px;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.95rem;box-shadow:0 2px 6px rgba(2,132,199,0.35);">1</div>
+                <div style="font-weight:700;margin:12px 0 6px;color:#0f172a;font-size:.98rem;">Buat Surat Baru</div>
+                <div style="font-size:.825rem;color:#475569;line-height:1.55;">Operator mengisi formulir surat resmi: nomor, perihal, kepada, isi surat, dan memilih pejabat penandatangan.</div>
+            </div>
+            <div class="guide-step-card" style="padding:18px 16px;min-width:0;background:linear-gradient(180deg,#ffffff 0%,#fffbeb 100%);border-radius:14px;border:1px solid #fde68a;border-left:4px solid #f59e0b;box-shadow:0 4px 12px rgba(245,158,11,0.06);">
+                <div class="step-badge" style="width:32px;height:32px;background:#f59e0b;color:#ffffff;border-radius:8px;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.95rem;box-shadow:0 2px 6px rgba(245,158,11,0.35);">2</div>
+                <div style="font-weight:700;margin:12px 0 6px;color:#0f172a;font-size:.98rem;">Pejabat Mengesahkan</div>
+                <div style="font-size:.825rem;color:#475569;line-height:1.55;">Pejabat membuka halaman Persetujuan, meninjau isi surat, lalu memasukkan PIN TTE untuk mengesahkan secara elektronik.</div>
+            </div>
+            <div class="guide-step-card" style="padding:18px 16px;min-width:0;background:linear-gradient(180deg,#ffffff 0%,#ecfdf5 100%);border-radius:14px;border:1px solid #a7f3d0;border-left:4px solid #10b981;box-shadow:0 4px 12px rgba(16,185,129,0.06);">
+                <div class="step-badge" style="width:32px;height:32px;background:#10b981;color:#ffffff;border-radius:8px;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.95rem;box-shadow:0 2px 6px rgba(16,185,129,0.35);">3</div>
+                <div style="font-weight:700;margin:12px 0 6px;color:#0f172a;font-size:.98rem;">PDF Ber-QR Code Terbit</div>
+                <div style="font-size:.825rem;color:#475569;line-height:1.55;">Sistem otomatis membuat PDF resmi lengkap dengan QR Code TTE tersisip di antara jabatan dan nama pejabat. PDF disimpan di Google Drive.</div>
+            </div>
+            <div class="guide-step-card" style="padding:18px 16px;min-width:0;background:linear-gradient(180deg,#ffffff 0%,#fbf7ff 100%);border-radius:14px;border:1px solid #ddd6fe;border-left:4px solid #8b5cf6;box-shadow:0 4px 12px rgba(139,92,246,0.06);">
+                <div class="step-badge" style="width:32px;height:32px;background:#8b5cf6;color:#ffffff;border-radius:8px;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.95rem;box-shadow:0 2px 6px rgba(139,92,246,0.35);">4</div>
+                <div style="font-weight:700;margin:12px 0 6px;color:#0f172a;font-size:.98rem;">Verifikasi Publik</div>
+                <div style="font-size:.825rem;color:#475569;line-height:1.55;">Penerima surat cukup scan QR Code menggunakan kamera HP. Halaman verifikasi resmi langsung terbuka tanpa perlu login akun apapun.</div>
+            </div>
+        </div>
+    </div>
+
+</div>

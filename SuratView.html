@@ -1,0 +1,1371 @@
+<!-- Form Buat / Edit Surat -->
+<div class="card" id="formSuratCard">
+    <div class="card-header"
+        style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div class="card-title" id="formSuratTitle">✍️ Formulir Surat Resmi Baru</div>
+        <span id="editDocBadge" class="badge badge-warning" style="display:none;font-size:.8rem;padding:4px 10px;">
+            ✏️ Mode Edit: ID <span id="editDocIdLabel"></span>
+        </span>
+    </div>
+
+    <input type="hidden" id="editDocId" value="">
+
+    <!-- Alert pemberitahuan saat edit -->
+    <div id="editModeBanner"
+        style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:.875rem;color:#1e40af;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+            <strong>ℹ️ Mode Edit Surat:</strong> Anda sedang mengubah isi draf surat. Setelah disimpan, surat akan
+            diajukan ulang ke pejabat penandatangan.
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="cancelEditSurat(false, true)"
+            style="padding:4px 10px;font-size:.78rem;">❌ Batal Edit</button>
+    </div>
+
+    <div id="suratFormAlert"
+        style="display:none;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:.875rem;"></div>
+
+    <!-- Pemilihan Metode Pembuatan Surat -->
+    <div class="doc-type-selector" id="docTypeSelectorWrap">
+        <button type="button" id="btnModeTemplate" class="btn-mode active" onclick="switchDocMode('TEMPLATE')">
+            ✍️ Ketik di Aplikasi (Template Resmi)
+        </button>
+        <button type="button" id="btnModeUpload" class="btn-mode" onclick="switchDocMode('UPLOAD_PDF')">
+            📄 Upload Dokumen PDF (Word / Eksternal)
+        </button>
+    </div>
+    <input type="hidden" id="inputTipeDokumen" value="TEMPLATE">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+        <!-- Kategori / Jenis Surat -->
+        <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">🏷️ Kategori / Jenis Surat <span style="color:red;">*</span></label>
+            <select id="inputKategoriSurat" class="form-control" style="font-weight:600;color:#0f172a;">
+                <option value="Surat Dinas">📄 Surat Dinas</option>
+                <option value="Surat Keterangan">📋 Surat Keterangan</option>
+                <option value="Surat Undangan">✉️ Surat Undangan</option>
+                <option value="Surat Keputusan">📜 Surat Keputusan (SK)</option>
+                <option value="Surat Tugas">💼 Surat Tugas</option>
+                <option value="Surat Edaran">📢 Surat Edaran</option>
+                <option value="Surat Permohonan">📨 Surat Permohonan</option>
+                <option value="Lainnya">📁 Lainnya</option>
+            </select>
+            <p style="font-size:.75rem;color:#64748b;margin-top:4px;">💡 Pilih jenis surat untuk mempermudah pengarsipan dan filter di menu Daftar Surat.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">📋 Nomor Surat <span style="color:red;">*</span></label>
+            <input id="inputNomorSurat" class="form-control" type="text" placeholder="Contoh: 005/TU-DISDIK/IX/2026">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">📅 Tanggal Surat <span style="color:red;">*</span></label>
+            <input id="inputTanggalSurat" class="form-control" type="date">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">📎 Lampiran</label>
+            <input id="inputLampiran" class="form-control" type="text" placeholder="Contoh: 1 (satu) Berkas atau -">
+            <p style="font-size:.75rem;color:#94a3b8;margin-top:4px;">💡 Isi dengan tanda strip (-) jika tidak ada
+                lampiran.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">📌 Perihal (Judul Surat) <span style="color:red;">*</span></label>
+            <input id="inputPerihal" class="form-control" type="text"
+                placeholder="Contoh: Undangan Rapat Koordinasi Dinas">
+        </div>
+
+        <!-- Field Kepada: textarea multi-baris -->
+        <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">📬 Kepada / Ditujukan Kepada <span style="color:red;">*</span></label>
+            <textarea id="inputKepada" class="form-control" rows="3"
+                placeholder="Contoh:&#10;1. Yth. Kepala Bidang Pendidikan Dasar di Tempat&#10;2. Yth. Kepala Bidang Pendidikan Menengah di Tempat"
+                style="resize:vertical;line-height:1.6;"></textarea>
+            <p style="font-size:.775rem;color:#94a3b8;margin-top:4px;">💡 Dapat diisi lebih dari satu tujuan. Pisahkan
+                tiap tujuan dengan baris baru.</p>
+        </div>
+
+        <!-- ==================== PANEL 1: KETIK DI APLIKASI (TEMPLATE) ==================== -->
+        <div id="panelTemplateMode" class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">📝 Isi Surat <span style="color:red;">*</span></label>
+
+            <!-- Toolbar Editor -->
+            <div id="rteToolbar" style="
+        display:flex;flex-wrap:wrap;gap:3px;
+        background:#f1f5f9;
+        border:1px solid #e2e8f0;
+        border-bottom:none;
+        border-radius:8px 8px 0 0;
+        padding:6px 8px;
+      ">
+                <!-- Format teks -->
+                <button type="button" class="rte-btn" title="Tebal (Ctrl+B)" onclick="rteExec('bold')"
+                    style="font-weight:700;">B</button>
+                <button type="button" class="rte-btn" title="Miring (Ctrl+I)" onclick="rteExec('italic')"
+                    style="font-style:italic;">I</button>
+                <button type="button" class="rte-btn" title="Garis Bawah (Ctrl+U)" onclick="rteExec('underline')"
+                    style="text-decoration:underline;">U</button>
+                <button type="button" class="rte-btn" title="Garis Coret" onclick="rteExec('strikeThrough')"
+                    style="text-decoration:line-through;">S</button>
+
+                <span class="rte-sep"></span>
+
+                <!-- Ukuran font -->
+                <select onchange="rteExecVal('fontSize', this.value); this.blur();" title="Ukuran Font"
+                    style="font-size:.78rem;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;background:#fff;color:#334155;cursor:pointer;height:28px;">
+                    <option value="">Ukuran</option>
+                    <option value="1">8pt</option>
+                    <option value="2">10pt</option>
+                    <option value="3">12pt (Normal)</option>
+                    <option value="4">14pt</option>
+                    <option value="5">18pt</option>
+                    <option value="6">24pt</option>
+                </select>
+
+                <span class="rte-sep"></span>
+
+                <!-- Alignment -->
+                <button type="button" class="rte-btn" title="Rata Kiri" onclick="rteExec('justifyLeft')"> ≡←</button>
+                <button type="button" class="rte-btn" title="Rata Tengah" onclick="rteExec('justifyCenter')">≡≡</button>
+                <button type="button" class="rte-btn" title="Rata Kanan" onclick="rteExec('justifyRight')"> ≡→</button>
+                <button type="button" class="rte-btn" title="Rata Penuh" onclick="rteExec('justifyFull')"> ≡≡≡</button>
+
+                <span class="rte-sep"></span>
+
+                <!-- Daftar -->
+                <button type="button" class="rte-btn" title="Daftar Bullet" onclick="rteExec('insertUnorderedList')">•
+                    Daftar</button>
+                <button type="button" class="rte-btn" title="Daftar Nomor" onclick="rteExec('insertOrderedList')">1.
+                    Nomor</button>
+
+                <span class="rte-sep"></span>
+
+                <!-- Indent -->
+                <button type="button" class="rte-btn" title="Tambah Indentasi" onclick="rteExec('indent')"> →|</button>
+                <button type="button" class="rte-btn" title="Kurangi Indentasi" onclick="rteExec('outdent')">
+                    |←</button>
+
+                <span class="rte-sep"></span>
+
+                <!-- Warna teks -->
+                <label title="Warna Teks"
+                    style="display:inline-flex;align-items:center;gap:2px;cursor:pointer;font-size:.78rem;color:#334155;padding:0 4px;">
+                    🎨
+                    <input type="color" value="#000000" onchange="rteExecVal('foreColor', this.value)"
+                        style="width:22px;height:22px;border:none;padding:0;cursor:pointer;background:none;">
+                </label>
+
+                <span class="rte-sep"></span>
+
+                <!-- Hapus / Kosongkan ketikan surat -->
+                <button type="button" class="rte-btn" title="Hapus / Kosongkan seluruh isi ketikan surat" onclick="rteClearContent()"
+                    style="color:#dc2626;">✕ Clear</button>
+            </div>
+
+            <!-- Horizontal Ruler ala Microsoft Word (Opsi 2 Interaktif) -->
+            <div id="rteRulerWrap" style="
+                position: relative;
+                background: #f1f5f9;
+                border-left: 1px solid #cbd5e1;
+                border-right: 1px solid #cbd5e1;
+                border-top: 1px solid #e2e8f0;
+                border-bottom: 1px solid #cbd5e1;
+                height: 28px;
+                user-select: none;
+                -webkit-user-select: none;
+                box-sizing: border-box;
+                display: flex;
+                align-items: center;
+            ">
+                <!-- Sisi Margin Kiri: Tab Selector ala MS Word (Tombol Pemilih Jenis Tab di Sudut Kiri) -->
+                <button type="button" id="btnTabSelector" onclick="cycleTabSelectorType()" title="Pemilih Tab Stop: Tab Kiri (Left Tab). Klik untuk ganti ke Tab Tengah / Tab Kanan." style="
+                    width: 16px;
+                    height: 100%;
+                    background: #e2e8f0;
+                    border: none;
+                    border-right: 1px solid #cbd5e1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    flex-shrink: 0;
+                    padding: 0;
+                    transition: background 0.15s;
+                    outline: none;
+                " onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'">
+                    <span id="tabSelectorIcon" style="display:flex;align-items:center;justify-content:center;pointer-events:none;"></span>
+                </button>
+
+                <!-- Ruler Track Aktif (Lebar sesuai area teks editor) -->
+                <div id="rteRulerTrack" style="
+                    position: relative;
+                    flex: 1;
+                    height: 100%;
+                    background: #ffffff;
+                    overflow: visible;
+                    cursor: default;
+                ">
+                    <!-- SVG Ticks & Centimeter Numbers -->
+                    <svg id="rteRulerSvg" width="100%" height="100%" style="position: absolute; top: 0; left: 0; pointer-events: none;"></svg>
+
+                    <!-- Container Penanda Tab Stop (Left, Center, Right) -->
+                    <div id="rteTabStopsContainer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible;"></div>
+
+                    <!-- First Line Indent Marker (Segitiga Atas ▼) -->
+                    <div id="markerFirstLineIndent" class="ruler-marker" title="Inden Baris Pertama (First Line Indent)"
+                        style="position: absolute; top: 1px; left: 0px; transform: translateX(-50%); cursor: ew-resize; width: 12px; height: 11px; z-index: 15; touch-action: none;">
+                        <svg width="12" height="11" viewBox="0 0 12 11" fill="none">
+                            <polygon points="1,1 11,1 6,10" fill="#1e293b" stroke="#ffffff" stroke-width="1"/>
+                        </svg>
+                    </div>
+
+                    <!-- Left Indent Marker (Segitiga Bawah ▲ + Balok Kotak ■ di bawahnya) -->
+                    <div id="markerLeftIndent" class="ruler-marker" title="Batas Kiri Paragraf (Left Indent)"
+                        style="position: absolute; bottom: 1px; left: 0px; transform: translateX(-50%); cursor: ew-resize; width: 12px; height: 14px; z-index: 14; touch-action: none;">
+                        <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
+                            <polygon points="6,0 11,7 1,7" fill="#1e293b" stroke="#ffffff" stroke-width="1"/>
+                            <rect x="2" y="7" width="8" height="6" fill="#1e293b" stroke="#ffffff" stroke-width="1"/>
+                        </svg>
+                    </div>
+
+                    <!-- Right Indent Marker (Segitiga Bawah ▲ di sisi kanan) -->
+                    <div id="markerRightIndent" class="ruler-marker" title="Batas Kanan Paragraf (Right Indent)"
+                        style="position: absolute; bottom: 1px; right: 0px; transform: translateX(50%); cursor: ew-resize; width: 12px; height: 14px; z-index: 14; touch-action: none;">
+                        <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
+                            <polygon points="6,0 11,7 1,7" fill="#1e293b" stroke="#ffffff" stroke-width="1"/>
+                            <rect x="2" y="7" width="8" height="6" fill="#1e293b" stroke="#ffffff" stroke-width="1"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Sisi Margin Kanan (abu-abu tipis selaras padding 16px editor) -->
+                <div style="width: 16px; height: 100%; background: #e2e8f0; border-left: 1px solid #cbd5e1; flex-shrink: 0;" title="Margin Kanan Dokumen"></div>
+
+                <!-- Garis Panduan Vertikal (Muncul saat marker digeser) -->
+                <div id="rteRulerGuideline" style="display: none; position: absolute; top: 28px; width: 1px; border-left: 1px dashed #0284c7; z-index: 99; pointer-events: none; height: 260px;"></div>
+            </div>
+
+            <!-- Area penulisan (contenteditable) -->
+            <div id="inputIsiSuratEditor" contenteditable="true" spellcheck="true" style="
+          min-height:240px;
+          border:1px solid #e2e8f0;
+          border-radius:0 0 8px 8px;
+          font-family:'Inter', Arial, sans-serif;
+          font-size:11pt;
+          line-height:1.7;
+          padding:14px 16px;
+          background:#fff;
+          outline:none;
+          box-sizing:border-box;
+          overflow-y:auto;
+          color:#1e293b;
+        " oninput="syncRteToHidden()"></div>
+
+            <!-- Hidden input untuk sinkronisasi nilai (opsional) -->
+            <textarea id="inputIsiSurat" style="display:none;"></textarea>
+
+            <p style="font-size:.775rem;color:#94a3b8;margin-top:6px;">
+                💡 Gunakan toolbar di atas untuk memformat teks (tebal, miring, daftar, alignment, dll.).
+                Tuliskan kalimat pembuka <em>(misal: Dengan hormat,)</em> langsung di dalam editor teks.
+            </p>
+        </div>
+
+        <!-- ==================== PANEL 2: UPLOAD DOKUMEN PDF (EKSTERNAL) ==================== -->
+        <div id="panelUploadPdfMode" class="form-group" style="grid-column:1/-1;display:none;">
+            <label class="form-label">📄 Unggah Berkas PDF Surat & Tentukan Posisi TTE <span
+                    style="color:red;">*</span></label>
+
+            <!-- Dropzone Upload -->
+            <div class="pdf-dropzone" id="pdfDropzone" onclick="document.getElementById('inputPdfFile').click()">
+                <input type="file" id="inputPdfFile" accept="application/pdf" style="display:none;"
+                    onchange="handlePdfFileUpload(this)">
+                <div style="font-size:42px;margin-bottom:8px;">📤</div>
+                <div style="font-weight:700;font-size:1rem;color:#1e293b;" id="pdfUploadPrompt">Pilih Dokumen PDF Surat
+                    (Word/Eksternal)</div>
+                <p style="font-size:.82rem;color:#64748b;margin-top:4px;">Klik untuk mencari file atau seret file PDF ke
+                    area ini (Maksimal 15 MB)</p>
+            </div>
+
+            <!-- Informasi Berkas Terpilih -->
+            <div id="pdfFileInfoBox"
+                style="display:none;margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:24px;">📄</span>
+                    <div>
+                        <div style="font-weight:700;font-size:.9rem;color:#166534;" id="pdfFileNameLabel">-</div>
+                        <div style="font-size:.78rem;color:#64748b;" id="pdfFileSizeLabel">-</div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('inputPdfFile').click()">Ganti File</button>
+            </div>
+
+            <!-- Kontainer Pratinjau Visual Canvas & Stempel Presisi -->
+            <div id="pdfVisualWorkspace" style="display:none;margin-top:16px;">
+
+                <!-- Bar Navigasi Halaman, Dropdown, & Kontrol Stempel -->
+                <div style="background:#1e293b;color:#fff;padding:12px 16px;border-radius:10px 10px 0 0;">
+                    <div
+                        style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:.85rem;font-weight:600;color:#94a3b8;">📄 Halaman:</span>
+                            <select id="selectPdfPage" onchange="renderPdfPage(parseInt(this.value))"
+                                style="padding:4px 10px;height:32px;font-size:.85rem;background:#334155;color:#fff;border:1px solid #475569;border-radius:6px;cursor:pointer;">
+                                <option value="1">Halaman 1</option>
+                            </select>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="changePdfPage(-1)"
+                                id="btnPrevPage"
+                                style="padding:4px 8px;background:#334155;color:#fff;border:none;">◀</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="changePdfPage(1)"
+                                id="btnNextPage"
+                                style="padding:4px 8px;background:#334155;color:#fff;border:none;">▶</button>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-sm" id="btnPlaceTteOnCurrentPage"
+                                onclick="placeStampOnCurrentPage()"
+                                style="padding:5px 12px;background:#059669;color:#fff;border:none;font-weight:600;border-radius:6px;display:flex;align-items:center;gap:4px;">
+                                🎯 Taruh TTE di Halaman Ini
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="resetStampToDefault()"
+                                style="padding:5px 12px;background:#475569;color:#fff;border:none;font-weight:500;border-radius:6px;">
+                                🔄 Reset Posisi
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Baris Tombol Pills untuk Semua Halaman -->
+                    <div style="font-size:.75rem;color:#94a3b8;margin-bottom:4px;">Lompat Cepat ke Halaman:</div>
+                    <div id="pdfPagePillsContainer" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">
+                        <!-- Tombol pill tiap halaman akan digenerate otomatis oleh JS -->
+                    </div>
+                </div>
+
+                <!-- Banner Pemberitahuan jika Stempel Ada di Halaman Lain -->
+                <div id="ttePageNoticeBanner"
+                    style="display:none;background:#fef3c7;border-left:4px solid #d97706;padding:10px 16px;font-size:.82rem;color:#92400e;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        📍 Stempel QR-Code TTE saat ini diset pada <strong>Halaman <span
+                                id="labelTteTargetPage">1</span></strong>.
+                    </div>
+                    <button type="button" class="btn btn-sm" onclick="placeStampOnCurrentPage()"
+                        style="background:#d97706;color:#fff;border:none;padding:4px 10px;font-size:.78rem;font-weight:600;border-radius:5px;">
+                        Pindahkan TTE ke Halaman Ini
+                    </button>
+                </div>
+
+                <!-- Instruksi Singkat -->
+                <div
+                    style="background:#eff6ff;border-left:4px solid #3b82f6;padding:10px 16px;font-size:.82rem;color:#1e40af;">
+                    💡 <strong>Petunjuk:</strong> Pilih halaman tempat tanda tangan berada, lalu geser kotak hijau
+                    stempel atau klik kanvas <strong>tepat di atas nama pejabat penandatangan</strong>.
+                </div>
+
+                <!-- Area Kanvas PDF & Floating Stamp -->
+                <div class="pdf-preview-container">
+                    <div class="pdf-canvas-wrap" id="pdfCanvasWrap">
+                        <canvas id="pdfCanvas"></canvas>
+                        <!-- Floating TTE Stamp Box (Bisa Digeser & Ditarik Ukurannya) -->
+                        <div id="tteStampBox" class="tte-stamp-box" title="Geser posisi, atau tarik sudut kanan-bawah untuk memperbesar/memperkecil">
+                            <div class="stamp-icon">📱</div>
+                            <div class="stamp-label">QR-CODE TTE<br><span
+                                    style="font-size:9px;font-weight:normal;color:#047857;">(Geser / Tarik Ukuran)</span></div>
+                            <!-- Handle Tarik Ukuran di Sudut Kanan Bawah -->
+                            <div id="stampResizeHandle" class="stamp-resize-handle" title="Tarik sudut ini untuk memperbesar / memperkecil ukuran QR Code">
+                                <svg width="10" height="10" viewBox="0 0 10 10">
+                                    <line x1="8" y1="2" x2="2" y2="8" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="8" y1="5" x2="5" y2="8" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="8" y1="8" x2="8" y2="8" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Indikator Koordinat & Pengatur Ukuran Terkini -->
+                <div
+                    style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:0 0 10px 10px;padding:10px 16px;font-size:.8rem;color:#64748b;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                    <div>
+                        📍 Posisi Stempel TTE: <strong>Halaman <span id="labelTtePage">1</span></strong> | X: <strong id="labelTteX">0</strong> pt, Y: <strong id="labelTteY">0</strong> pt
+                        <span style="display:inline-block;margin:0 6px;color:#cbd5e1;">|</span>
+                        📐 Ukuran QR: <strong id="labelTteSize" style="color:#059669;">75</strong> <strong>pt</strong>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <span style="font-size:0.75rem;font-weight:600;color:#475569;">Atur Ukuran:</span>
+                        <div style="display:inline-flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;background:#ffffff;">
+                            <button type="button" class="btn-size-step" onclick="stepTteSize(-5)" title="Perkecil Ukuran (5 pt)">➖</button>
+                            <button type="button" class="btn-size-step" onclick="stepTteSize(5)" title="Perbesar Ukuran (5 pt)">➕</button>
+                        </div>
+                        <div class="preset-sizes-wrap">
+                            <button type="button" class="btn-size-preset" onclick="setTteStampSize(55)" title="Ukuran Kecil (55 pt)">Kecil</button>
+                            <button type="button" class="btn-size-preset active" id="btnPresetNormal" onclick="setTteStampSize(75)" title="Ukuran Normal Standar (75 pt)">Normal</button>
+                            <button type="button" class="btn-size-preset" onclick="setTteStampSize(95)" title="Ukuran Besar (95 pt)">Besar</button>
+                            <button type="button" class="btn-size-preset" onclick="setTteStampSize(115)" title="Ukuran Ekstra (115 pt)">Ekstra</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Hidden fields data PDF & TTE Coordinates & Size -->
+            <input type="hidden" id="inputTtePage" value="1">
+            <input type="hidden" id="inputTteX" value="0">
+            <input type="hidden" id="inputTteY" value="0">
+            <input type="hidden" id="inputTteSize" value="75">
+            <input type="hidden" id="inputPdfBase64" value="">
+            <input type="hidden" id="inputPdfFileName" value="">
+        </div>
+
+        <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">🖊️ Pejabat Penandatangan <span style="color:red;">*</span></label>
+            <select id="selectPejabat" class="form-control">
+                <option value="">— Memuat daftar pejabat... —</option>
+            </select>
+        </div>
+
+    </div>
+
+    <div
+        style="display:flex;gap:12px;margin-top:8px;padding-top:16px;border-top:1px solid #f1f5f9;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-primary" onclick="submitBuatSurat()" id="btnSubmitSurat">
+            📤 Kirim ke Pejabat untuk Ditandatangani
+        </button>
+        <button class="btn btn-secondary" onclick="resetFormSurat()" id="btnResetForm">🔄 Reset Form</button>
+        <button class="btn btn-danger btn-sm" onclick="cancelEditSurat(false, true)" id="btnCancelEdit"
+            style="display:none;margin-left:auto;">❌ Batal Edit</button>
+    </div>
+
+</div>
+
+<!-- Sukses Panel setelah surat dibuat -->
+<div id="successSuratPanel" style="display:none;" class="card">
+    <div style="text-align:center;padding:32px 20px;">
+        <div style="font-size:64px;margin-bottom:16px;">✅</div>
+        <h3 style="font-size:1.2rem;font-weight:700;color:#065f46;margin-bottom:8px;">Surat Berhasil Dibuat!</h3>
+        <p style="color:#64748b;font-size:.9rem;margin-bottom:24px;" id="successSuratMsg">Surat telah dikirim ke pejabat
+            penandatangan untuk ditinjau dan disahkan.</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="resetFormSurat()">✍️ Buat Surat Lain</button>
+            <button class="btn btn-primary" onclick="switchTab('daftarSurat')">📋 Lihat Daftar Surat</button>
+        </div>
+    </div>
+</div>
+
+<!-- Style tambahan untuk toolbar RTE -->
+<style>
+    .rte-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 28px;
+        height: 28px;
+        padding: 0 7px;
+        font-size: .8rem;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        color: #334155;
+        cursor: pointer;
+        transition: background .15s, border-color .15s;
+        white-space: nowrap;
+        font-family: inherit;
+        line-height: 1;
+    }
+
+    .rte-btn:hover {
+        background: #e2e8f0;
+        border-color: #94a3b8;
+    }
+
+    .rte-btn:active {
+        background: #cbd5e1;
+        transform: scale(.96);
+    }
+
+    .rte-sep {
+        display: inline-block;
+        width: 1px;
+        height: 22px;
+        background: #cbd5e1;
+        margin: 0 3px;
+        vertical-align: middle;
+    }
+
+    #inputIsiSuratEditor:empty:before {
+        content: attr(data-placeholder);
+        color: #94a3b8;
+        pointer-events: none;
+    }
+
+    #inputIsiSuratEditor p {
+        margin: 0 0 6px 0;
+    }
+
+    #inputIsiSuratEditor ul,
+    #inputIsiSuratEditor ol {
+        padding-left: 24px;
+        margin: 4px 0;
+    }
+
+    /* Horizontal Ruler Styles */
+    .ruler-marker {
+        transition: filter 0.15s ease;
+    }
+    .ruler-marker:hover {
+        filter: drop-shadow(0 2px 4px rgba(2, 132, 199, 0.7));
+    }
+    .ruler-marker.dragging {
+        filter: drop-shadow(0 2px 6px rgba(2, 132, 199, 1));
+        z-index: 30 !important;
+    }
+
+    /* Tab Stop Marker Styles ala MS Word */
+    .tab-stop-marker {
+        transition: transform 0.08s ease, filter 0.15s ease;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .tab-stop-marker:hover {
+        filter: drop-shadow(0 2px 5px rgba(2, 132, 199, 0.9));
+    }
+    .tab-stop-marker.dragging {
+        filter: drop-shadow(0 2px 6px rgba(2, 132, 199, 1));
+        z-index: 35 !important;
+    }
+    .rte-tab-stop {
+        display: inline-block;
+        min-width: 4px;
+        user-select: all;
+    }
+</style>
+
+<!-- Script Rich Text Editor (berjalan tanpa CDN) -->
+<script>
+    // Pasang placeholder via data attribute
+    (function () {
+        var ed = document.getElementById('inputIsiSuratEditor');
+        if (ed) ed.setAttribute('data-placeholder', 'Tulis isi / badan surat di sini. Gunakan toolbar untuk memformat teks...');
+    })();
+
+    /** Jalankan perintah execCommand pada editor */
+    function rteExec(command) {
+        document.getElementById('inputIsiSuratEditor').focus();
+        document.execCommand(command, false, null);
+        syncRteToHidden();
+    }
+
+    /** Jalankan perintah execCommand dengan nilai (misal fontSize, foreColor) */
+    function rteExecVal(command, value) {
+        document.getElementById('inputIsiSuratEditor').focus();
+        document.execCommand(command, false, value);
+        syncRteToHidden();
+    }
+
+    /** Sinkronisasi konten editor ke textarea tersembunyi */
+    function syncRteToHidden() {
+        var ed = document.getElementById('inputIsiSuratEditor');
+        var inp = document.getElementById('inputIsiSurat');
+        if (ed && inp) inp.value = ed.innerHTML;
+    }
+
+    /** Mendapatkan konten HTML dari editor */
+    window.getCKEditorData = function () {
+        var ed = document.getElementById('inputIsiSuratEditor');
+        return ed ? ed.innerHTML : '';
+    };
+
+    /** Mengisi konten editor (digunakan saat Mode Edit) */
+    window.setCKEditorData = function (html) {
+        var ed = document.getElementById('inputIsiSuratEditor');
+        if (ed) {
+            ed.innerHTML = html || '';
+            syncRteToHidden();
+        }
+    };
+
+    /** Reset editor ke kosong */
+    window.resetCKEditor = function () {
+        var ed = document.getElementById('inputIsiSuratEditor');
+        if (ed) ed.innerHTML = '';
+        syncRteToHidden();
+    };
+
+    /** Menghapus / Mengosongkan seluruh isi ketikan surat (Tombol Clear) */
+    function rteClearContent() {
+        var ed = document.getElementById('inputIsiSuratEditor');
+        if (!ed) return;
+
+        var text = (ed.innerText || ed.textContent || '').trim();
+        var rawHtml = (ed.innerHTML || '').trim();
+        var isEmpty = !text && (!rawHtml || rawHtml === '<br>' || rawHtml === '<p><br></p>' || rawHtml === '<div><br></div>');
+
+        if (isEmpty) {
+            if (typeof showToast === 'function') {
+                showToast('Editor isi surat sudah dalam keadaan kosong.', 'info');
+            }
+            ed.focus();
+            return;
+        }
+
+        if (confirm('Apakah Anda yakin ingin menghapus seluruh isi ketikan surat ini?')) {
+            ed.innerHTML = '';
+            syncRteToHidden();
+
+            // Reset posisi penanda ruler ke default (0 cm)
+            var mFirst = document.getElementById('markerFirstLineIndent');
+            var mLeft = document.getElementById('markerLeftIndent');
+            var mRight = document.getElementById('markerRightIndent');
+            if (mFirst) mFirst.style.left = '0px';
+            if (mLeft) mLeft.style.left = '0px';
+            if (mRight) mRight.style.right = '0px';
+
+            // Reset penanda tab stop
+            _rulerTabStops = [];
+            renderRulerTabStops();
+
+            ed.focus();
+            if (typeof showToast === 'function') {
+                showToast('Seluruh isi ketikan surat berhasil dihapus.', 'success');
+            }
+        }
+    }
+
+    /** Init editor (fokus ke editor jika bukan mode edit) */
+    window.initCKEditor = function () {
+        var ed = document.getElementById('inputIsiSuratEditor');
+        if (ed && !window._isEditingMode) {
+            ed.innerHTML = '';
+            syncRteToHidden();
+        }
+    };
+
+    // Tangani penekanan tombol Tab di dalam editor isi surat (Tab Stop ala MS Word)
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Tab' && document.activeElement === document.getElementById('inputIsiSuratEditor')) {
+            e.preventDefault();
+            handleRteTabKey(e);
+        }
+    });
+
+    // ====================================================================
+    // TAB STOP ALA MICROSOFT WORD (LEFT TAB, CENTER TAB, RIGHT TAB)
+    // ====================================================================
+    var _activeTabType = 'left'; // 'left', 'center', 'right'
+    var _rulerTabStops = [];     // Array of { id: string, cm: number, type: 'left'|'center'|'right' }
+    var _justDraggedTabStop = false; // Pengaman siklus event agar drag/drop tidak memicu pembuatan tab baru
+
+    function updateTabSelectorUI() {
+        var iconEl = document.getElementById('tabSelectorIcon');
+        var btn = document.getElementById('btnTabSelector');
+        if (!iconEl || !btn) return;
+
+        if (_activeTabType === 'left') {
+            iconEl.innerHTML = '<svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M2 1V10H9" stroke="#1e293b" stroke-width="2" stroke-linecap="square"/></svg>';
+            btn.title = 'Tab Stop Aktif: Tab Kiri (Left Tab). Klik penggaris untuk memasang. Klik tombol ini untuk ganti ke Tab Tengah.';
+        } else if (_activeTabType === 'center') {
+            iconEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1V10M1 10H11" stroke="#1e293b" stroke-width="2" stroke-linecap="square"/></svg>';
+            btn.title = 'Tab Stop Aktif: Tab Tengah (Center Tab). Klik penggaris untuk memasang. Klik tombol ini untuk ganti ke Tab Kanan.';
+        } else if (_activeTabType === 'right') {
+            iconEl.innerHTML = '<svg width="10" height="12" viewBox="0 0 10 12" fill="none"><path d="M8 1V10H1" stroke="#1e293b" stroke-width="2" stroke-linecap="square"/></svg>';
+            btn.title = 'Tab Stop Aktif: Tab Kanan (Right Tab). Klik penggaris untuk memasang. Klik tombol ini untuk ganti ke Tab Kiri.';
+        }
+    }
+
+    function cycleTabSelectorType() {
+        if (_activeTabType === 'left') _activeTabType = 'center';
+        else if (_activeTabType === 'center') _activeTabType = 'right';
+        else _activeTabType = 'left';
+        updateTabSelectorUI();
+    }
+
+    function renderRulerTabStops() {
+        var container = document.getElementById('rteTabStopsContainer');
+        var track = document.getElementById('rteRulerTrack');
+        if (!container || !track) return;
+
+        container.innerHTML = '';
+        var trackW = track.clientWidth;
+        if (trackW <= 0) return;
+        var pxPerCm = trackW / _rulerTotalCm;
+
+        _rulerTabStops.forEach(function (tab) {
+            var xPos = tab.cm * pxPerCm;
+            var marker = document.createElement('div');
+            marker.className = 'tab-stop-marker';
+            marker.dataset.tabId = tab.id;
+            marker.dataset.tabCm = tab.cm;
+            marker.dataset.tabType = tab.type;
+            marker.style.pointerEvents = 'auto';
+
+            var iconSvg = '';
+            var titleText = '';
+
+            if (tab.type === 'left') {
+                // Vertical stem L tepat di tengah (X=11), kaki horizontal ke kanan (H18)
+                iconSvg = '<svg width="22" height="12" viewBox="0 0 22 12" fill="none"><path d="M11 1V10H18" stroke="#0f172a" stroke-width="2" stroke-linecap="square"/></svg>';
+                titleText = 'Left Tab: ' + tab.cm + ' cm (Tahan & geser ke bawah untuk hapus, atau klik kanan)';
+            } else if (tab.type === 'center') {
+                // Center stem tepat di tengah (X=11), horizontal simetris (6 s.d. 16)
+                iconSvg = '<svg width="22" height="12" viewBox="0 0 22 12" fill="none"><path d="M11 1V10M6 10H16" stroke="#0f172a" stroke-width="2" stroke-linecap="square"/></svg>';
+                titleText = 'Center Tab: ' + tab.cm + ' cm (Tahan & geser ke bawah untuk hapus, atau klik kanan)';
+            } else if (tab.type === 'right') {
+                // Vertical stem tepat di tengah (X=11), kaki horizontal ke kiri (H4)
+                iconSvg = '<svg width="22" height="12" viewBox="0 0 22 12" fill="none"><path d="M11 1V10H4" stroke="#0f172a" stroke-width="2" stroke-linecap="square"/></svg>';
+                titleText = 'Right Tab: ' + tab.cm + ' cm (Tahan & geser ke bawah untuk hapus, atau klik kanan)';
+            }
+
+            marker.title = titleText;
+            // Hit box luas: tinggi 28px (penuh ruler) & lebar 22px, mudah digenggam mouse/jari
+            marker.style.cssText = 'position: absolute; top: 0px; bottom: 0px; height: 28px; width: 22px; left: ' + xPos + 'px; transform: translateX(-50%); cursor: ew-resize; z-index: 18; touch-action: none; display: flex; align-items: flex-end; justify-content: center;';
+            marker.innerHTML = iconSvg;
+
+            // Klik kanan langsung menghapus tab stop seketika
+            marker.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                _justDraggedTabStop = true;
+                setTimeout(function () { _justDraggedTabStop = false; }, 500);
+                removeTabStop(tab.id, tab.cm);
+            });
+
+            // Klik ganda untuk menghapus tab stop
+            marker.addEventListener('dblclick', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                _justDraggedTabStop = true;
+                setTimeout(function () { _justDraggedTabStop = false; }, 500);
+                removeTabStop(tab.id, tab.cm);
+            });
+
+            setupTabStopDrag(marker, tab);
+            container.appendChild(marker);
+        });
+    }
+
+    function setupTabStopDrag(markerEl, tabObj) {
+        var isDragging = false;
+        var track = document.getElementById('rteRulerTrack');
+        var guideline = document.getElementById('rteRulerGuideline');
+        var editor = document.getElementById('inputIsiSuratEditor');
+        var wrap = document.getElementById('rteRulerWrap');
+        var startY = 0;
+        var startX = 0;
+        var isOffRuler = false;
+        var origTitle = markerEl.title;
+
+        function updateGuideline(xPosPx) {
+            if (!guideline || !wrap || !track) return;
+            var wrapRect = wrap.getBoundingClientRect();
+            var trackRect = track.getBoundingClientRect();
+            guideline.style.left = (trackRect.left + xPosPx - wrapRect.left) + 'px';
+        }
+
+        function onStart(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            _justDraggedTabStop = true;
+            isDragging = true;
+            isOffRuler = false;
+
+            var clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+            var clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+            startY = clientY;
+            startX = clientX;
+            markerEl.classList.add('dragging');
+
+            if (guideline && editor) {
+                guideline.style.display = 'block';
+                guideline.style.height = (editor.offsetHeight + 35) + 'px';
+                var currentX = parseFloat(markerEl.style.left) || 0;
+                updateGuideline(currentX);
+            }
+
+            // Gunakan CAPTURE phase di window agar tidak bisa dicegat oleh elemen lain
+            window.addEventListener('mousemove', onMove, true);
+            window.addEventListener('mouseup', onEnd, true);
+            window.addEventListener('touchmove', onMove, { passive: false, capture: true });
+            window.addEventListener('touchend', onEnd, { capture: true });
+        }
+
+        function onMove(e) {
+            if (!isDragging || !track) return;
+            if (e.preventDefault) e.preventDefault();
+
+            var clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+            var clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+            var trackRect = track.getBoundingClientRect();
+            var trackW = trackRect.width;
+            if (trackW <= 0) return;
+            var pxPerCm = trackW / _rulerTotalCm;
+
+            // Deteksi keluar penggaris 4 arah ala MS Word:
+            // 1. Ke Bawah (arah lembar dokumen)
+            // 2. Ke Atas (arah toolbar)
+            // 3. Ke Kiri (melewati batas margin kiri 0cm)
+            // 4. Ke Kanan (melewati batas margin kanan)
+            var deltaY = clientY - startY;
+            var isBelow = (deltaY > 5) || (clientY > trackRect.bottom + 1);
+            var isAbove = (deltaY < -5) || (clientY < trackRect.top - 1);
+            var isLeftOut = (clientX < trackRect.left - 4);
+            var isRightOut = (clientX > trackRect.right + 4);
+
+            isOffRuler = isBelow || isAbove || isLeftOut || isRightOut;
+
+            if (isOffRuler) {
+                // Tampilan saat ditarik keluar penggaris (siap dihapus)
+                if (guideline) guideline.style.display = 'none';
+
+                var pullY = 0;
+                if (isBelow) pullY = Math.min(Math.max(deltaY, 6), 35);
+                else if (isAbove) pullY = Math.max(Math.min(deltaY, -6), -20);
+
+                markerEl.style.opacity = '0.35';
+                markerEl.style.transform = 'translate(-50%, ' + pullY + 'px) scale(0.85)';
+                markerEl.style.filter = 'drop-shadow(0 0 8px rgba(239, 68, 68, 1))';
+                markerEl.title = 'Lepas klik mouse untuk menghapus tab stop ini';
+            } else {
+                // Tampilan normal saat digeser sepanjang penggaris
+                if (guideline) guideline.style.display = 'block';
+
+                markerEl.style.opacity = '1';
+                markerEl.style.transform = 'translateX(-50%) scale(1)';
+                markerEl.style.filter = 'drop-shadow(0 2px 6px rgba(2, 132, 199, 1))';
+                markerEl.title = origTitle;
+
+                var newX = clientX - trackRect.left;
+                if (newX < 0) newX = 0;
+                if (newX > trackW) newX = trackW;
+
+                var cmVal = Math.round((newX / pxPerCm) * 10) / 10;
+                tabObj.cm = cmVal;
+                markerEl.style.left = newX + 'px';
+                updateGuideline(newX);
+            }
+        }
+
+        function onEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            _justDraggedTabStop = true;
+            setTimeout(function () { _justDraggedTabStop = false; }, 500);
+
+            markerEl.classList.remove('dragging');
+            if (guideline) guideline.style.display = 'none';
+
+            window.removeEventListener('mousemove', onMove, true);
+            window.removeEventListener('mouseup', onEnd, true);
+            window.removeEventListener('touchmove', onMove, { passive: false, capture: true });
+            window.removeEventListener('touchend', onEnd, { capture: true });
+
+            var clientY = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientY : e.clientY;
+            var clientX = (e.changedTouches && e.changedTouches.length > 0) ? e.changedTouches[0].clientX : e.clientX;
+            var trackRect = track ? track.getBoundingClientRect() : null;
+
+            var finalDeltaY = (clientY !== undefined) ? (clientY - startY) : 0;
+            var isFinalBelow = (finalDeltaY > 5) || (trackRect && clientY !== undefined && clientY > trackRect.bottom + 1);
+            var isFinalAbove = (finalDeltaY < -5) || (trackRect && clientY !== undefined && clientY < trackRect.top - 1);
+            var isFinalLeft = (trackRect && clientX !== undefined && clientX < trackRect.left - 4);
+            var isFinalRight = (trackRect && clientX !== undefined && clientX > trackRect.right + 4);
+
+            var shouldDelete = isOffRuler || isFinalBelow || isFinalAbove || isFinalLeft || isFinalRight;
+
+            if (shouldDelete) {
+                // Hapus tab stop seketika!
+                removeTabStop(tabObj.id, tabObj.cm);
+            } else {
+                markerEl.style.opacity = '1';
+                markerEl.style.transform = 'translateX(-50%)';
+                markerEl.style.filter = '';
+                markerEl.title = origTitle;
+                _rulerTabStops.sort(function (a, b) { return a.cm - b.cm; });
+                renderRulerTabStops();
+                syncRteToHidden();
+            }
+        }
+
+        markerEl.addEventListener('mousedown', onStart);
+        markerEl.addEventListener('touchstart', onStart, { passive: false });
+    }
+
+    function removeTabStop(id, cm) {
+        _justDraggedTabStop = true;
+        setTimeout(function () { _justDraggedTabStop = false; }, 500);
+
+        _rulerTabStops = _rulerTabStops.filter(function (t) {
+            if (id && t.id === id) return false;
+            if (cm !== undefined && Math.abs(t.cm - cm) < 0.05) return false;
+            return true;
+        });
+        renderRulerTabStops();
+        syncRteToHidden();
+    }
+
+    function onRulerTrackClick(e) {
+        // Jika baru saja drag/lepas tab stop, tolak pembuatan tab baru
+        if (_justDraggedTabStop) {
+            return;
+        }
+        if (e.target.closest('.ruler-marker') || e.target.closest('.tab-stop-marker')) {
+            return;
+        }
+        var track = document.getElementById('rteRulerTrack');
+        if (!track) return;
+        var rect = track.getBoundingClientRect();
+        var clickX = e.clientX - rect.left;
+        var pxPerCm = rect.width / _rulerTotalCm;
+        var cm = Math.round((clickX / pxPerCm) * 10) / 10;
+
+        if (cm >= 0.5 && cm <= _rulerTotalCm - 0.5) {
+            // Hindari pembuatan tab stop dobel jika sudah ada dalam radius 0.4 cm
+            var exists = _rulerTabStops.some(function (t) { return Math.abs(t.cm - cm) < 0.4; });
+            if (!exists) {
+                _rulerTabStops.push({
+                    id: 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                    cm: cm,
+                    type: _activeTabType
+                });
+                _rulerTabStops.sort(function (a, b) { return a.cm - b.cm; });
+                renderRulerTabStops();
+            }
+        }
+    }
+
+    function handleRteTabKey(e) {
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return;
+        var range = sel.getRangeAt(0);
+
+        var p = getRteActiveParagraph();
+        if (!p) return;
+
+        var track = document.getElementById('rteRulerTrack');
+        var trackW = track ? track.clientWidth : 500;
+        var pxPerCm = trackW / _rulerTotalCm;
+
+        var pRect = p.getBoundingClientRect();
+        var pComputed = window.getComputedStyle(p);
+        var pPadLeft = parseFloat(pComputed.paddingLeft) || 0;
+
+        var caretX = 0;
+        var rects = range.getClientRects();
+        if (rects.length > 0) {
+            caretX = rects[0].left;
+        } else {
+            var tempSpan = document.createElement('span');
+            tempSpan.textContent = '\u200B';
+            range.insertNode(tempSpan);
+            caretX = tempSpan.getBoundingClientRect().left;
+            tempSpan.parentNode.removeChild(tempSpan);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+
+        var currentOffsetPx = Math.max(0, caretX - (pRect.left + pPadLeft));
+        var currentOffsetCm = currentOffsetPx / pxPerCm;
+
+        // Cari tab stop berikutnya di sebelah kanan kursor
+        var nextTab = null;
+        for (var i = 0; i < _rulerTabStops.length; i++) {
+            if (_rulerTabStops[i].cm > currentOffsetCm + 0.15) {
+                nextTab = _rulerTabStops[i];
+                break;
+            }
+        }
+
+        var targetCm = 0;
+        var tabType = 'left';
+
+        if (nextTab) {
+            targetCm = nextTab.cm;
+            tabType = nextTab.type;
+        } else {
+            var defaultStep = 1.25;
+            targetCm = (Math.floor(currentOffsetCm / defaultStep) + 1) * defaultStep;
+        }
+
+        var diffCm = Math.max(0.15, targetCm - currentOffsetCm);
+        var widthPx = Math.max(4, Math.round(diffCm * pxPerCm));
+
+        var tabSpan = document.createElement('span');
+        tabSpan.className = 'rte-tab-stop';
+        tabSpan.dataset.tabType = tabType;
+        tabSpan.dataset.targetCm = targetCm;
+        tabSpan.style.display = 'inline-block';
+        tabSpan.style.width = widthPx + 'px';
+        tabSpan.style.minWidth = '4px';
+        tabSpan.style.userSelect = 'all';
+        tabSpan.innerHTML = '&nbsp;';
+
+        range.deleteContents();
+        range.insertNode(tabSpan);
+
+        var newRange = document.createRange();
+        newRange.setStartAfter(tabSpan);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+
+        syncRteToHidden();
+    }
+
+    function recalcTabStopsInParagraph(p) {
+        if (!p) return;
+        var tabSpans = p.querySelectorAll('.rte-tab-stop');
+        if (tabSpans.length === 0) return;
+
+        var track = document.getElementById('rteRulerTrack');
+        if (!track) return;
+        var trackW = track.clientWidth;
+        if (trackW <= 0) return;
+        var pxPerCm = trackW / _rulerTotalCm;
+        var pRect = p.getBoundingClientRect();
+        var pComputed = window.getComputedStyle(p);
+        var pPadLeft = parseFloat(pComputed.paddingLeft) || 0;
+
+        tabSpans.forEach(function (span) {
+            var targetCm = parseFloat(span.dataset.targetCm);
+            var tabType = span.dataset.tabType || 'left';
+            if (isNaN(targetCm)) return;
+
+            var targetPx = targetCm * pxPerCm;
+            var spanLeft = span.getBoundingClientRect().left - (pRect.left + pPadLeft);
+
+            if (tabType === 'left') {
+                var currentSpanWidth = span.offsetWidth;
+                var spanStart = spanLeft;
+                var desiredWidth = Math.max(4, Math.round(targetPx - spanStart));
+                span.style.width = desiredWidth + 'px';
+            } else if (tabType === 'right') {
+                var nextNode = span.nextSibling;
+                var textWidth = 0;
+                if (nextNode && nextNode.nodeType === 3) {
+                    try {
+                        var r = document.createRange();
+                        r.selectNodeContents(nextNode);
+                        textWidth = r.getBoundingClientRect().width;
+                    } catch (e) { }
+                }
+                var desiredWidth = Math.max(4, Math.round(targetPx - spanLeft - textWidth));
+                span.style.width = desiredWidth + 'px';
+            } else if (tabType === 'center') {
+                var nextNode = span.nextSibling;
+                var textWidth = 0;
+                if (nextNode && nextNode.nodeType === 3) {
+                    try {
+                        var r = document.createRange();
+                        r.selectNodeContents(nextNode);
+                        textWidth = r.getBoundingClientRect().width;
+                    } catch (e) { }
+                }
+                var desiredWidth = Math.max(4, Math.round(targetPx - spanLeft - (textWidth / 2)));
+                span.style.width = desiredWidth + 'px';
+            }
+        });
+    }
+
+    // ====================================================================
+    // HORIZONTAL RULER INTERAKTIF ALA MICROSOFT WORD (OPSI 2)
+    // ====================================================================
+    var _rulerPxPerCm = 37.8;
+    var _rulerTotalCm = 16; // Standar area tulis kertas A4 ~16 cm
+
+    function drawRulerSvg() {
+        var track = document.getElementById('rteRulerTrack');
+        var svg = document.getElementById('rteRulerSvg');
+        if (!track || !svg) return;
+
+        var trackW = track.clientWidth;
+        if (trackW <= 0) return;
+
+        _rulerPxPerCm = trackW / _rulerTotalCm;
+
+        // Kosongkan konten lama
+        while (svg.firstChild) {
+            svg.removeChild(svg.firstChild);
+        }
+
+        // Gambar grid garis ukur centimeter dan millimeter
+        var svgNs = "http://www.w3.org/2000/svg";
+
+        for (var cm = 0; cm <= _rulerTotalCm; cm++) {
+            var baseX = cm * _rulerPxPerCm;
+
+            // Garis centimeter utama (tall tick)
+            var line = document.createElementNS(svgNs, "line");
+            line.setAttribute("x1", baseX);
+            line.setAttribute("y1", 0);
+            line.setAttribute("x2", baseX);
+            line.setAttribute("y2", 10);
+            line.setAttribute("stroke", "#94a3b8");
+            line.setAttribute("stroke-width", "1");
+            svg.appendChild(line);
+
+            // Angka satuan centimeter (1 s.d. 15)
+            if (cm > 0 && cm < _rulerTotalCm) {
+                var text = document.createElementNS(svgNs, "text");
+                text.setAttribute("x", baseX);
+                text.setAttribute("y", 20);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("font-size", "8.5");
+                text.setAttribute("font-weight", "700");
+                text.setAttribute("fill", "#64748b");
+                text.setAttribute("font-family", "Arial, sans-serif");
+                text.textContent = cm;
+                svg.appendChild(text);
+            }
+
+            // Ticks sub-divisi (millimeter dan 0.5 cm)
+            if (cm < _rulerTotalCm) {
+                for (var mm = 1; mm < 10; mm++) {
+                    var mmX = baseX + (mm * (_rulerPxPerCm / 10));
+                    var mmLine = document.createElementNS(svgNs, "line");
+                    mmLine.setAttribute("x1", mmX);
+                    mmLine.setAttribute("y1", 0);
+                    mmLine.setAttribute("x2", mmX);
+                    var tickH = (mm === 5) ? 6 : 3;
+                    var strokeColor = (mm === 5) ? "#cbd5e1" : "#e2e8f0";
+                    mmLine.setAttribute("y2", tickH);
+                    mmLine.setAttribute("stroke", strokeColor);
+                    mmLine.setAttribute("stroke-width", "1");
+                    svg.appendChild(mmLine);
+                }
+            }
+        }
+    }
+
+    /**
+     * Mendapatkan elemen paragraf/blok aktif tempat kursor berada
+     */
+    function getRteActiveParagraph() {
+        var ed = document.getElementById('inputIsiSuratEditor');
+        if (!ed) return null;
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount) {
+            var firstBlock = ed.querySelector('p, div, li');
+            return firstBlock || ed;
+        }
+        var node = sel.anchorNode;
+        while (node && node !== ed) {
+            if (node.nodeType === 1 && (node.tagName === 'P' || node.tagName === 'DIV' || node.tagName === 'LI')) {
+                return node;
+            }
+            node = node.parentNode;
+        }
+        var childP = ed.querySelector('p, div, li');
+        if (!childP && ed.childNodes.length > 0) {
+            try {
+                document.execCommand('formatBlock', false, 'p');
+                childP = ed.querySelector('p');
+            } catch (e) { }
+        }
+        return childP || ed;
+    }
+
+    /**
+     * Menyelaraskan posisi slider ruler dengan nilai indentasi paragraf aktif
+     */
+    function syncRulerFromParagraph() {
+        var p = getRteActiveParagraph();
+        var track = document.getElementById('rteRulerTrack');
+        if (!p || !track) return;
+
+        var trackW = track.clientWidth;
+        if (trackW <= 0) return;
+        var pxPerCm = trackW / _rulerTotalCm;
+
+        var computed = window.getComputedStyle(p);
+        var rawMl = p.style.marginLeft || computed.marginLeft || '0px';
+        var rawTi = p.style.textIndent || computed.textIndent || '0px';
+        var rawMr = p.style.marginRight || computed.marginRight || '0px';
+
+        function parseUnitToPx(valStr) {
+            if (!valStr) return 0;
+            if (valStr.indexOf('cm') !== -1) {
+                return parseFloat(valStr) * pxPerCm;
+            }
+            return parseFloat(valStr) || 0;
+        }
+
+        var mlPx = parseUnitToPx(rawMl);
+        var tiPx = parseUnitToPx(rawTi);
+        var mrPx = parseUnitToPx(rawMr);
+
+        var mLeft = document.getElementById('markerLeftIndent');
+        var mFirst = document.getElementById('markerFirstLineIndent');
+        var mRight = document.getElementById('markerRightIndent');
+
+        var leftPos = Math.max(0, Math.min(mlPx, trackW - 40));
+        var firstPos = Math.max(0, Math.min(mlPx + tiPx, trackW - 40));
+        var rightPos = Math.max(0, Math.min(mrPx, trackW - 40));
+
+        if (mLeft) mLeft.style.left = leftPos + 'px';
+        if (mFirst) mFirst.style.left = firstPos + 'px';
+        if (mRight) mRight.style.right = rightPos + 'px';
+    }
+
+    /**
+     * Menyiapkan interaksi drag pada ketiga penanda ruler
+     */
+    function setupRulerMarkerDrag(markerEl, markerType) {
+        if (!markerEl) return;
+        var isDragging = false;
+        var track = document.getElementById('rteRulerTrack');
+        var guideline = document.getElementById('rteRulerGuideline');
+        var editor = document.getElementById('inputIsiSuratEditor');
+        var wrap = document.getElementById('rteRulerWrap');
+
+        function updateGuidelinePos() {
+            if (!guideline || !markerEl || !wrap) return;
+            var markerRect = markerEl.getBoundingClientRect();
+            var wrapRect = wrap.getBoundingClientRect();
+            guideline.style.left = (markerRect.left + (markerRect.width / 2) - wrapRect.left) + 'px';
+        }
+
+        function onStart(e) {
+            e.preventDefault();
+            isDragging = true;
+            markerEl.classList.add('dragging');
+
+            if (guideline && editor) {
+                guideline.style.display = 'block';
+                guideline.style.height = (editor.offsetHeight + 35) + 'px';
+                updateGuidelinePos();
+            }
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd);
+        }
+
+        function onMove(e) {
+            if (!isDragging || !track) return;
+            if (e.preventDefault) e.preventDefault();
+
+            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            var trackRect = track.getBoundingClientRect();
+            var trackW = trackRect.width;
+            if (trackW <= 0) return;
+            var pxPerCm = trackW / _rulerTotalCm;
+
+            var p = getRteActiveParagraph();
+            if (!p) return;
+
+            if (markerType === 'firstLine') {
+                var newX = clientX - trackRect.left;
+                if (newX < 0) newX = 0;
+                if (newX > trackW - 30) newX = trackW - 30;
+
+                var leftPos = parseFloat(document.getElementById('markerLeftIndent').style.left) || 0;
+                var diffPx = newX - leftPos;
+                var diffCm = Math.round((diffPx / pxPerCm) * 10) / 10;
+
+                markerEl.style.left = newX + 'px';
+                p.style.textIndent = diffCm + 'cm';
+                updateGuidelinePos();
+
+            } else if (markerType === 'left') {
+                var newX = clientX - trackRect.left;
+                if (newX < 0) newX = 0;
+                if (newX > trackW - 40) newX = trackW - 40;
+
+                var cmVal = Math.round((newX / pxPerCm) * 10) / 10;
+
+                var firstLineEl = document.getElementById('markerFirstLineIndent');
+                var prevLeft = parseFloat(markerEl.style.left) || 0;
+                var delta = newX - prevLeft;
+                var prevFirst = parseFloat(firstLineEl.style.left) || 0;
+                var newFirst = Math.max(0, Math.min(prevFirst + delta, trackW - 40));
+
+                markerEl.style.left = newX + 'px';
+                firstLineEl.style.left = newFirst + 'px';
+
+                var diffPx = newFirst - newX;
+                var diffCm = Math.round((diffPx / pxPerCm) * 10) / 10;
+
+                p.style.marginLeft = cmVal + 'cm';
+                p.style.textIndent = diffCm + 'cm';
+                updateGuidelinePos();
+
+            } else if (markerType === 'right') {
+                var newRight = trackRect.right - clientX;
+                if (newRight < 0) newRight = 0;
+                if (newRight > trackW - 40) newRight = trackW - 40;
+
+                var cmVal = Math.round((newRight / pxPerCm) * 10) / 10;
+                markerEl.style.right = newRight + 'px';
+                p.style.marginRight = cmVal + 'cm';
+                updateGuidelinePos();
+            }
+        }
+
+        function onEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            markerEl.classList.remove('dragging');
+            if (guideline) guideline.style.display = 'none';
+
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+
+            syncRteToHidden();
+        }
+
+        markerEl.addEventListener('mousedown', onStart);
+        markerEl.addEventListener('touchstart', onStart, { passive: false });
+    }
+
+    /**
+     * Inisialisasi Ruler & Tab Stop
+     */
+    function initRteRuler() {
+        drawRulerSvg();
+        updateTabSelectorUI();
+        renderRulerTabStops();
+
+        setupRulerMarkerDrag(document.getElementById('markerFirstLineIndent'), 'firstLine');
+        setupRulerMarkerDrag(document.getElementById('markerLeftIndent'), 'left');
+        setupRulerMarkerDrag(document.getElementById('markerRightIndent'), 'right');
+
+        var track = document.getElementById('rteRulerTrack');
+        if (track) {
+            track.addEventListener('click', onRulerTrackClick);
+        }
+
+        var ed = document.getElementById('inputIsiSuratEditor');
+        if (ed) {
+            ed.addEventListener('click', syncRulerFromParagraph);
+            ed.addEventListener('keyup', function (e) {
+                syncRulerFromParagraph();
+                var p = getRteActiveParagraph();
+                if (p) recalcTabStopsInParagraph(p);
+            });
+            ed.addEventListener('focus', syncRulerFromParagraph);
+            ed.addEventListener('input', function (e) {
+                syncRulerFromParagraph();
+                var p = getRteActiveParagraph();
+                if (p) recalcTabStopsInParagraph(p);
+            });
+        }
+
+        window.addEventListener('resize', function () {
+            drawRulerSvg();
+            renderRulerTabStops();
+            syncRulerFromParagraph();
+        });
+
+        if (track && 'ResizeObserver' in window) {
+            var ro = new ResizeObserver(function () {
+                drawRulerSvg();
+                renderRulerTabStops();
+                syncRulerFromParagraph();
+            });
+            ro.observe(track);
+        }
+    }
+
+    // Jalankan init ruler
+    setTimeout(initRteRuler, 150);
+</script>

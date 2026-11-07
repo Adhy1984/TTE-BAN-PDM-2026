@@ -1,0 +1,170 @@
+<!-- Daftar Semua Surat -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">📄 Daftar Arsip Surat</div>
+        <div class="card-header-actions" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <select id="filterKategoriKeluar" class="form-control" style="width:auto;padding:8px 12px;font-size:.8rem;" onchange="loadDaftarSurat()">
+                <option value="ALL">Semua Kategori</option>
+                <option value="Surat Dinas">📄 Surat Dinas</option>
+                <option value="Surat Keterangan">📋 Surat Keterangan</option>
+                <option value="Surat Undangan">✉️ Surat Undangan</option>
+                <option value="Surat Keputusan">📜 Surat Keputusan (SK)</option>
+                <option value="Surat Tugas">💼 Surat Tugas</option>
+                <option value="Surat Edaran">📢 Surat Edaran</option>
+                <option value="Surat Permohonan">📨 Surat Permohonan</option>
+                <option value="Lainnya">📁 Lainnya</option>
+            </select>
+            <select id="filterStatus" class="form-control" style="width:auto;padding:8px 12px;font-size:.8rem;"
+                onchange="loadDaftarSurat()">
+                <option value="ALL">Semua Status</option>
+                <option value="DRAFT">Draft</option>
+                <option value="MENUNGGU_TTD">Menunggu TTE</option>
+                <option value="DITANDATANGANI">Sudah Ditandatangani</option>
+                <option value="DITOLAK">Ditolak</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="loadDaftarSurat()">🔄 Refresh</button>
+        </div>
+    </div>
+
+    <div id="daftarSuratLoading" style="text-align:center;padding:40px;color:#94a3b8;">
+        <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+        Memuat daftar surat...
+    </div>
+
+    <div id="daftarSuratEmpty" style="display:none;text-align:center;padding:48px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">📭</div>
+        <div style="font-size:1rem;font-weight:600;">Belum ada surat yang sesuai filter</div>
+        <p style="font-size:.85rem;margin-top:6px;">Buat surat pertama Anda dengan klik tombol "Buat Surat Baru"</p>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="switchTab('buatSurat')">✍️ Buat Surat
+            Baru</button>
+    </div>
+
+    <div class="table-responsive" id="daftarSuratTableWrap" style="display:none;">
+        <table class="data-table" id="daftarSuratTable" style="width:100%;margin:0;">
+            <thead>
+                <tr>
+                    <th style="width:40px;text-align:center;">No</th>
+                    <th style="min-width:145px;">ID Dokumen</th>
+                    <th style="min-width:200px;">Nomor Surat</th>
+                    <th style="min-width:140px;">Tanggal</th>
+                    <th style="min-width:130px;">Kategori</th>
+                    <th style="min-width:220px;">Perihal</th>
+                    <th style="min-width:160px;">Penandatangan</th>
+                    <th style="min-width:130px;">Status</th>
+                    <th style="min-width:120px;text-align:center;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="daftarSuratBody">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Detail Surat Modal -->
+<div id="modalDetailSurat" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:700px;">
+        <!-- Header Modal (Tetap di atas) -->
+        <div class="modal-header">
+            <div class="modal-title" style="margin-bottom:0;">📄 Detail Surat</div>
+            <button onclick="closeDetailModal()"
+                style="border:none;background:none;cursor:pointer;font-size:22px;color:#94a3b8;line-height:1;padding:4px 8px;border-radius:6px;transition:background .2s;"
+                title="Tutup" onmouseover="this.style.background='#f1f5f9'"
+                onmouseout="this.style.background='transparent'">✕</button>
+        </div>
+
+        <!-- Body Modal (Bisa di-scroll dengan lancar) -->
+        <div id="detailSuratContent" class="modal-body">
+            <!-- Section PDF Tersedia (Ditaruh paling atas agar langsung terlihat saat status sudah ditandatangani) -->
+            <div id="detPdfSection"
+                style="display:none;background:#ecfdf5;border-radius:10px;padding:16px;border:1px solid #6ee7b7;margin-bottom:16px;">
+                <div style="font-size:.85rem;font-weight:700;color:#065f46;margin-bottom:10px;">✅ Dokumen PDF Resmi Tersedia:</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <a id="detBtnView" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">👁️ Lihat PDF Asli</a>
+                    <button id="detBtnDownload" onclick="downloadOfficialPdf()" class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:6px;">⬇️ Unduh PDF</button>
+                    <button class="btn btn-secondary btn-sm" onclick="copyVerifyLink()" style="display:inline-flex;align-items:center;gap:6px;">🔗 Salin Link Verifikasi</button>
+                </div>
+            </div>
+
+            <!-- Section Alasan Penolakan -->
+            <div id="detTolakSection"
+                style="display:none;background:#fef2f2;border-radius:10px;padding:14px;border:1px solid #fca5a5;margin-bottom:16px;">
+                <strong style="color:#dc2626;font-size:.85rem;">Alasan Penolakan:</strong>
+                <p style="font-size:.85rem;color:#991b1b;margin-top:4px;" id="detAlasanTolak">—</p>
+            </div>
+
+            <!-- Metadata Surat -->
+            <div
+                style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;background:#f8fafc;border-radius:10px;padding:16px;margin-bottom:16px;border:1px solid #e2e8f0;">
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;">ID Dokumen</div>
+                    <div style="font-size:.85rem;font-weight:700;font-family:monospace;" id="detID">—</div>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;">Nomor Surat</div>
+                    <div style="font-size:.85rem;font-weight:600;" id="detNomor">—</div>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;">Tanggal Surat</div>
+                    <div style="font-size:.85rem;" id="detTanggal">—</div>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;">Kategori Surat</div>
+                    <div style="font-size:.85rem;font-weight:700;color:#0284c7;" id="detKategori">—</div>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;">Lampiran</div>
+                    <div style="font-size:.85rem;" id="detLampiran">—</div>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;">Perihal</div>
+                    <div style="font-size:.85rem;" id="detPerihal">—</div>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;">Kepada</div>
+                    <div style="font-size:.85rem;white-space:pre-line;word-break:break-word;line-height:1.6;"
+                        id="detKepada">—</div>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;">Penandatangan</div>
+                    <div style="font-size:.85rem;" id="detPejabat">—</div>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;">Status</div>
+                    <div id="detStatus">—</div>
+                </div>
+                <div>
+                    <div style="font-size:.75rem;color:#64748b;font-weight:600;margin-bottom:2px;"
+                        id="detWaktuTtdLabel">Waktu TTE</div>
+                    <div style="font-size:.85rem;color:#059669;font-weight:600;" id="detWaktuTtd">—</div>
+                </div>
+            </div>
+
+            <!-- Isi Surat (render HTML dari rich text editor) -->
+            <div id="detailIsiSection"
+                style="background:#f8fafc;border-radius:10px;padding:16px;border:1px solid #e2e8f0;margin-bottom:6px;">
+                <div style="font-size:.8rem;color:#64748b;font-weight:600;margin-bottom:8px;">Isi Surat:</div>
+                <div style="font-size:.875rem;color:#334155;line-height:1.7;max-height:240px;overflow-y:auto;background:#ffffff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;word-break:break-word;"
+                    id="detIsi">—</div>
+            </div>
+        </div>
+
+        <!-- Footer Modal (Tetap di bawah) -->
+        <div class="modal-footer" style="gap:10px;display:flex;align-items:center;">
+            <button class="btn btn-secondary btn-sm" id="detBtnPreview"
+                onclick="openPreviewModal(_currentDetailDoc && _currentDetailDoc.id_dokumen, _currentDetailDoc && _currentDetailDoc.nomor_surat)"
+                style="margin-right:auto;">
+                🔍 Pratinjau Surat
+            </button>
+            <button class="btn btn-success btn-sm" id="detBtnSign" onclick="onDetailSignClick()" style="display:none;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;box-shadow:0 2px 6px rgba(16,185,129,0.3);">
+                ✅ Tanda Tangani TTE
+            </button>
+            <button class="btn btn-warning btn-sm" id="detBtnEdit" onclick="onDetailEditClick()" style="display:none;">
+                ✏️ Edit Surat
+            </button>
+            <button class="btn btn-danger btn-sm" id="detBtnDelete" onclick="onDetailDeleteClick()" style="display:none;background:#dc2626;color:#fff;border:none;">
+                🗑️ Hapus Dokumen
+            </button>
+            <button class="btn btn-secondary" onclick="closeDetailModal()">Tutup</button>
+        </div>
+    </div>
+</div>

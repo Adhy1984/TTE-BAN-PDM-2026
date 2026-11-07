@@ -1,0 +1,70 @@
+<!-- Halaman Persetujuan & Penandatanganan Elektronik Pejabat -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">✅ Halaman Persetujuan & Penandatanganan TTE</div>
+        <button class="btn btn-secondary btn-sm" onclick="loadApprovalList()">🔄 Refresh</button>
+    </div>
+
+    <div
+        style="background:#fffbeb;border:1px solid #fbbf24;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:.875rem;color:#78350f;">
+        <strong>⚠️ Perhatian Pejabat Penandatangan:</strong> Dengan memasukkan PIN TTE dan mengklik tombol
+        "Tandatangani", Anda menyatakan bahwa isi surat telah diperiksa, disetujui, dan bertanggung jawab atas
+        pengesahan dokumen ini secara resmi dan mengikat.
+    </div>
+
+    <div id="approvalLoading" style="text-align:center;padding:40px;color:#94a3b8;">
+        <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+        Memuat surat yang perlu ditandatangani...
+    </div>
+
+    <div id="approvalEmpty" style="display:none;text-align:center;padding:48px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+        <div style="font-size:1rem;font-weight:600;color:#059669;">Tidak ada surat yang perlu ditandatangani saat ini
+        </div>
+        <p style="font-size:.85rem;margin-top:6px;">Semua surat telah diproses. Kembali lagi nanti jika ada surat baru
+            masuk.</p>
+    </div>
+
+    <div id="approvalList">
+        <!-- Akan diisi oleh JavaScript -->
+    </div>
+</div>
+
+<!-- Template Card Surat untuk Approval (di-clone oleh JS) -->
+<template id="approvalCardTemplate">
+    <div class="approval-card"
+        style="border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:16px;background:#fff;transition:box-shadow .2s;"
+        onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
+        <div
+            style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+            <div>
+                <div style="font-weight:700;font-size:1rem;color:#0f172a;" data-field="nomor_surat">—</div>
+                <div style="font-size:.8rem;color:#94a3b8;margin-top:3px;" data-field="perihal">—</div>
+            </div>
+            <span class="badge badge-menunggu">⏳ Menunggu TTE</span>
+        </div>
+        <div
+            style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:14px;font-size:.85rem;">
+            <div><span style="color:#94a3b8;">Tanggal:</span> <strong data-field="tanggal_surat">—</strong></div>
+            <div><span style="color:#94a3b8;">Kepada:</span> <strong data-field="kepada">—</strong></div>
+            <div><span style="color:#94a3b8;">ID Dokumen:</span> <strong data-field="id_dokumen"
+                    style="font-family:monospace;font-size:.8rem;">—</strong></div>
+        </div>
+        <div style="background:#f1f5f9;border-radius:8px;padding:12px;margin-bottom:16px;">
+            <div style="font-size:.8rem;color:#64748b;font-weight:600;margin-bottom:6px;">Ringkasan Isi Surat:</div>
+            <div style="font-size:.875rem;color:#334155;line-height:1.6;max-height:80px;overflow:hidden;"
+                data-field="isi_surat_preview">—</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-success" data-action="approve">
+                ✅ Tanda Tangani Secara Elektronik
+            </button>
+            <button class="btn btn-secondary btn-sm" data-action="preview">
+                🔍 Pratinjau Surat
+            </button>
+            <button class="btn btn-danger btn-sm" data-action="reject">
+                ❌ Tolak Surat
+            </button>
+        </div>
+    </div>
+</template>

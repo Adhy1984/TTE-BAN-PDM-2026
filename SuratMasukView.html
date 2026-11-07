@@ -1,0 +1,595 @@
+<!-- ====================================================================
+     MODUL ARSIP SURAT MASUK & DISPOSISI PEJABAT
+     File: SuratMasukView.html
+     ==================================================================== -->
+
+<div class="view-container">
+
+    <!-- Header Modul Surat Masuk -->
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+        <div>
+            <h2 style="font-size:1.45rem;font-weight:700;color:var(--slate-800);margin-bottom:4px;display:flex;align-items:center;gap:10px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;background:linear-gradient(135deg,#38bdf8,#0284c7);color:#ffffff;border-radius:10px;box-shadow:0 4px 12px rgba(2,132,199,0.3);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                        <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                    </svg>
+                </span>
+                Arsip Surat Masuk & Disposisi
+            </h2>
+            <p style="font-size:.88rem;color:var(--slate-500);margin:0;">
+                Penelaahan dokumen, disposisi pejabat, dan pengarsipan berkas surat masuk ke Google Drive
+            </p>
+        </div>
+        <div>
+            <!-- Tombol Unggah (Hanya untuk Operator & Admin) -->
+            <button type="button" id="btnBukaModalUploadSm" class="btn btn-primary" onclick="openModalUploadSuratMasuk()"
+                style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;font-weight:600;border-radius:9px;box-shadow:0 4px 14px rgba(37,99,235,0.25);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Unggah Surat Masuk
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter & Toolbar Surat Masuk -->
+    <div class="card" style="margin-bottom:20px;padding:16px 20px;border-radius:12px;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.05);border:1px solid #e2e8f0;">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <!-- Kolom Pencarian (Mengembang memenuhi sisa ruang) -->
+            <div style="position:relative;flex:1 1 260px;min-width:220px;">
+                <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#94a3b8;display:flex;align-items:center;pointer-events:none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input type="text" id="searchSuratMasuk" class="form-control"
+                    placeholder="Cari nomor surat, pengirim, perihal, atau disposisi..."
+                    oninput="filterSuratMasuk()"
+                    style="width:100%;height:40px;padding:8px 14px 8px 38px;border-radius:8px;font-size:.875rem;border:1px solid #cbd5e1;background:#fff;box-sizing:border-box;">
+            </div>
+
+            <!-- Filter Status Disposisi -->
+            <select id="filterDisposisiSuratMasuk" class="form-control" onchange="filterSuratMasuk()"
+                style="width:auto;flex:0 0 auto;min-width:160px;height:40px;border-radius:8px;font-size:.85rem;padding:6px 12px;font-weight:600;border:1px solid #cbd5e1;cursor:pointer;background-color:#fff;box-sizing:border-box;">
+                <option value="ALL">Semua Disposisi</option>
+                <option value="BELUM">⏳ Belum Disposisi</option>
+                <option value="SUDAH">✅ Sudah Disposisi</option>
+            </select>
+
+            <!-- Filter Kategori -->
+            <select id="filterKategoriSuratMasuk" class="form-control" onchange="filterSuratMasuk()"
+                style="width:auto;flex:0 0 auto;min-width:150px;height:40px;border-radius:8px;font-size:.85rem;padding:6px 12px;border:1px solid #cbd5e1;cursor:pointer;background-color:#fff;box-sizing:border-box;">
+                <option value="ALL">Semua Kategori</option>
+                <option value="Surat Dinas">Surat Dinas</option>
+                <option value="Surat Undangan">Surat Undangan</option>
+                <option value="Surat Edaran">Surat Edaran</option>
+                <option value="Surat Permohonan">Surat Permohonan</option>
+                <option value="Laporan">Laporan</option>
+                <option value="Pemberitahuan">Pemberitahuan</option>
+                <option value="Lainnya">Lainnya</option>
+            </select>
+
+            <!-- Tombol Refresh -->
+            <button type="button" class="btn btn-secondary" onclick="loadSuratMasuk()" title="Muat Ulang Data"
+                style="height:40px;flex:0 0 auto;border-radius:8px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;background:#f8fafc;color:#334155;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap;box-sizing:border-box;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Refresh
+            </button>
+        </div>
+
+        <!-- Info Jumlah Data -->
+        <div style="margin-top:14px;padding-top:10px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:#64748b;flex-wrap:wrap;gap:8px;">
+            <span>Menampilkan <strong id="smCountFiltered" style="color:var(--slate-800);">0</strong> dari <strong id="smCountTotal" style="color:var(--slate-800);">0</strong> berkas surat masuk</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;color:#15803d;font-weight:500;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Tersinkronisasi ke Google Drive Resmi
+            </span>
+        </div>
+    </div>
+
+    <!-- Tabel Daftar Surat Masuk -->
+    <div class="card" style="padding:0;overflow:hidden;border-radius:12px;margin-bottom:30px;">
+
+        <!-- Loading Spinner -->
+        <div id="suratMasukLoading" style="display:none;padding:60px 20px;text-align:center;color:var(--slate-400);">
+            <div style="font-size:36px;animation:spin 1.2s linear infinite;margin-bottom:12px;">⏳</div>
+            <div style="font-weight:600;font-size:.92rem;color:var(--slate-700);">Memuat arsip surat masuk & disposisi...</div>
+            <div style="font-size:.8rem;color:var(--slate-400);margin-top:4px;">Mengambil data dari spreadsheet dan Google Drive</div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="suratMasukEmpty" style="display:none;padding:60px 20px;text-align:center;color:var(--slate-400);">
+            <div style="font-size:42px;margin-bottom:12px;">📭</div>
+            <div style="font-weight:600;font-size:1.05rem;color:var(--slate-700);margin-bottom:6px;">Belum Ada Arsip Surat Masuk</div>
+            <p style="font-size:.84rem;color:var(--slate-500);max-width:420px;margin:0 auto 18px;line-height:1.5;">
+                Belum ada dokumen surat masuk yang tercatat.
+            </p>
+        </div>
+
+        <!-- Responsive Table Container -->
+        <div id="suratMasukTableWrap" class="table-responsive" style="display:block;">
+            <table class="data-table" style="width:100%;margin:0;">
+                <thead>
+                    <tr>
+                        <th style="width:44px;text-align:center;">NO</th>
+                        <th style="min-width:190px;">NOMOR SURAT & PENGIRIM</th>
+                        <th style="min-width:210px;">PERIHAL</th>
+                        <th style="min-width:125px;">TANGGAL</th>
+                        <th style="min-width:115px;">KATEGORI</th>
+                        <th style="min-width:160px;">STATUS DISPOSISI</th>
+                        <th style="min-width:150px;">BERKAS DIGITAL</th>
+                        <th style="min-width:180px;text-align:center;">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody id="suratMasukTableBody">
+                    <!-- Baris data di-generate via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ====================================================================
+     MODAL UNGGAH SURAT MASUK (OPERATOR & ADMIN)
+     ==================================================================== -->
+<div id="modalUploadSuratMasuk" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:620px;max-height:92vh;overflow-y:auto;border-radius:14px;">
+        <div class="modal-header">
+            <h3 class="modal-title" style="margin:0;font-size:1.15rem;display:flex;align-items:center;gap:8px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:#e0f2fe;color:#0284c7;border-radius:7px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                        <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                    </svg>
+                </span>
+                Unggah & Arsipkan Surat Masuk
+            </h3>
+            <button type="button" onclick="closeModalUploadSuratMasuk()"
+                style="border:none;background:none;font-size:22px;color:#94a3b8;cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px;"
+                title="Tutup">✕</button>
+        </div>
+
+        <form id="formUploadSuratMasuk" onsubmit="submitSuratMasuk(event)" style="padding:16px 20px;">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+
+                <!-- Nomor Surat Masuk -->
+                <div>
+                    <label for="smNomorSurat" class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:5px;display:block;">
+                        Nomor Surat Resmi <span style="color:#ef4444;">*</span>
+                    </label>
+                    <input type="text" id="smNomorSurat" class="form-control" required
+                        placeholder="Contoh: 005/123/DISDIK/XI/2026"
+                        style="border-radius:7px;font-size:.88rem;">
+                </div>
+
+                <!-- Asal Pengirim / Instansi -->
+                <div>
+                    <label for="smPengirim" class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:5px;display:block;">
+                        Asal Surat / Pengirim Instansi <span style="color:#ef4444;">*</span>
+                    </label>
+                    <input type="text" id="smPengirim" class="form-control" required
+                        placeholder="Contoh: Dinas Pendidikan dan Kebudayaan Prov. NTT"
+                        style="border-radius:7px;font-size:.88rem;">
+                </div>
+
+                <!-- Perihal Surat -->
+                <div>
+                    <label for="smPerihal" class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:5px;display:block;">
+                        Perihal Surat <span style="color:#ef4444;">*</span>
+                    </label>
+                    <textarea id="smPerihal" class="form-control" rows="2" required
+                        placeholder="Contoh: Undangan Rapat Koordinasi Akreditasi Sekolah/Madrasah Tahun 2026"
+                        style="border-radius:7px;font-size:.88rem;resize:vertical;"></textarea>
+                </div>
+
+                <!-- Grid: Tanggal Surat & Tanggal Diterima -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <label for="smTanggalSurat" class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:5px;display:block;">
+                            Tanggal Surat <span style="color:#ef4444;">*</span>
+                        </label>
+                        <input type="date" id="smTanggalSurat" class="form-control" required
+                            style="border-radius:7px;font-size:.88rem;">
+                    </div>
+                    <div>
+                        <label for="smTanggalTerima" class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:5px;display:block;">
+                            Tanggal Diterima <span style="color:#ef4444;">*</span>
+                        </label>
+                        <input type="date" id="smTanggalTerima" class="form-control" required
+                            style="border-radius:7px;font-size:.88rem;">
+                    </div>
+                </div>
+
+                <!-- Kategori / Klasifikasi Surat -->
+                <div>
+                    <label for="smKategori" class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:5px;display:block;">
+                        Kategori / Klasifikasi Surat
+                    </label>
+                    <select id="smKategori" class="form-control" style="border-radius:7px;font-size:.88rem;">
+                        <option value="Surat Dinas">Surat Dinas</option>
+                        <option value="Surat Undangan">Surat Undangan</option>
+                        <option value="Surat Edaran">Surat Edaran</option>
+                        <option value="Surat Permohonan">Surat Permohonan</option>
+                        <option value="Laporan">Laporan</option>
+                        <option value="Pemberitahuan">Pemberitahuan</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+
+                <!-- Keterangan / Catatan Awal -->
+                <div>
+                    <label for="smKeterangan" class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:5px;display:block;">
+                        Catatan Ringkas Staf <span style="font-size:.78rem;font-weight:normal;color:#94a3b8;">(Opsional)</span>
+                    </label>
+                    <textarea id="smKeterangan" class="form-control" rows="2"
+                        placeholder="Catatan tambahan saat penerimaan surat..."
+                        style="border-radius:7px;font-size:.88rem;resize:vertical;"></textarea>
+                </div>
+
+                <!-- Unggah Berkas PDF Dokumen -->
+                <div>
+                    <label class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:5px;display:block;">
+                        Berkas Digital PDF Surat Masuk <span style="color:#ef4444;">*</span>
+                    </label>
+                    
+                    <div id="smFileDropZone"
+                        style="border:2px dashed #cbd5e1;border-radius:10px;padding:24px 16px;text-align:center;background:#f8fafc;cursor:pointer;transition:all .2s;"
+                        onclick="document.getElementById('smFileInput').click()"
+                        onmouseover="this.style.borderColor='#38bdf8';this.style.background='#f0f9ff';"
+                        onmouseout="this.style.borderColor='#cbd5e1';this.style.background='#f8fafc';">
+                        
+                        <input type="file" id="smFileInput" accept="application/pdf" style="display:none;" onchange="onSuratMasukFileSelected(event)">
+                        
+                        <div id="smFilePrompt">
+                            <div style="font-size:32px;color:#0284c7;margin-bottom:8px;">📄</div>
+                            <div style="font-weight:600;font-size:.9rem;color:var(--slate-700);">
+                                Klik di sini untuk memilih berkas PDF surat masuk
+                            </div>
+                            <div style="font-size:.78rem;color:#94a3b8;margin-top:4px;">
+                                Format berkas: PDF (Maksimal 25 MB). Berkas akan disimpan ke Google Drive resmi.
+                            </div>
+                        </div>
+
+                        <!-- Indikator Berkas Terpilih -->
+                        <div id="smFileSelectedInfo" style="display:none;align-items:center;justify-content:center;gap:12px;background:#e0f2fe;padding:10px 16px;border-radius:8px;border:1px solid #bae6fd;">
+                            <span style="font-size:24px;">📎</span>
+                            <div style="text-align:left;flex:1;overflow:hidden;">
+                                <div id="smSelectedFileName" style="font-weight:700;font-size:.86rem;color:#0369a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">nama_berkas.pdf</div>
+                                <div id="smSelectedFileSize" style="font-size:.76rem;color:#0284c7;">0 KB</div>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation();resetSuratMasukFile();"
+                                style="font-size:.75rem;padding:3px 8px;border-radius:5px;">Ganti</button>
+                        </div>
+                    </div>
+
+                    <!-- Hidden data holding base64 string -->
+                    <input type="hidden" id="smHiddenBase64">
+                    <input type="hidden" id="smHiddenFileName">
+                    <input type="hidden" id="smHiddenFileSize">
+                </div>
+
+            </div>
+
+            <!-- Pesan Error / Notifikasi Form -->
+            <div id="smFormAlert" style="display:none;margin-top:14px;padding:10px 14px;border-radius:7px;font-size:.85rem;"></div>
+
+            <!-- Footer Modal -->
+            <div class="modal-footer" style="padding:16px 0 0;margin-top:16px;display:flex;justify-content:flex-end;gap:10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModalUploadSuratMasuk()">Batal</button>
+                <button type="submit" id="btnSubmitSuratMasuk" class="btn btn-primary"
+                    style="display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:8px 20px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Simpan & Arsipkan ke GDrive
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ====================================================================
+     MODAL FORMULIR DISPOSISI SURAT OLEH PEJABAT
+     ==================================================================== -->
+<div id="modalDisposisiSurat" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:640px;max-height:92vh;overflow-y:auto;border-radius:14px;">
+        <div class="modal-header">
+            <h3 class="modal-title" style="margin:0;font-size:1.15rem;display:flex;align-items:center;gap:8px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:#fef3c7;color:#b45309;border-radius:8px;">
+                    ✍️
+                </span>
+                Lembar Disposisi Surat Masuk
+            </h3>
+            <button type="button" onclick="closeModalDisposisi()"
+                style="border:none;background:none;font-size:22px;color:#94a3b8;cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px;"
+                title="Tutup">✕</button>
+        </div>
+
+        <form id="formDisposisiSurat" onsubmit="submitDisposisi(event)" style="padding:16px 20px;">
+            <input type="hidden" id="dispDocId">
+
+            <!-- Resume Surat Masuk -->
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #0284c7;border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+                <div style="font-size:.76rem;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
+                    Informasi Surat Masuk
+                </div>
+                <div style="font-weight:700;color:var(--slate-800);font-size:.92rem;" id="dispResNomor">-</div>
+                <div style="font-size:.82rem;color:var(--slate-600);margin-top:2px;" id="dispResPengirim">-</div>
+                <div style="font-size:.82rem;color:var(--slate-700);margin-top:4px;font-style:italic;" id="dispResPerihal">-</div>
+                <div style="font-size:.78rem;color:#94a3b8;margin-top:4px;" id="dispResTanggal">-</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+                <!-- Sifat Disposisi -->
+                <div>
+                    <label class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:6px;display:block;">
+                        Sifat Disposisi <span style="color:#ef4444;">*</span>
+                    </label>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;">
+                            <input type="radio" name="dispSifat" value="Biasa" checked> Biasa
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;">
+                            <input type="radio" name="dispSifat" value="Penting"> Penting
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;">
+                            <input type="radio" name="dispSifat" value="Segera"> Segera
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;">
+                            <input type="radio" name="dispSifat" value="Sangat Segera"> Sangat Segera
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer;">
+                            <input type="radio" name="dispSifat" value="Rahasia"> Rahasia
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Diteruskan Kepada -->
+                <div>
+                    <label class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:6px;display:block;">
+                        Diteruskan Kepada <span style="color:#ef4444;">*</span>
+                    </label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f8fafc;padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:8px;">
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispKepadaQuick" value="Sekretaris" onchange="syncDisposisiKepada()"> Sekretaris
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispKepadaQuick" value="Anggota BAN PDM Provinsi NTT" onchange="syncDisposisiKepada()"> Anggota BAN PDM Provinsi NTT
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispKepadaQuick" value="Bendahara/Keuangan" onchange="syncDisposisiKepada()"> Bendahara/Keuangan
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispKepadaQuick" value="Subbag Tata Usaha" onchange="syncDisposisiKepada()"> Subbag Tata Usaha
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispKepadaQuick" value="Tim IT" onchange="syncDisposisiKepada()"> Tim IT
+                        </label>
+                    </div>
+                    <input type="text" id="dispKepada" class="form-control" required
+                        placeholder="Pilih di atas atau ketik nama penerima disposisi..."
+                        style="border-radius:7px;font-size:.88rem;">
+                </div>
+
+                <!-- Petunjuk / Instruksi Tindak Lanjut -->
+                <div>
+                    <label class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:6px;display:block;">
+                        Petunjuk / Instruksi Pejabat
+                    </label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f8fafc;padding:10px 14px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:8px;">
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispInstruksiQuick" value="Tindak lanjuti sesuai ketentuan" onchange="syncDisposisiInstruksi()"> Tindak lanjuti
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispInstruksiQuick" value="Pelajari dan laporkan hasilnya" onchange="syncDisposisiInstruksi()"> Pelajari & laporkan
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispInstruksiQuick" value="Hadiri / Wakili pertemuan" onchange="syncDisposisiInstruksi()"> Hadiri / Wakili
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispInstruksiQuick" value="Siapkan bahan / draft tanggapan" onchange="syncDisposisiInstruksi()"> Siapkan tanggapan
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispInstruksiQuick" value="Koordinasikan dengan pihak terkait" onchange="syncDisposisiInstruksi()"> Koordinasikan
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;">
+                            <input type="checkbox" name="dispInstruksiQuick" value="Untuk diketahui dan diarsipkan" onchange="syncDisposisiInstruksi()"> Arsipkan
+                        </label>
+                    </div>
+                    <textarea id="dispInstruksi" class="form-control" rows="2"
+                        placeholder="Rincian petunjuk atau instruksi pejabat..."
+                        style="border-radius:7px;font-size:.88rem;resize:vertical;"></textarea>
+                </div>
+
+                <!-- Catatan Khusus Pejabat -->
+                <div>
+                    <label for="dispCatatan" class="form-label" style="font-weight:600;font-size:.85rem;color:var(--slate-700);margin-bottom:5px;display:block;">
+                        Catatan Khusus Pejabat <span style="font-size:.78rem;font-weight:normal;color:#94a3b8;">(Opsional)</span>
+                    </label>
+                    <textarea id="dispCatatan" class="form-control" rows="2"
+                        placeholder="Pesan tambahan atau catatan khusus..."
+                        style="border-radius:7px;font-size:.88rem;resize:vertical;"></textarea>
+                </div>
+
+                <div style="background:#eff6ff;padding:8px 12px;border-radius:7px;font-size:.8rem;color:#0369a1;display:flex;align-items:center;gap:8px;">
+                    <span>👤</span>
+                    <span>Disposisi disimpan atas nama pejabat: <strong id="dispPejabatNama">—</strong></span>
+                </div>
+            </div>
+
+            <div id="dispAlert" style="display:none;margin-top:14px;padding:10px 14px;border-radius:7px;font-size:.85rem;"></div>
+
+            <!-- Footer Modal Disposisi -->
+            <div class="modal-footer" style="padding:16px 0 0;margin-top:16px;display:flex;justify-content:flex-end;gap:10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModalDisposisi()">Batal</button>
+                <button type="submit" id="btnSubmitDisposisi" class="btn btn-primary"
+                    style="display:inline-flex;align-items:center;gap:6px;font-weight:600;background:linear-gradient(135deg,#059669,#10b981);border:none;">
+                    💾 Simpan Disposisi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ====================================================================
+     MODAL LEMBAR DISPOSISI RESMI (TAMPILAN SIAP CETAK)
+     ==================================================================== -->
+<div id="modalLembarDisposisi" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:760px;max-height:92vh;overflow-y:auto;border-radius:14px;background:#ffffff;">
+        <div class="modal-header" style="border-bottom:1px solid #e2e8f0;padding:12px 20px;">
+            <h3 class="modal-title" style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:8px;">
+                <span>📋</span> Lembar Disposisi Surat Masuk
+            </h3>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="printLembarDisposisi()"
+                    style="display:inline-flex;align-items:center;gap:6px;font-weight:600;">
+                    🖨️ Cetak Disposisi
+                </button>
+                <button type="button" onclick="closeLembarDisposisi()"
+                    style="border:none;background:none;font-size:22px;color:#94a3b8;cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px;"
+                    title="Tutup">✕</button>
+            </div>
+        </div>
+
+        <div style="padding:24px 28px;">
+            <!-- Area Cetak Lembar Disposisi -->
+            <div id="printAreaLembarDisposisi" style="background:#ffffff;border:2px solid #0f172a;padding:24px;border-radius:4px;color:#0f172a;font-family:'Segoe UI',sans-serif;">
+                
+                <!-- Kop Resmi Lembaga BAN PDM Lembar Disposisi -->
+                <table style="width:100%;border-collapse:collapse;margin-bottom:0;font-family:Arial,Helvetica,sans-serif;">
+                    <tr>
+                        <td style="width:95px;vertical-align:middle;text-align:center;padding-right:18px;">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Logo_BAN-PDM.png" alt="Logo BAN PDM"
+                                style="height:86px;width:auto;max-width:95px;object-fit:contain;display:block;margin:0 auto;">
+                        </td>
+                        <td style="vertical-align:middle;text-align:left;padding-left:4px;">
+                            <div style="font-size:19px;font-weight:bold;color:#4682B4;line-height:1.15;margin:0;">
+                                BADAN AKREDITASI NASIONAL
+                            </div>
+                            <div style="font-size:9.5px;font-weight:bold;color:#4682B4;line-height:1.25;margin:2px 0;letter-spacing:-0.2px;">
+                                PENDIDIKAN ANAK USIA DINI, PENDIDIKAN DASAR, DAN PENDIDIKAN MENENGAH
+                            </div>
+                            <div style="font-size:19px;font-weight:bold;color:#4682B4;line-height:1.15;margin:0 0 2px 0;">
+                                PROVINSI NUSA TENGGARA TIMUR
+                            </div>
+                            <div style="font-size:9.5px;color:#333333;line-height:1.35;margin:0;">
+                                Kompleks BPMP NTT, Jalan Jenderal Soeharto No. 57A, Naikoten Satu, Kota Kupang, Nusa Tenggara Timur 85118
+                            </div>
+                            <div style="font-size:9.5px;color:#333333;line-height:1.35;margin:0;">
+                                Email: ntt@ban-pdm.id
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <hr style="border:none;border-top:2px solid #000000;margin:6px 0 16px 0;">
+
+                <div style="text-align:center;margin-bottom:16px;">
+                    <span style="font-size:14px;font-weight:800;letter-spacing:1px;border-bottom:2px solid #0f172a;padding-bottom:2px;">LEMBAR DISPOSISI SURAT</span>
+                </div>
+
+                <!-- Tabel Data Surat Masuk -->
+                <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:11.5px;">
+                    <tr>
+                        <td style="width:18%;padding:6px 8px;border:1px solid #cbd5e1;font-weight:700;background:#f8fafc;">Surat Dari</td>
+                        <td style="width:32%;padding:6px 8px;border:1px solid #cbd5e1;" id="printSmPengirim">-</td>
+                        <td style="width:18%;padding:6px 8px;border:1px solid #cbd5e1;font-weight:700;background:#f8fafc;">Diterima Tanggal</td>
+                        <td style="width:32%;padding:6px 8px;border:1px solid #cbd5e1;" id="printSmTglTerima">-</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:6px 8px;border:1px solid #cbd5e1;font-weight:700;background:#f8fafc;">Nomor Surat</td>
+                        <td style="padding:6px 8px;border:1px solid #cbd5e1;" id="printSmNomor">-</td>
+                        <td style="padding:6px 8px;border:1px solid #cbd5e1;font-weight:700;background:#f8fafc;">Tanggal Surat</td>
+                        <td style="padding:6px 8px;border:1px solid #cbd5e1;" id="printSmTglSurat">-</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:6px 8px;border:1px solid #cbd5e1;font-weight:700;background:#f8fafc;">Perihal</td>
+                        <td colspan="3" style="padding:6px 8px;border:1px solid #cbd5e1;font-weight:600;" id="printSmPerihal">-</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:6px 8px;border:1px solid #cbd5e1;font-weight:700;background:#f8fafc;">Sifat Disposisi</td>
+                        <td colspan="3" style="padding:6px 8px;border:1px solid #cbd5e1;" id="printSmSifat">
+                            <span style="font-weight:700;color:#0369a1;" id="printSmSifatVal">Biasa</span>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Kolom Disposisi Kepada & Petunjuk -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                    <div style="border:1px solid #cbd5e1;border-radius:4px;padding:10px 12px;background:#f8fafc;">
+                        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0369a1;margin-bottom:6px;border-bottom:1px solid #e2e8f0;padding-bottom:3px;">
+                            Diteruskan Kepada Yth:
+                        </div>
+                        <div id="printSmKepada" style="font-size:12px;font-weight:700;color:#0f172a;line-height:1.5;">-</div>
+                    </div>
+                    <div style="border:1px solid #cbd5e1;border-radius:4px;padding:10px 12px;background:#f8fafc;">
+                        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#0369a1;margin-bottom:6px;border-bottom:1px solid #e2e8f0;padding-bottom:3px;">
+                            Petunjuk / Instruksi Tindak Lanjut:
+                        </div>
+                        <div id="printSmInstruksi" style="font-size:11.5px;color:#0f172a;line-height:1.5;">-</div>
+                    </div>
+                </div>
+
+                <!-- Catatan Khusus Pejabat -->
+                <div style="border:1px solid #cbd5e1;border-radius:4px;padding:10px 12px;margin-bottom:20px;background:#ffffff;">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;margin-bottom:4px;">
+                        Catatan Khusus Pejabat:
+                    </div>
+                    <div id="printSmCatatan" style="font-size:11.5px;color:#334155;line-height:1.5;min-height:36px;font-style:italic;">-</div>
+                </div>
+
+                <!-- Tanda Tangan / Legalisasi Pejabat -->
+                <div style="display:flex;justify-content:flex-end;text-align:center;">
+                    <div style="min-width:220px;">
+                        <div style="font-size:11px;color:#475569;" id="printSmTglDisposisi">Kupang, -</div>
+                        <div style="font-size:11.5px;font-weight:700;color:#0f172a;margin-top:2px;">Pejabat Penelaah,</div>
+                        <div style="height:55px;"></div>
+                        <div style="font-size:12px;font-weight:800;color:#0f172a;text-decoration:underline;" id="printSmPejabatNama">-</div>
+                        <div style="font-size:10.5px;color:#64748b;">BAN PDM Provinsi NTT</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================================
+     MODAL KONFIRMASI HAPUS SURAT MASUK
+     ==================================================================== -->
+<div id="modalHapusSuratMasuk" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:440px;border-radius:14px;text-align:center;padding:24px 20px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:#fee2e2;color:#ef4444;display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+        </div>
+        <h3 style="font-size:1.15rem;font-weight:700;color:var(--slate-800);margin-bottom:8px;">Hapus Arsip Surat Masuk?</h3>
+        <p style="font-size:.86rem;color:var(--slate-600);line-height:1.5;margin-bottom:18px;">
+            Apakah Anda yakin ingin menghapus arsip surat masuk dengan nomor <strong id="deleteSmNomorLabel" style="color:#ef4444;">-</strong>?<br>
+            <span style="font-size:.78rem;color:#94a3b8;">Berkas terkait di Google Drive juga akan dipindahkan ke tempat sampah.</span>
+        </p>
+        <input type="hidden" id="deleteSmId">
+        <div style="display:flex;justify-content:center;gap:10px;">
+            <button type="button" class="btn btn-secondary" onclick="closeModalHapusSuratMasuk()">Batal</button>
+            <button type="button" id="btnConfirmDeleteSm" class="btn btn-danger" onclick="confirmHapusSuratMasuk()"
+                style="display:inline-flex;align-items:center;gap:6px;font-weight:600;">
+                Hapus Arsip
+            </button>
+        </div>
+    </div>
+</div>

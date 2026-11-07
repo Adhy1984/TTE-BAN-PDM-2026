@@ -1,0 +1,272 @@
+<!-- ====================================================================
+     APLIKASI TANDA TANGAN ELEKTRONIK (TTE) BAN PDM PROV. NTT
+     File: UserManagementView.html (Manajemen Pengguna & Pejabat)
+     ==================================================================== -->
+<div id="userManagementContent" class="anim-fade-up">
+
+    <!-- Header Section -->
+    <div class="user-mgmt-header">
+        <div>
+            <h2 style="font-size:1.35rem;font-weight:800;color:#0f172a;letter-spacing:-0.01em;display:flex;align-items:center;gap:10px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:#e0f2fe;color:#0284c7;font-size:1.2rem;">👥</span>
+                Manajemen Pengguna & Hak Akses
+            </h2>
+            <p style="color:#64748b;font-size:0.875rem;margin-top:4px;">
+                Kelola akun Administrator, Operator TU, dan Pejabat Penandatangan beserta kredensial PIN TTE.
+            </p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-tactile" onclick="loadUserManagement()" title="Muat ulang data pengguna">
+                🔄 Segarkan
+            </button>
+            <button class="btn btn-primary btn-tactile" onclick="openModalUser(false)" style="background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);box-shadow:0 3px 10px rgba(2,132,199,0.3);">
+                ➕ Tambah Pengguna Baru
+            </button>
+        </div>
+    </div>
+
+    <!-- Ringkasan Statistik Pengguna -->
+    <div class="user-mgmt-stats">
+        <div class="user-stat-card">
+            <div class="user-stat-icon-wrapper" style="background:#f1f5f9;color:#334155;">👥</div>
+            <div>
+                <div style="font-size:1.35rem;font-weight:800;color:#0f172a;" id="statUserTotal">0</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#64748b;">Total Pengguna</div>
+            </div>
+        </div>
+        <div class="user-stat-card">
+            <div class="user-stat-icon-wrapper" style="background:#ede9fe;color:#6366f1;">🛡️</div>
+            <div>
+                <div style="font-size:1.35rem;font-weight:800;color:#4338ca;" id="statUserAdmin">0</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#64748b;">Administrator</div>
+            </div>
+        </div>
+        <div class="user-stat-card">
+            <div class="user-stat-icon-wrapper" style="background:#e0f2fe;color:#0284c7;">✍️</div>
+            <div>
+                <div style="font-size:1.35rem;font-weight:800;color:#0369a1;" id="statUserOperator">0</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#64748b;">Operator TU</div>
+            </div>
+        </div>
+        <div class="user-stat-card">
+            <div class="user-stat-icon-wrapper" style="background:#dcfce7;color:#16a34a;">✒️</div>
+            <div>
+                <div style="font-size:1.35rem;font-weight:800;color:#15803d;" id="statUserPejabat">0</div>
+                <div style="font-size:0.78rem;font-weight:600;color:#64748b;">Pejabat TTE</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Kolom Pencarian -->
+    <div class="user-filter-bar">
+        <div class="user-search-wrapper">
+            <span style="color:#94a3b8;font-size:1rem;">🔍</span>
+            <input type="text" id="searchUserQuery" class="user-search-input" placeholder="Cari nama, username, NIP, atau jabatan..." oninput="filterUserTable()">
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <select id="filterUserRole" onchange="filterUserTable()" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.85rem;background:#ffffff;color:#334155;outline:none;">
+                <option value="">Semua Peran</option>
+                <option value="admin">Administrator</option>
+                <option value="operator">Operator TU</option>
+                <option value="pejabat">Pejabat TTE</option>
+            </select>
+            <select id="filterUserStatus" onchange="filterUserTable()" style="padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.85rem;background:#ffffff;color:#334155;outline:none;">
+                <option value="">Semua Status</option>
+                <option value="AKTIF">Status: Aktif</option>
+                <option value="NON-AKTIF">Status: Non-Aktif</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Container Tabel Pengguna -->
+    <div class="user-table-container">
+        <!-- Spinner Loading -->
+        <div id="userTableLoading" style="display:none;padding:50px 20px;text-align:center;color:#64748b;">
+            <div style="font-size:2rem;animation:spin 1s linear infinite;display:inline-block;">⏳</div>
+            <p style="margin-top:10px;font-size:0.9rem;font-weight:500;">Memuat daftar pengguna dari database...</p>
+        </div>
+
+        <!-- State Kosong -->
+        <div id="userTableEmpty" style="display:none;padding:60px 20px;text-align:center;color:#64748b;">
+            <div style="font-size:2.8rem;margin-bottom:8px;">👥</div>
+            <h4 style="font-size:1.05rem;color:#1e293b;font-weight:700;">Tidak Ada Pengguna Ditemukan</h4>
+            <p style="font-size:0.85rem;color:#94a3b8;margin-top:4px;">Coba ubah kata kunci pencarian atau filter peran Anda.</p>
+        </div>
+
+        <!-- Tabel Data -->
+        <div style="overflow-x:auto;">
+            <table class="user-data-table" id="userMainTable">
+                <thead>
+                    <tr>
+                        <th style="width:50px;text-align:center;">No</th>
+                        <th>Pengguna / Nama Lengkap</th>
+                        <th>Username</th>
+                        <th>Peran (Role)</th>
+                        <th>Data Pejabat & PIN TTE</th>
+                        <th>Status</th>
+                        <th style="width:170px;text-align:center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <!-- Baris data di-render secara dinamis via Scripts.html -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ====================================================================
+     MODAL FORMULIR TAMBAH / EDIT PENGGUNA
+     ==================================================================== -->
+<div id="modalUserForm" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:620px;width:92%;max-height:90vh;overflow-y:auto;border-radius:18px;">
+        
+        <!-- Modal Header -->
+        <div class="modal-header" style="border-bottom:1px solid #f1f5f9;padding-bottom:14px;margin-bottom:18px;">
+            <div class="modal-title" id="modalUserTitle" style="font-size:1.15rem;color:#0f172a;display:flex;align-items:center;gap:8px;">
+                <span>➕</span> Tambah Pengguna Baru
+            </div>
+            <button onclick="closeModalUser()" style="border:none;background:none;cursor:pointer;font-size:22px;color:#94a3b8;padding:4px 8px;border-radius:6px;transition:background .2s;" title="Tutup">✕</button>
+        </div>
+
+        <!-- Modal Body / Form -->
+        <form id="formUserMain" onsubmit="submitUserForm(event)" autocomplete="off">
+            <input type="hidden" id="formUserAction" value="create">
+            <input type="hidden" id="formUserId" value="">
+            <input type="hidden" id="formOriginalUsername" value="">
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <!-- Nama Lengkap -->
+                <div class="form-group" style="grid-column:1 / -1;margin-bottom:12px;">
+                    <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:6px;">
+                        Nama Lengkap <span style="color:#ef4444;">*</span>
+                    </label>
+                    <input type="text" id="userFormNama" class="form-control" placeholder="Contoh: Drs. H. Ahmad Dahlan, M.Pd." required style="width:100%;padding:9px 13px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.875rem;">
+                </div>
+
+                <!-- Username -->
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:6px;">
+                        Username <span style="color:#ef4444;">*</span>
+                    </label>
+                    <input type="text" id="userFormUsername" class="form-control" placeholder="Contoh: ahmad.dahlan" required style="width:100%;padding:9px 13px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.875rem;">
+                </div>
+
+                <!-- Password -->
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:6px;">
+                        Kata Sandi (Password) <span id="userFormPasswordRequired" style="color:#ef4444;">*</span>
+                    </label>
+                    <input type="password" id="userFormPassword" class="form-control" placeholder="Minimal 6 karakter" style="width:100%;padding:9px 13px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.875rem;">
+                    <span id="userFormPasswordHint" style="font-size:0.75rem;color:#64748b;display:none;margin-top:3px;">Kosongkan jika tidak ingin mengubah kata sandi lama.</span>
+                </div>
+
+                <!-- Role / Peran -->
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:6px;">
+                        Peran (Role) <span style="color:#ef4444;">*</span>
+                    </label>
+                    <select id="userFormRole" class="form-control" onchange="onUserRoleChanged()" style="width:100%;padding:9px 13px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.875rem;background:#ffffff;">
+                        <option value="operator">Operator Tata Usaha (Draft & Kirim Surat)</option>
+                        <option value="pejabat">Pejabat Penandatangan (Pengesahan TTE)</option>
+                        <option value="admin">Administrator Sistem (Akses Penuh)</option>
+                    </select>
+                </div>
+
+                <!-- Status Akun -->
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:6px;">
+                        Status Akun <span style="color:#ef4444;">*</span>
+                    </label>
+                    <select id="userFormStatus" class="form-control" style="width:100%;padding:9px 13px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.875rem;background:#ffffff;">
+                        <option value="AKTIF">🟢 AKTIF (Dapat Login)</option>
+                        <option value="NON-AKTIF">⚪ NON-AKTIF (Diblokir)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 KOLOM KHUSUS PEJABAT PENANDATANGAN (KONDISIONAL)
+                 ============================================================ -->
+            <div id="sectionPejabatDetails" class="pejabat-collapsible-box hidden">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                    <span style="font-size:1.2rem;">✒️</span>
+                    <div>
+                        <strong style="color:#15803d;font-size:0.9rem;">Profil & Otoritas Tanda Tangan Elektronik (TTE)</strong>
+                        <p style="font-size:0.78rem;color:#166534;margin:2px 0 0;">
+                            Data ini akan terhubung langsung ke lembar kerja pejabat untuk keperluan tanda tangan dokumen resmi.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Pilihan Mode Pejabat (Baru atau Eksisting) -->
+                <div style="margin-bottom:14px;background:#ffffff;padding:10px 14px;border-radius:8px;border:1px solid #dcfce7;">
+                    <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;color:#1e293b;cursor:pointer;margin-bottom:6px;">
+                        <input type="radio" name="pejabatMode" value="new" checked onchange="onPejabatModeChanged()">
+                        <strong>Buat Data Pejabat Baru</strong> (Masukkan NIP, Jabatan & PIN baru)
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;color:#1e293b;cursor:pointer;">
+                        <input type="radio" name="pejabatMode" value="existing" onchange="onPejabatModeChanged()">
+                        <strong>Tautkan ke Data Pejabat yang Sudah Ada</strong>
+                    </label>
+                </div>
+
+                <!-- Opsi Tautkan Pejabat Eksisting -->
+                <div id="boxPejabatExisting" style="display:none;margin-bottom:12px;">
+                    <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:6px;">
+                        Pilih Profil Pejabat yang Tersedia:
+                    </label>
+                    <select id="selectExistingPejabat" class="form-control" onchange="onSelectExistingPejabatChange()" style="width:100%;padding:9px 13px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.875rem;background:#ffffff;">
+                        <option value="">-- Pilih Pejabat --</option>
+                    </select>
+                </div>
+
+                <!-- Kolom Input Pejabat Baru / Detail -->
+                <div id="boxPejabatInputs" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group" style="grid-column:1 / -1;">
+                        <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:4px;">
+                            Jabatan Resmi <span style="color:#ef4444;">*</span>
+                        </label>
+                        <input type="text" id="pejabatFormJabatan" class="form-control" placeholder="Contoh: Ketua BAN PDM Prov. NTT" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.85rem;">
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:4px;">
+                            Nomor Induk Pegawai (NIP)
+                        </label>
+                        <input type="text" id="pejabatFormNip" class="form-control" placeholder="Contoh: 19750812 200003 1 002" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.85rem;">
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:4px;">
+                            PIN TTE (6 Digit Angka) <span style="color:#ef4444;">*</span>
+                        </label>
+                        <input type="password" id="pejabatFormPin" class="form-control" placeholder="Contoh: 123456" maxlength="6" pattern="[0-9]{4,6}" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.85rem;letter-spacing:2px;">
+                        <span style="font-size:0.73rem;color:#15803d;display:block;margin-top:2px;">PIN digunakan untuk mengesahkan surat elektronik.</span>
+                    </div>
+
+                    <div class="form-group" style="grid-column:1 / -1;">
+                        <label style="display:block;font-size:0.825rem;font-weight:700;color:#334155;margin-bottom:4px;">
+                            Email Resmi Instansi (Opsional)
+                        </label>
+                        <input type="email" id="pejabatFormEmail" class="form-control" placeholder="Contoh: pejabat@ban-pdm.id" style="width:100%;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.85rem;">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;border-top:1px solid #f1f5f9;padding-top:16px;">
+                <button type="button" class="btn btn-secondary" onclick="closeModalUser()">
+                    Batal
+                </button>
+                <button type="submit" class="btn btn-primary" id="btnSaveUser" style="background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);box-shadow:0 3px 10px rgba(2,132,199,0.3);min-width:130px;">
+                    💾 Simpan Pengguna
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
