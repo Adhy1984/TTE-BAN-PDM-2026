@@ -781,6 +781,40 @@
     // SECTION 5: DASHBOARD
     // ====================================================================
 
+    /**
+     * Animasi angka berhitung cepat (Count-Up Counter) pada kartu KPI Dashboard
+     */
+    function animateCountUp(elementId, targetValue, durationMs) {
+        var el = document.getElementById(elementId);
+        if (!el) return;
+        var target = parseInt(targetValue, 10);
+        if (isNaN(target)) {
+            el.textContent = targetValue;
+            return;
+        }
+        if (target === 0) {
+            el.textContent = '0';
+            return;
+        }
+        var start = 0;
+        var startTime = null;
+        var duration = durationMs || 650;
+
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var progress = Math.min((timestamp - startTime) / duration, 1);
+            var easeOut = 1 - Math.pow(1 - progress, 3);
+            var current = Math.floor(easeOut * (target - start) + start);
+            el.textContent = current;
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                el.textContent = target;
+            }
+        }
+        window.requestAnimationFrame(step);
+    }
+
     function loadDashboard() {
         var today = new Date();
         var hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -801,11 +835,11 @@
             .withSuccessHandler(function (res) {
                 if (!res || !res.success || !res.stats) return;
                 var s = res.stats;
-                document.getElementById('statTotal').textContent = s.total;
+                animateCountUp('statTotal', s.total, 650);
                 var smEl = document.getElementById('statSuratMasuk');
-                if (smEl) smEl.textContent = s.totalSuratMasuk || 0;
-                document.getElementById('statMenunggu').textContent = s.menunggu;
-                document.getElementById('statTtd').textContent = s.ditandatangani;
+                if (smEl) animateCountUp('statSuratMasuk', s.totalSuratMasuk || 0, 650);
+                animateCountUp('statMenunggu', s.menunggu, 650);
+                animateCountUp('statTtd', s.ditandatangani, 650);
                 var tolakEl = document.getElementById('statTolak');
                 if (tolakEl) tolakEl.textContent = s.ditolak;
 

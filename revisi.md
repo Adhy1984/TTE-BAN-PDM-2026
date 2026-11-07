@@ -1,65 +1,66 @@
 # CATATAN REVISI (revisi.md)
 ================================================================================
-REVISI: PERATAAN TEKS PARAGRAF AWAL (FLUSH LEFT) & PENAMBAHAN JARAK ANTARA TEMPAT DAN DENGAN HORMAT
-KODE REVISI: REV-202611-057
+REVISI: ANTI-TRUNCATION TEKS LENGKAP 4 KARTU KPI & EFEK ANIMASI PREMIUM (GLASSMORPHISM, SHIMMER & COUNT-UP)
+KODE REVISI: REV-202611-058
 STATUS: SELESAI DITERAPKAN (COMPLETED)
 TANGGAL PENYELESAIAN: 07 November 2026
-ENGINE: ZettBOT v6.6 (by Zettbos)
+ENGINE: ZettBOT v6.7 (by Zettbos)
 ================================================================================
 
 ## 1. Latar Belakang & Keluhan Pengguna (User Request)
-Pengguna mengajukan permintaan perbaikan tata letak dokumen surat resmi:
-> *"1. Saya ingin kalimat pertama dari awal itu sama rata tidak menjorok ke dalam seperti gambar diatas. agar kelihatan rapih dan enak dilihat mata"*
-> *"2. Perlu ada jarak lagi antara kata tempat dan dengan hormat."*
+Pengguna mengajukan permintaan revisi tampilan 4 kartu statistik KPI Dashboard:
+> *"1. Saya ingin tulisan di dalam 4 kartu ini jangan ada yang hilang. Tolong diperbaiki"*
+> *"2. Tambahkan animasi dan efek yang keren di 4 kartu ini agar terlihat keren dan luar biasa"*
 > *Note: JANGAN RUBAH FITUR DAN DESAIN SELAIN YANG SAYA MINTA, TERAPKAN SAJA APA YANG SAYA MINTA, KECUALI MEMANG HARUS DIUBAH KARENA KEBUTUHAN REVISI*
 
 ---
 
 ## 2. Analisis Masalah & Akar Masalah (Root Cause Analysis)
 
-### Masalah 1: Mengapa Kalimat Pertama / Paragraf Awal Menjorok ke Dalam?
-- **Akar Masalah:**
-  Pada lembar format cetak dan pratinjau surat dinas (`TemplateSurat.html`), aturan CSS untuk paragraf isi surat dikunci dengan indentasi otomatis:
+### Masalah 1: Mengapa Teks pada Kartu Terpotong / Hilang Menjadi Titik-Titik (`...`)?
+- **Akar Masalah CSS:**
+  Pada berkas `Styles.html` baris 2005–2029, kelas `.kpi-label` dan `.kpi-sub` dikunci dengan properti:
   ```css
-  .isi-container p {
-      margin: 0 0 4px 0;
-      text-indent: 26px; /* <-- Ini penyebab baris pertama menjorok ke dalam */
-      font-size: 11pt;
-  }
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* <-- Ini penyebab munculnya titik-titik pemotong '...' */
   ```
-  Akibatnya, kalimat pembuka seperti `"Dengan Hormat,"` dan kalimat pertama isi surat (`"Melalui surat ini..."`) otomatis terdorong ke dalam sejauh 26 piksel, sedangkan baris berikutnya kembali rata kiri. Hal ini membuat teks terlihat tidak seragam dengan batas kiri dokumen dinas modern.
+- **Dampak Visual pada Tangkapan Layar Pengguna:**
+  1. Kartu 3: `"MENUNGGU TTE PEJABAT"` terpotong menjadi `"MENUNGGU TTE PEJ..."`
+  2. Kartu 4: `"SUDAH DITANDATANGANI"` terpotong menjadi `"SUDAH DITANDATAN..."`
+  3. Sub-label Kartu 4: `"Dokumen Sah Ber-QR Code"` terpotong menjadi `"Dokumen Sah Ber-QR ..."`
 
-### Masalah 2: Mengapa Jarak Antara Kata "Tempat" dan "Dengan Hormat" Terlalu Mepet?
-- **Akar Masalah:**
-  Blok daftar penerima surat (`.kepada-box`) memiliki `margin-bottom: 20px`, sementara wadah isi surat (`.isi-container`) memiliki `margin-top: 14px`.
-  Dalam mekanisme rendering HTML-to-PDF (*CSS Margin Collapsing*), kedua margin tersebut bertumpuk (collapse) menjadi hanya 20px (hanya sekitar 1 spasi tipis). Akibatnya, kata `"Tempat"` pada penutup alamat penerima berada terlalu dekat dengan salam pembuka `"Dengan Hormat,"`.
+### Masalah 2: Efek dan Animasi Kartu yang Masih Statis
+- Kartu sebelumnya hanya memiliki hover sederhana `transform: translateY(-3px)` tanpa kedalaman 3D, tanpa kilau cahaya, dan angka statistik muncul seketika secara kaku tanpa animasi hitung naik (*count-up*).
 
 ---
 
 ## 3. Implementasi & Solusi Presisi yang Telah Diterapkan
 
-### A. Perataan Paragraf Awal Sama Rata (Flush Left / text-indent: 0)
-- Mengubah aturan CSS `.isi-container p` pada `TemplateSurat.html`:
-  ```css
-  .isi-container p {
-      margin: 0 0 6px 0;
-      text-indent: 0; /* Sama rata di batas margin kiri, tidak menjorok ke dalam */
-      font-size: 11pt;
-  }
-  ```
-- Hasil Implementasi:
-  1. Salam pembuka `"Dengan Hormat,"` berdiri tegak lurus di garis batas kiri standar dinas.
-  2. Kalimat pertama `"Melalui surat ini..."` dan baris-baris berikutnya sejajar rata kiri (*flush left justified*), terlihat rapi, bersih, simetris, dan enak dilihat mata.
-  3. Fitur Word-style ruler tetap berfungsi normal untuk mengatur indentasi kustom jika dibutuhkan pada paragraf tertentu.
+### A. Solusi Masalah 1: Jaminan 100% Teks Utuh Tanpa Terpotong (Anti-Truncation)
+1. **Mengeliminasi `text-overflow: ellipsis` dan `white-space: nowrap`:**
+   Pada `Styles.html`, `.kpi-label` dan `.kpi-sub` diubah menjadi `white-space: normal; line-height: 1.25; overflow: visible; text-overflow: clip;`.
+2. **Optimalisasi Tipografi Responsif & Spasi Konten:**
+   - `.kpi-label`: Mengatur `font-size: 0.69rem; letter-spacing: 0.025em;` sehingga kata-kata panjang seperti `"MENUNGGU TTE PEJABAT"` dan `"SUDAH DITANDATANGANI"` membungkus rapi ke baris kedua jika diperlukan tanpa terpotong hurufnya sama sekali.
+   - `.kpi-sub`: Memastikan teks deskripsi seperti `"Dokumen Sah Ber-QR Code"` tampil utuh 100% tanpa ada kata yang hilang.
+   - `.kpi-content`: Menetapkan `flex: 1; min-width: 0;` dan `margin-right: 8px;` agar teks memiliki ruang yang lapang sebelum ikon kartu.
 
-### B. Penambahan Jarak Antara Kata "Tempat" dan "Dengan Hormat,"
-- Memberikan ruang pemisah vertikal yang lega dan proporsional standar tata naskah dinas:
-  1. Pada `.kepada-box` (wadah "Kepada Yth. ... Tempat"):
-     Diubah menjadi `margin: 20px 0 28px 0;` (jarak bawah 28px).
-  2. Pada `.isi-container` (wadah "Dengan Hormat, ..."):
-     Diubah menjadi `margin-top: 24px; margin-bottom: 16px; padding-top: 4px;` untuk mencegah *margin collapsing*.
-- Hasil Implementasi:
-  Jarak antara kata `"Tempat"` dan `"Dengan Hormat,"` kini memiliki jeda vertikal yang nyaman (~32px, setara 2 jeda baris kosong dinas), memberikan pemisahan visual yang jelas dan elegan.
+### B. Solusi Masalah 2: Peningkatan Efek & Animasi Kelas Eksekutif (Ultra-Modern Effects)
+1. **Efek Shimmer Sweep Light Ray (Kilatan Cahaya Melintas):**
+   - Menambahkan pseudo-element `::after` dengan gradien kilauan kaca transparan diagonal `linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.40) 50%, transparent 100%)`.
+   - Saat kursor mouse diarahkan ke kartu (*hover*), seberkas kilau cahaya lembut meluncur melintasi kartu secara mulus (`kpiShimmerSweep`).
+2. **Efek 3D Floating Lift & Colored Neon Aura:**
+   - Kartu melayang naik secara halus: `transform: translateY(-6px) scale(1.015);` dengan kurva transisi *cubic-bezier spring* ala Apple.
+   - Bayangan kartu memancarkan **pendaran cahaya warna-warni (*colored aura drop-shadow*)** yang menyala sesuai warna tema masing-masing kartu:
+     - Kartu Biru: Pendaran Cyan/Sky Blue (`rgba(2, 132, 199, 0.52)`)
+     - Kartu Oranye: Pendaran Amber Gold (`rgba(217, 119, 6, 0.52)`)
+     - Kartu Ungu: Pendaran Royal Violet (`rgba(124, 58, 237, 0.52)`)
+     - Kartu Hijau: Pendaran Fresh Emerald (`rgba(5, 150, 105, 0.52)`)
+3. **Efek Interaktif Ikon Melayang & Micro-Rotation (`.kpi-icon-pill`):**
+   - Kotak ikon kaca akrilik (*frosted glass*) dipercantik dengan `backdrop-filter: blur(8px)` dan kilau tepian kaca.
+   - Saat kartu di-hover, ikon membesar dan berputar manis (`transform: scale(1.18) rotate(8deg);`) memberikan sensasi responsif yang sangat hidup.
+4. **Efek Animasi Angka Berhitung (*Count-Up Counter Animation*):**
+   - Di `Scripts.html`, saat Dashboard dimuat atau data direfresh, fungsi `animateCountUp()` membuat angka statistik berhitung cepat dan mulus dari `0` menuju angka tujuan (`6`, `1`, `1`, `5`) dalam waktu 650ms dengan efek deselerasi halus (*ease-out cubic*).
 
 ---
 
@@ -67,9 +68,10 @@ Pengguna mengajukan permintaan perbaikan tata letak dokumen surat resmi:
 
 | No | Berkas | Lokasi | Deskripsi Perubahan | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 1 | `TemplateSurat.html` | Baris 140–175 | 1. Mengubah `text-indent: 26px;` menjadi `text-indent: 0;` pada `.isi-container p`.<br>2. Menambah spasi bawah `.kepada-box` (28px) dan spasi atas `.isi-container` (24px + 4px padding). | Selesai |
-| 2 | `dist/index.html` | Seluruh Berkas | Sinkronisasi bundel Vercel via `build.ps1`. | Selesai |
-| 3 | `prd.md` | Master Context | Upgrade versi engine ke ZettBOT v6.6 dan mencatat riwayat v6.6. | Selesai |
+| 1 | `Styles.html` | Baris 1968–2045 | 1. Menghapus ellipsis & mengizinkan wrapping alami (teks 100% utuh).<br>2. Menambahkan efek Shimmer Sweep Light Ray.<br>3. Menambahkan 3D Floating Lift & Colored Aura Glow.<br>4. Menambahkan Micro-Rotation pada Ikon Kaca. | Selesai |
+| 2 | `Scripts.html` | Baris 784–845 | Menambahkan fungsi `animateCountUp()` untuk angka statistik kartu saat Dashboard dimuat. | Selesai |
+| 3 | `dist/index.html` | Seluruh Berkas | Sinkronisasi bundel Vercel via `build.ps1`. | Selesai |
+| 4 | `prd.md` | Master Context | Upgrade versi engine ke ZettBOT v6.7 dan mencatat riwayat v6.7. | Selesai |
 
 ---
 
@@ -77,4 +79,4 @@ Pengguna mengajukan permintaan perbaikan tata letak dokumen surat resmi:
 - `verify.ps1`: Tag HTML seimbang (Open:Close div = 58:58 di Index, 70:70 di Dashboard).
 - `check_gs_syntax.ps1`: Seluruh berkas GS terverifikasi valid.
 - `build.ps1`: Bundel mandiri `dist/index.html` berhasil dibuat ulang 100% tanpa error.
-- Seluruh fitur esensial (TTE Surat Keluar ber-PIN 6-digit, disposisi surat masuk, auto-logout 10 menit, Word-style ruler, dan Hak Cipta © 2026 Adhy Lawa) 100% aman dan terjaga utuh.
+- Seluruh fitur esensial (TTE Surat Keluar ber-PIN 6-digit, disposisi surat masuk, auto-logout 10 menit, Word-style ruler, template surat rata kiri, dan Hak Cipta © 2026 Adhy Lawa) 100% aman dan terjaga utuh.

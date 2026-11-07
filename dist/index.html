@@ -1999,74 +1999,164 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.14);
         position: relative;
         overflow: hidden;
         min-width: 0;
-        transition: transform 0.25s, box-shadow 0.25s;
+        cursor: pointer;
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    border-color 0.35s ease;
     }
-    .kpi-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.2);
+
+    /* Ambient Corner Glow Orb */
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: -35px;
+        right: -35px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 70%);
+        pointer-events: none;
+        z-index: 1;
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
+    .kpi-card:hover::before {
+        transform: scale(1.45);
+    }
+
+    /* Shimmer Light Ray Animation */
+    .kpi-card::after {
+        content: '';
+        position: absolute;
+        top: -60%;
+        left: -80%;
+        width: 60%;
+        height: 220%;
+        background: linear-gradient(
+            115deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.12) 30%,
+            rgba(255, 255, 255, 0.40) 50%,
+            rgba(255, 255, 255, 0.12) 70%,
+            rgba(255, 255, 255, 0) 100%
+        );
+        transform: rotate(25deg);
+        pointer-events: none;
+        z-index: 3;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+    .kpi-card:hover::after {
+        opacity: 1;
+        animation: kpiShimmerSweep 0.95s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    @keyframes kpiShimmerSweep {
+        0% { left: -80%; }
+        100% { left: 150%; }
+    }
+
     .kpi-content {
+        flex: 1;
         min-width: 0;
-        overflow: hidden;
+        margin-right: 8px;
+        z-index: 2;
     }
+
     .kpi-blue {
         background: linear-gradient(135deg, #0284c7 0%, #0369a1 60%, #075985 100%);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.25);
     }
+    .kpi-blue:hover {
+        transform: translateY(-6px) scale(1.015);
+        box-shadow: 0 16px 36px -6px rgba(2, 132, 199, 0.52), 0 0 0 1.5px rgba(255, 255, 255, 0.5);
+    }
+
     .kpi-amber {
         background: linear-gradient(135deg, #d97706 0%, #b45309 60%, #92400e 100%);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.25);
     }
+    .kpi-amber:hover {
+        transform: translateY(-6px) scale(1.015);
+        box-shadow: 0 16px 36px -6px rgba(217, 119, 6, 0.52), 0 0 0 1.5px rgba(255, 255, 255, 0.5);
+    }
+
     .kpi-purple {
         background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 60%, #5b21b6 100%);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.25);
     }
+    .kpi-purple:hover {
+        transform: translateY(-6px) scale(1.015);
+        box-shadow: 0 16px 36px -6px rgba(124, 58, 237, 0.52), 0 0 0 1.5px rgba(255, 255, 255, 0.5);
+    }
+
     .kpi-emerald {
         background: linear-gradient(135deg, #059669 0%, #047857 60%, #065f46 100%);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.25);
     }
+    .kpi-emerald:hover {
+        transform: translateY(-6px) scale(1.015);
+        box-shadow: 0 16px 36px -6px rgba(5, 150, 105, 0.52), 0 0 0 1.5px rgba(255, 255, 255, 0.5);
+    }
+
     .kpi-label {
-        font-size: 0.70rem;
+        font-size: 0.69rem;
         font-weight: 700;
-        letter-spacing: 0.05em;
-        opacity: 0.92;
-        margin-bottom: 6px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        letter-spacing: 0.025em;
+        line-height: 1.25;
+        opacity: 0.94;
+        margin-bottom: 5px;
+        white-space: normal;
+        word-break: normal;
+        overflow: visible;
+        text-overflow: clip;
+        text-transform: uppercase;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
     .kpi-value {
-        font-size: 1.95rem;
+        font-size: 2.05rem;
         font-weight: 800;
-        line-height: 1;
+        line-height: 1.05;
         letter-spacing: -0.02em;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
     }
     .kpi-sub {
-        font-size: 0.74rem;
-        opacity: 0.88;
-        margin-top: 6px;
+        font-size: 0.73rem;
+        opacity: 0.90;
+        margin-top: 5px;
         font-weight: 500;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        line-height: 1.25;
+        white-space: normal;
+        word-break: normal;
+        overflow: visible;
+        text-overflow: clip;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
     }
     .kpi-icon-pill {
         width: 48px;
         height: 48px;
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.20);
         backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.25);
+        font-size: 23px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.35);
         flex-shrink: 0;
+        z-index: 2;
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                    background 0.3s ease, 
+                    box-shadow 0.3s ease;
+    }
+    .kpi-card:hover .kpi-icon-pill {
+        transform: scale(1.18) rotate(8deg);
+        background: rgba(255, 255, 255, 0.34);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18), inset 0 1px 2px rgba(255, 255, 255, 0.6);
     }
 
     /* Charts Grid */
@@ -6871,6 +6961,40 @@
     // SECTION 5: DASHBOARD
     // ====================================================================
 
+    /**
+     * Animasi angka berhitung cepat (Count-Up Counter) pada kartu KPI Dashboard
+     */
+    function animateCountUp(elementId, targetValue, durationMs) {
+        var el = document.getElementById(elementId);
+        if (!el) return;
+        var target = parseInt(targetValue, 10);
+        if (isNaN(target)) {
+            el.textContent = targetValue;
+            return;
+        }
+        if (target === 0) {
+            el.textContent = '0';
+            return;
+        }
+        var start = 0;
+        var startTime = null;
+        var duration = durationMs || 650;
+
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var progress = Math.min((timestamp - startTime) / duration, 1);
+            var easeOut = 1 - Math.pow(1 - progress, 3);
+            var current = Math.floor(easeOut * (target - start) + start);
+            el.textContent = current;
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                el.textContent = target;
+            }
+        }
+        window.requestAnimationFrame(step);
+    }
+
     function loadDashboard() {
         var today = new Date();
         var hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -6891,11 +7015,11 @@
             .withSuccessHandler(function (res) {
                 if (!res || !res.success || !res.stats) return;
                 var s = res.stats;
-                document.getElementById('statTotal').textContent = s.total;
+                animateCountUp('statTotal', s.total, 650);
                 var smEl = document.getElementById('statSuratMasuk');
-                if (smEl) smEl.textContent = s.totalSuratMasuk || 0;
-                document.getElementById('statMenunggu').textContent = s.menunggu;
-                document.getElementById('statTtd').textContent = s.ditandatangani;
+                if (smEl) animateCountUp('statSuratMasuk', s.totalSuratMasuk || 0, 650);
+                animateCountUp('statMenunggu', s.menunggu, 650);
+                animateCountUp('statTtd', s.ditandatangani, 650);
                 var tolakEl = document.getElementById('statTolak');
                 if (tolakEl) tolakEl.textContent = s.ditolak;
 
