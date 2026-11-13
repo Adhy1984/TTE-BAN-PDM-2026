@@ -52,5 +52,5 @@ const CONFIG = {
   // Kontak Resmi & Helpdesk BAN PDM NTT (Lupa Username / Password & Pemulihan Akun)
   ADMIN_EMAIL: "ntt@ban-pdm.id",
   ADMIN_WA: "6281234567890",
-  GOOGLE_CLIENT_ID: ""
+  GOOGLE_CLIENT_ID: "937444204077-ure9hl2ao0q9sinkpq2cqcvi4amgtg6i.apps.googleusercontent.com"
 };

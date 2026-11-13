@@ -544,60 +544,13 @@
     }
 
     /**
-     * Memproses alur masuk dengan Akun Google
+     * Memproses verifikasi email Google ke backend e-TTE
      */
-    function doGoogleLogin() {
+    function verifyGoogleEmailWithBackend(googleEmail, googleName, idToken) {
         var errEl = document.getElementById('loginError');
         if (errEl) errEl.style.display = 'none';
+        setLoading('btnGoogleLogin', true, 'Memverifikasi Akun...');
 
-        var clientId = (window.GOOGLE_CLIENT_ID || localStorage.getItem('GOOGLE_CLIENT_ID') || '').trim();
-
-        // 1. Jika Google Client ID tersedia dan Google Identity Services (GIS) aktif
-        if (clientId && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-            try {
-                google.accounts.id.initialize({
-                    client_id: clientId,
-                    callback: handleGoogleCredentialResponse,
-                    auto_select: false,
-                    cancel_on_tap_outside: true
-                });
-                google.accounts.id.prompt(function (notification) {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        promptGoogleEmailDirect();
-                    }
-                });
-                return;
-            } catch (gisErr) {
-                console.warn('GIS initialize error:', gisErr);
-            }
-        }
-
-        // 2. Direct Google Email Login (Tanpa konfigurasi Cloud Console yang rumit)
-        promptGoogleEmailDirect();
-    }
-
-    function promptGoogleEmailDirect() {
-        var errEl = document.getElementById('loginError');
-        var entered = prompt(
-            "🔐 MASUK DENGAN AKUN GOOGLE\n\n" +
-            "Silakan masukkan alamat Email Google Anda yang terdaftar di sistem e-TTE BAN PDM NTT:\n" +
-            "(Contoh: user@ban-pdm.id atau email@gmail.com)\n\n" +
-            "Catatan: Hanya email yang telah terdaftar di database yang dapat masuk.",
-            ""
-        );
-
-        if (!entered || entered.trim() === '') return;
-        var cleanEmail = entered.trim();
-
-        if (cleanEmail.indexOf('@') === -1) {
-            if (errEl) {
-                errEl.style.display = 'block';
-                errEl.textContent = 'Format email Google tidak valid!';
-            }
-            return;
-        }
-
-        setLoading('btnGoogleLogin', true, 'Memverifikasi...');
         google.script.run
             .withSuccessHandler(function (res) {
                 setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
@@ -606,7 +559,7 @@
                 } else {
                     if (errEl) {
                         errEl.style.display = 'block';
-                        errEl.textContent = (res && res.message) || 'Akun Google tidak terdaftar di sistem e-TTE.';
+                        errEl.textContent = (res && res.message) || ('Akun Google (' + googleEmail + ') belum terdaftar di sistem e-TTE.');
                     }
                 }
             })
@@ -617,7 +570,113 @@
                     errEl.textContent = 'Gagal terhubung ke server: ' + (err && err.message ? err.message : err);
                 }
             })
-            .apiLoginWithGoogle(cleanEmail, '');
+            .apiLoginWithGoogle(googleEmail, googleName || '', idToken || '');
+    }
+
+    /**
+     * Memproses alur masuk resmi dengan Akun Google (Google OAuth 2.0 Account Chooser Popup)
+     */
+    function doGoogleLogin() {
+        var errEl = document.getElementById('loginError');
+        if (errEl) errEl.style.display = 'none';
+
+        var clientId = (window.GOOGLE_CLIENT_ID || localStorage.getItem('GOOGLE_CLIENT_ID') || '937444204077-ure9hl2ao0q9sinkpq2cqcvi4amgtg6i.apps.googleusercontent.com').trim();
+
+        // Pastikan pustaka Google Identity Services (GIS) siap
+        if (typeof google === 'undefined' || !google.accounts) {
+            setLoading('btnGoogleLogin', true, 'Memuat Google...');
+            var script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.onload = function () {
+                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                triggerGoogleOAuthPopup(clientId);
+            };
+            script.onerror = function () {
+                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                if (errEl) {
+                    errEl.style.display = 'block';
+                    errEl.textContent = 'Gagal memuat pustaka Google Sign-In. Periksa koneksi internet Anda.';
+                }
+            };
+            document.head.appendChild(script);
+            return;
+        }
+
+        triggerGoogleOAuthPopup(clientId);
+    }
+
+    function triggerGoogleOAuthPopup(clientId) {
+        var errEl = document.getElementById('loginError');
+
+        // Gunakan Google OAuth 2.0 Token Client resmi untuk memunculkan Popup Account Chooser
+        if (google.accounts && google.accounts.oauth2) {
+            try {
+                var tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: clientId,
+                    scope: 'email profile openid',
+                    callback: function (tokenResponse) {
+                        if (tokenResponse && tokenResponse.access_token) {
+                            setLoading('btnGoogleLogin', true, 'Mengambil Profil...');
+                            fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                                headers: { 'Authorization': 'Bearer ' + tokenResponse.access_token }
+                            })
+                            .then(function (response) { return response.json(); })
+                            .then(function (userInfo) {
+                                if (userInfo && userInfo.email) {
+                                    verifyGoogleEmailWithBackend(userInfo.email, userInfo.name || '');
+                                } else {
+                                    setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                                    if (errEl) {
+                                        errEl.style.display = 'block';
+                                        errEl.textContent = 'Gagal membaca alamat email dari akun Google Anda.';
+                                    }
+                                }
+                            })
+                            .catch(function (fetchErr) {
+                                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                                if (errEl) {
+                                    errEl.style.display = 'block';
+                                    errEl.textContent = 'Gagal mengambil profil Google: ' + fetchErr.message;
+                                }
+                            });
+                        } else if (tokenResponse && tokenResponse.error) {
+                            setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                            console.warn('Google Sign-In dibatalkan atau ditutup:', tokenResponse.error);
+                        }
+                    },
+                    error_callback: function (nonOAuthError) {
+                        setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                        console.warn('Google OAuth Error:', nonOAuthError);
+                    }
+                });
+
+                tokenClient.requestAccessToken({ prompt: 'select_account' });
+                return;
+            } catch (oauthErr) {
+                console.warn('initTokenClient error, fallback to id.initialize:', oauthErr);
+            }
+        }
+
+        // Fallback GIS One Tap / Popup Kredensial
+        if (google.accounts && google.accounts.id) {
+            try {
+                google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: handleGoogleCredentialResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+                google.accounts.id.prompt();
+            } catch (gisErr) {
+                console.warn('GIS id.initialize error:', gisErr);
+                if (errEl) {
+                    errEl.style.display = 'block';
+                    errEl.textContent = 'Gagal menginisialisasi login Google: ' + (gisErr.message || gisErr);
+                }
+            }
+        }
     }
 
     function handleGoogleCredentialResponse(response) {
@@ -639,27 +698,7 @@
             return;
         }
 
-        setLoading('btnGoogleLogin', true, 'Memverifikasi...');
-        google.script.run
-            .withSuccessHandler(function (res) {
-                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
-                if (res && res.success) {
-                    handleAuthSuccess(res);
-                } else {
-                    if (errEl) {
-                        errEl.style.display = 'block';
-                        errEl.textContent = (res && res.message) || 'Akun Google Anda belum terdaftar di sistem e-TTE.';
-                    }
-                }
-            })
-            .withFailureHandler(function (err) {
-                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
-                if (errEl) {
-                    errEl.style.display = 'block';
-                    errEl.textContent = 'Gagal terhubung: ' + (err && err.message ? err.message : err);
-                }
-            })
-            .apiLoginWithGoogle(payload.email, payload.name || '', response.credential);
+        verifyGoogleEmailWithBackend(payload.email, payload.name || '', response.credential);
     }
 
     // ====================================================================
@@ -770,7 +809,7 @@
         if (!identifier) {
             if (alertBox) {
                 alertBox.style.display = 'block';
-                alertBox.textContent = 'Masukkan Username atau Email Anda terlebih dahulu.';
+                alertBox.textContent = 'Masukkan Username atau alamat Gmail Anda terlebih dahulu.';
             }
             return;
         }

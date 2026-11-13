@@ -373,7 +373,7 @@ function processLupaPassword(identifier) {
 
   if (targetEmail) {
     try {
-      const subject = "[e-TTE BAN PDM NTT] Kode OTP Verifikasi Reset Password";
+      const subject = "[e-TTE BAN PDM NTT] Kode Verifikasi Reset Password: " + otpCode;
       const bodyHtml =
         '<div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;">' +
         '<h2 style="color:#0284c7;margin-top:0;">Permintaan Reset Password</h2>' +
@@ -400,7 +400,7 @@ function processLupaPassword(identifier) {
         otpSent: true,
         username: targetUser.username,
         maskedEmail: maskEmail(targetEmail),
-        message: "Kode OTP 6-digit telah dikirimkan ke email terdaftar (" + maskEmail(targetEmail) + "). Berlaku selama 15 menit."
+        message: "Kode OTP 6-digit telah dikirimkan ke kotak masuk Gmail Anda (" + maskEmail(targetEmail) + "). Berlaku selama 15 menit."
       };
     } catch (mailErr) {
       Logger.log("processLupaPassword MailApp warning: " + mailErr.message);
