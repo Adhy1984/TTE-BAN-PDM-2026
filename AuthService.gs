@@ -215,6 +215,69 @@ function authenticateGoogleUser(googleEmail, googleName, idToken) {
 }
 
 /**
+ * ====================================================================
+ * FUNGSI OTORISASI IZIN EMAIL (MAILAPP / GMAILAPP)
+ * Jalankan fungsi ini 1x di Editor Google Apps Script:
+ * Pilih fungsi 'otorisasiIzinKirimEmail' -> Klik 'Run / Jalankan' -> Review permissions -> Allow (Izinkan).
+ * ====================================================================
+ */
+function otorisasiIzinKirimEmail() {
+  try {
+    const userEmail = Session.getEffectiveUser().getEmail() || (typeof CONFIG !== "undefined" ? CONFIG.ADMIN_EMAIL : "");
+    if (userEmail) {
+      MailApp.sendEmail({
+        to: userEmail,
+        subject: "[e-TTE BAN PDM NTT] Uji Coba Otorisasi Pengiriman Email",
+        htmlBody: "<p>Selamat! Otorisasi izin pengiriman email (MailApp & GmailApp) untuk sistem e-TTE telah aktif 100%.</p>"
+      });
+      Logger.log("Email uji coba otorisasi berhasil dikirim ke: " + userEmail);
+    }
+    return { success: true, message: "Otorisasi email berhasil diaktifkan!" };
+  } catch (err) {
+    Logger.log("Error otorisasi email: " + err.message);
+    throw err;
+  }
+}
+
+/**
+ * Helper pengiriman email defensif (MailApp dengan cadangan otomatis GmailApp)
+ */
+function sendEmailSafe(targetEmail, subject, htmlBody) {
+  if (!targetEmail) throw new Error("Alamat email penerima kosong.");
+
+  let lastError = null;
+  // 1. Coba menggunakan MailApp
+  try {
+    MailApp.sendEmail({
+      to: targetEmail,
+      subject: subject,
+      htmlBody: htmlBody
+    });
+    return true;
+  } catch (errMail) {
+    lastError = errMail;
+    Logger.log("sendEmailSafe MailApp warning: " + errMail.message);
+  }
+
+  // 2. Cadangan otomatis menggunakan GmailApp
+  try {
+    GmailApp.sendEmail(targetEmail, subject, "", {
+      htmlBody: htmlBody
+    });
+    return true;
+  } catch (errGmail) {
+    lastError = errGmail;
+    Logger.log("sendEmailSafe GmailApp warning: " + errGmail.message);
+  }
+
+  // Jika belum diotorisasi di Google Apps Script
+  throw new Error(
+    "Izin pengiriman email belum diaktifkan di Google Apps Script (" + (lastError ? lastError.message : "Izin diperlukan") + "). " +
+    "Buka editor script, pilih fungsi 'otorisasiIzinKirimEmail', lalu klik 'Run / Jalankan' dan 'Izinkan' (Review permissions -> Allow)."
+  );
+}
+
+/**
  * Helper menyamarkan email untuk privasi (contoh: ad***a@gmail.com)
  */
 function maskEmail(email) {
@@ -294,11 +357,7 @@ function processLupaUsername(keyword) {
         '<small style="color:#64748b;">Pesan otomatis dari Sistem e-TTE BAN PDM Provinsi NTT. Jangan membalas email ini.</small>' +
         '</div>';
 
-      MailApp.sendEmail({
-        to: targetEmail,
-        subject: subject,
-        htmlBody: bodyHtml
-      });
+      sendEmailSafe(targetEmail, subject, bodyHtml);
 
       return {
         success: true,
@@ -389,11 +448,7 @@ function processLupaPassword(identifier) {
         '<small style="color:#64748b;">Jika Anda tidak merasa meminta reset password, abaikan email ini. Akun Anda tetap aman terlindungi.</small>' +
         '</div>';
 
-      MailApp.sendEmail({
-        to: targetEmail,
-        subject: subject,
-        htmlBody: bodyHtml
-      });
+      sendEmailSafe(targetEmail, subject, bodyHtml);
 
       return {
         success: true,
