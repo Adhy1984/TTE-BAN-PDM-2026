@@ -27,14 +27,16 @@ function setupDatabase() {
   if (!userSheet) {
     userSheet = ss.insertSheet(CONFIG.SHEET_USERS);
     userSheet.appendRow([
-      "id_user", "username", "password", "nama", "role", "pejabat_id", "status", "created_at"
+      "id_user", "username", "password", "nama", "role", "pejabat_id", "email", "status", "created_at"
     ]);
-    userSheet.getRange(1, 1, 1, 8).setFontWeight("bold").setBackground("#1e293b").setFontColor("#ffffff");
+    userSheet.getRange(1, 1, 1, 9).setFontWeight("bold").setBackground("#1e293b").setFontColor("#ffffff");
     
     // Seed data user default
-    userSheet.appendRow(["USR-001", "admin", "admin123", "Administrator Sistem", "admin", "", "AKTIF", new Date().toISOString()]);
-    userSheet.appendRow(["USR-002", "operator", "operator123", "Staf Tata Usaha", "operator", "", "AKTIF", new Date().toISOString()]);
-    userSheet.appendRow(["USR-003", "kepala", "pejabat123", "Dr. H. Ahmad Fauzi, M.Pd.", "pejabat", "PJB-001", "AKTIF", new Date().toISOString()]);
+    userSheet.appendRow(["USR-001", "admin", "admin123", "Administrator Sistem", "admin", "", "ntt@ban-pdm.id", "AKTIF", new Date().toISOString()]);
+    userSheet.appendRow(["USR-002", "operator", "operator123", "Staf Tata Usaha", "operator", "", "tu@ban-pdm.id", "AKTIF", new Date().toISOString()]);
+    userSheet.appendRow(["USR-003", "kepala", "pejabat123", "Dr. H. Ahmad Fauzi, M.Pd.", "pejabat", "PJB-001", "ahmad.fauzi@instansi.go.id", "AKTIF", new Date().toISOString()]);
+  } else {
+    ensureColumnExists(userSheet, "email", "status");
   }
   
   // 2. Inisialisasi Sheet 'pejabat'
@@ -142,6 +144,21 @@ function ensureSuratMasukSheetExists(ss) {
   }
   SpreadsheetApp.flush();
   return sheet;
+}
+
+/**
+ * Memastikan kolom 'email' tersedia pada sheet users
+ */
+function ensureUsersEmailColumnExists(ss) {
+  try {
+    if (!ss) ss = getDb();
+    const sheet = ss.getSheetByName(CONFIG.SHEET_USERS);
+    if (sheet) {
+      ensureColumnExists(sheet, "email", "status");
+    }
+  } catch (err) {
+    Logger.log("ensureUsersEmailColumnExists error: " + err.message);
+  }
 }
 
 /**

@@ -153,3 +153,314 @@ function verifyPejabatPin(pejabatId, inputPin) {
     pejabat: pejabat
   };
 }
+
+/**
+ * Autentikasi Pengguna via Akun Google (Google Sign-In)
+ */
+function authenticateGoogleUser(googleEmail, googleName, idToken) {
+  if (!googleEmail || typeof googleEmail !== "string") {
+    return { success: false, message: "Email Google tidak valid atau tidak terbaca." };
+  }
+
+  const cleanEmail = googleEmail.trim().toLowerCase();
+  ensureUsersEmailColumnExists();
+
+  const users = getSheetRowsAsObjects(CONFIG.SHEET_USERS);
+  let user = users.find(u => String(u.email || "").trim().toLowerCase() === cleanEmail);
+
+  // Jika belum ditemukan di sheet users, cari di sheet pejabat yang memiliki email tersebut
+  let pejabatData = null;
+  const pejabatList = getSheetRowsAsObjects(CONFIG.SHEET_PEJABAT);
+  if (!user) {
+    const matchingPejabat = pejabatList.find(p => String(p.email || "").trim().toLowerCase() === cleanEmail);
+    if (matchingPejabat) {
+      pejabatData = matchingPejabat;
+      user = users.find(u => String(u.pejabat_id || "").trim() === String(matchingPejabat.id_pejabat).trim());
+    }
+  } else if (user.role === "pejabat" && user.pejabat_id) {
+    pejabatData = pejabatList.find(p => String(p.id_pejabat).trim() === String(user.pejabat_id).trim());
+  }
+
+  if (!user) {
+    return {
+      success: false,
+      message: "Akun Google Anda (" + cleanEmail + ") belum terdaftar di sistem e-TTE. Silakan hubungi Administrator untuk mendaftarkan akun."
+    };
+  }
+
+  if (user.status !== "AKTIF") {
+    return {
+      success: false,
+      message: "Akun Anda (" + user.username + ") berstatus non-aktif. Hubungi Administrator."
+    };
+  }
+
+  const token = createSessionToken(user);
+
+  return {
+    success: true,
+    message: "Login dengan Akun Google berhasil!",
+    token: token,
+    expiresIn: ((typeof CONFIG !== "undefined" && CONFIG.SESSION_EXPIRY_MINUTES) ? CONFIG.SESSION_EXPIRY_MINUTES : 10) * 60,
+    user: {
+      id: user.id_user,
+      username: user.username,
+      nama: user.nama || googleName || "Pengguna",
+      role: user.role,
+      pejabatId: user.pejabat_id || "",
+      jabatan: pejabatData ? pejabatData.jabatan : "",
+      nip: pejabatData ? pejabatData.nip : ""
+    }
+  };
+}
+
+/**
+ * Helper menyamarkan email untuk privasi (contoh: ad***a@gmail.com)
+ */
+function maskEmail(email) {
+  if (!email || typeof email !== "string" || email.indexOf("@") === -1) return "***";
+  const parts = email.split("@");
+  const name = parts[0];
+  const domain = parts[1];
+  const visible = name.length > 2 ? name.substring(0, 2) + "***" : name.substring(0, 1) + "***";
+  return visible + "@" + domain;
+}
+
+/**
+ * Memproses permintaan bantuan "Lupa Username"
+ */
+function processLupaUsername(keyword) {
+  if (!keyword || typeof keyword !== "string") {
+    return { success: false, message: "Masukkan Email, NIP, atau Nama Lengkap Anda." };
+  }
+
+  const kw = keyword.trim().toLowerCase();
+  const kwClean = kw.replace(/[\s\.\-_]/g, "");
+
+  const users = getSheetRowsAsObjects(CONFIG.SHEET_USERS);
+  const pejabatList = getSheetRowsAsObjects(CONFIG.SHEET_PEJABAT);
+
+  let targetUser = null;
+  let targetEmail = "";
+
+  for (let i = 0; i < users.length; i++) {
+    const u = users[i];
+    const uEmail = String(u.email || "").trim().toLowerCase();
+    const uNama = String(u.nama || "").trim().toLowerCase();
+
+    let pObj = null;
+    if (u.pejabat_id) {
+      pObj = pejabatList.find(p => String(p.id_pejabat).trim() === String(u.pejabat_id).trim());
+    }
+
+    const pEmail = pObj ? String(pObj.email || "").trim().toLowerCase() : "";
+    const pNip = pObj ? String(pObj.nip || "").replace(/[\s\.\-_]/g, "").toLowerCase() : "";
+    const pNama = pObj ? String(pObj.nama_lengkap || "").trim().toLowerCase() : "";
+
+    if (
+      (uEmail && uEmail === kw) ||
+      (pEmail && pEmail === kw) ||
+      (pNip && pNip.indexOf(kwClean) !== -1) ||
+      (uNama && uNama.indexOf(kw) !== -1) ||
+      (pNama && pNama.indexOf(kw) !== -1)
+    ) {
+      targetUser = u;
+      targetEmail = uEmail || pEmail || "";
+      break;
+    }
+  }
+
+  if (!targetUser) {
+    return {
+      success: false,
+      message: "Data akun tidak ditemukan. Pastikan Email, NIP, atau Nama Lengkap sudah sesuai dengan yang terdaftar di sistem e-TTE."
+    };
+  }
+
+  if (targetEmail) {
+    try {
+      const subject = "[e-TTE BAN PDM NTT] Informasi Pengingat Username Anda";
+      const bodyHtml =
+        '<div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;">' +
+        '<h2 style="color:#0284c7;margin-top:0;">Informasi Akun Portal e-TTE</h2>' +
+        '<p>Yth. <b>' + (targetUser.nama || 'Pengguna') + '</b>,</p>' +
+        '<p>Berikut adalah rincian username akun Anda pada Portal e-TTE BAN PDM Provinsi NTT:</p>' +
+        '<div style="background:#f1f5f9;border-left:4px solid #0284c7;padding:14px 18px;border-radius:8px;margin:16px 0;">' +
+        '<p style="margin:4px 0;font-size:0.95rem;"><b>Username:</b> <span style="font-size:1.15rem;color:#0f172a;font-weight:700;">' + targetUser.username + '</span></p>' +
+        '<p style="margin:4px 0;font-size:0.88rem;color:#475569;"><b>Hak Akses (Role):</b> ' + targetUser.role + '</p>' +
+        '</div>' +
+        '<p>Silakan gunakan username di atas untuk masuk ke portal resmi e-TTE.</p>' +
+        '<hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;">' +
+        '<small style="color:#64748b;">Pesan otomatis dari Sistem e-TTE BAN PDM Provinsi NTT. Jangan membalas email ini.</small>' +
+        '</div>';
+
+      MailApp.sendEmail({
+        to: targetEmail,
+        subject: subject,
+        htmlBody: bodyHtml
+      });
+
+      return {
+        success: true,
+        emailSent: true,
+        maskedEmail: maskEmail(targetEmail),
+        message: "Informasi username telah dikirimkan ke email terdaftar Anda (" + maskEmail(targetEmail) + "). Silakan periksa kotak masuk atau folder spam."
+      };
+    } catch (mailErr) {
+      Logger.log("processLupaUsername MailApp warning: " + mailErr.message);
+      return {
+        success: true,
+        emailSent: false,
+        username: targetUser.username,
+        message: "Akun ditemukan! Username Anda adalah: '" + targetUser.username + "'. Silakan catat dan jaga kerahasiaannya."
+      };
+    }
+  } else {
+    return {
+      success: true,
+      emailSent: false,
+      username: targetUser.username,
+      message: "Akun ditemukan! Username Anda adalah: '" + targetUser.username + "'. Silakan gunakan username ini untuk masuk."
+    };
+  }
+}
+
+/**
+ * Memproses permintaan "Lupa Password" (Kirim Kode OTP Reset)
+ */
+function processLupaPassword(identifier) {
+  if (!identifier || typeof identifier !== "string") {
+    return { success: false, message: "Masukkan Username atau Email terdaftar Anda." };
+  }
+
+  const idClean = identifier.trim().toLowerCase();
+  const users = getSheetRowsAsObjects(CONFIG.SHEET_USERS);
+  const pejabatList = getSheetRowsAsObjects(CONFIG.SHEET_PEJABAT);
+
+  let targetUser = users.find(u =>
+    String(u.username || "").trim().toLowerCase() === idClean ||
+    String(u.email || "").trim().toLowerCase() === idClean
+  );
+
+  let targetEmail = targetUser ? String(targetUser.email || "").trim().toLowerCase() : "";
+
+  // Jika belum ditemukan di sheet users, cari di sheet pejabat
+  if (!targetUser) {
+    const matchingPejabat = pejabatList.find(p => String(p.email || "").trim().toLowerCase() === idClean);
+    if (matchingPejabat) {
+      targetUser = users.find(u => String(u.pejabat_id || "").trim() === String(matchingPejabat.id_pejabat).trim());
+      targetEmail = String(matchingPejabat.email || "").trim().toLowerCase();
+    }
+  } else if (!targetEmail && targetUser.pejabat_id) {
+    const pObj = pejabatList.find(p => String(p.id_pejabat).trim() === String(targetUser.pejabat_id).trim());
+    if (pObj && pObj.email) targetEmail = String(pObj.email).trim().toLowerCase();
+  }
+
+  if (!targetUser) {
+    return {
+      success: false,
+      message: "Akun dengan Username atau Email tersebut tidak ditemukan di sistem."
+    };
+  }
+
+  // Generate kode OTP 6-digit acak
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const cacheKey = "OTP_PWD_" + String(targetUser.username).trim().toLowerCase();
+
+  // Simpan OTP di CacheService selama 15 menit (900 detik)
+  const cache = CacheService.getScriptCache();
+  cache.put(cacheKey, otpCode, 900);
+
+  if (targetEmail) {
+    try {
+      const subject = "[e-TTE BAN PDM NTT] Kode OTP Verifikasi Reset Password";
+      const bodyHtml =
+        '<div style="font-family:Arial,sans-serif;max-width:540px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px;background:#ffffff;">' +
+        '<h2 style="color:#0284c7;margin-top:0;">Permintaan Reset Password</h2>' +
+        '<p>Yth. <b>' + (targetUser.nama || 'Pengguna') + '</b>,</p>' +
+        '<p>Kami menerima permintaan untuk mengatur ulang kata sandi akun e-TTE Anda (Username: <b>' + targetUser.username + '</b>).</p>' +
+        '<div style="background:#f0f9ff;border:1px solid #bae6fd;padding:20px;border-radius:10px;margin:18px 0;text-align:center;">' +
+        '<p style="margin:0 0 8px;color:#0369a1;font-size:0.9rem;font-weight:600;">Kode OTP Verifikasi Anda:</p>' +
+        '<div style="font-size:2.2rem;font-weight:900;letter-spacing:8px;color:#0284c7;">' + otpCode + '</div>' +
+        '<p style="margin:10px 0 0;font-size:0.8rem;color:#64748b;">(Berlaku 15 menit. JANGAN berikan kode ini kepada siapa pun)</p>' +
+        '</div>' +
+        '<p>Masukkan kode di atas pada formulir reset password untuk memperbarui kata sandi Anda.</p>' +
+        '<hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;">' +
+        '<small style="color:#64748b;">Jika Anda tidak merasa meminta reset password, abaikan email ini. Akun Anda tetap aman terlindungi.</small>' +
+        '</div>';
+
+      MailApp.sendEmail({
+        to: targetEmail,
+        subject: subject,
+        htmlBody: bodyHtml
+      });
+
+      return {
+        success: true,
+        otpSent: true,
+        username: targetUser.username,
+        maskedEmail: maskEmail(targetEmail),
+        message: "Kode OTP 6-digit telah dikirimkan ke email terdaftar (" + maskEmail(targetEmail) + "). Berlaku selama 15 menit."
+      };
+    } catch (mailErr) {
+      Logger.log("processLupaPassword MailApp warning: " + mailErr.message);
+      return {
+        success: true,
+        otpSent: false,
+        needAdmin: true,
+        username: targetUser.username,
+        message: "Pengiriman email otomatis terhambat (" + mailErr.message + "). Silakan hubungi Administrator via WhatsApp untuk bantuan reset kata sandi."
+      };
+    }
+  } else {
+    return {
+      success: true,
+      otpSent: false,
+      needAdmin: true,
+      username: targetUser.username,
+      message: "Akun Anda belum memiliki alamat email terdaftar untuk menerima OTP. Silakan hubungi Administrator via WhatsApp untuk reset kata sandi."
+    };
+  }
+}
+
+/**
+ * Memverifikasi kode OTP dan mereset kata sandi baru
+ */
+function processResetPasswordWithOtp(username, otpCode, newPassword) {
+  if (!username || !otpCode || !newPassword) {
+    return { success: false, message: "Username, Kode OTP, dan Password baru wajib diisi." };
+  }
+
+  if (String(newPassword).length < 5) {
+    return { success: false, message: "Password baru minimal 5 karakter demi keamanan akun." };
+  }
+
+  const cleanUser = String(username).trim();
+  const cacheKey = "OTP_PWD_" + cleanUser.toLowerCase();
+  const cache = CacheService.getScriptCache();
+  const cachedOtp = cache.get(cacheKey);
+
+  if (!cachedOtp || String(cachedOtp).trim() !== String(otpCode).trim()) {
+    return {
+      success: false,
+      message: "Kode OTP salah atau telah kadaluwarsa (lebih dari 15 menit). Silakan minta kode baru."
+    };
+  }
+
+  const updated = updateRowByField(CONFIG.SHEET_USERS, "username", cleanUser, {
+    password: String(newPassword).trim()
+  });
+
+  if (updated) {
+    cache.remove(cacheKey);
+    return {
+      success: true,
+      message: "Password berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda."
+    };
+  } else {
+    return {
+      success: false,
+      message: "Gagal memperbarui kata sandi di database. Pastikan akun terdaftar."
+    };
+  }
+}

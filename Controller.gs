@@ -70,6 +70,18 @@ function doPost(e) {
       case "apiLogin":
         result = apiLogin(args[0], args[1]);
         break;
+      case "apiLoginWithGoogle":
+        result = apiLoginWithGoogle(args[0], args[1], args[2]);
+        break;
+      case "apiLupaUsername":
+        result = apiLupaUsername(args[0]);
+        break;
+      case "apiLupaPassword":
+        result = apiLupaPassword(args[0]);
+        break;
+      case "apiResetPasswordWithOtp":
+        result = apiResetPasswordWithOtp(args[0], args[1], args[2]);
+        break;
       case "apiGetDashboardStats":
         result = apiGetDashboardStats(args[0]);
         break;
@@ -185,6 +197,50 @@ function apiLogin(username, password) {
     return authenticateUser(username, password);
   } catch (err) {
     return { success: false, message: "Error login: " + err.message };
+  }
+}
+
+/**
+ * API: Autentikasi via Akun Google
+ */
+function apiLoginWithGoogle(googleEmail, googleName, idToken) {
+  try {
+    return authenticateGoogleUser(googleEmail, googleName, idToken);
+  } catch (err) {
+    return { success: false, message: "Error login Google: " + err.message };
+  }
+}
+
+/**
+ * API: Layanan Lupa Username (Kirim info username via Email)
+ */
+function apiLupaUsername(keyword) {
+  try {
+    return processLupaUsername(keyword);
+  } catch (err) {
+    return { success: false, message: "Error lupa username: " + err.message };
+  }
+}
+
+/**
+ * API: Layanan Lupa Password (Kirim OTP 6-digit ke Email)
+ */
+function apiLupaPassword(identifier) {
+  try {
+    return processLupaPassword(identifier);
+  } catch (err) {
+    return { success: false, message: "Error lupa password: " + err.message };
+  }
+}
+
+/**
+ * API: Reset Password menggunakan verifikasi Kode OTP
+ */
+function apiResetPasswordWithOtp(username, otpCode, newPassword) {
+  try {
+    return processResetPasswordWithOtp(username, otpCode, newPassword);
+  } catch (err) {
+    return { success: false, message: "Error reset password: " + err.message };
   }
 }
 

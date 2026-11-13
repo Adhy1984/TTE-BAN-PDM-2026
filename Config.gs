@@ -47,5 +47,10 @@ const CONFIG = {
   QR_API_BASE: "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=",
   
   // Token kadaluarsa sesi (dalam menit) - Maksimal 10 Menit demi keamanan
-  SESSION_EXPIRY_MINUTES: 10
+  SESSION_EXPIRY_MINUTES: 10,
+
+  // Kontak Resmi & Helpdesk BAN PDM NTT (Lupa Username / Password & Pemulihan Akun)
+  ADMIN_EMAIL: "ntt@ban-pdm.id",
+  ADMIN_WA: "6281234567890",
+  GOOGLE_CLIENT_ID: ""
 };

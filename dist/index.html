@@ -2712,6 +2712,42 @@
                 <span>Masuk ke Portal e-TTE</span>
             </button>
 
+            <!-- Garis Pemisah (Divider) -->
+            <div class="auth-divider">
+                <span>atau</span>
+            </div>
+
+            <!-- Tombol Masuk dengan Google -->
+            <button type="button" onclick="doGoogleLogin()" id="btnGoogleLogin" class="google-login-btn">
+                <svg class="google-icon-svg" width="18" height="18" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Masuk dengan Google</span>
+            </button>
+
+            <!-- Tautan Bantuan Akun: Lupa Username & Lupa Password -->
+            <div class="auth-helper-links">
+                <a href="javascript:void(0)" onclick="openModalLupaUsername()" class="auth-helper-link">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="helper-svg-icon">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Lupa Username?
+                </a>
+                <span class="auth-helper-dot">&bull;</span>
+                <a href="javascript:void(0)" onclick="openModalLupaPassword()" class="auth-helper-link">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="helper-svg-icon">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Lupa Password?
+                </a>
+            </div>
+
         </div>
 
         <!-- Catatan Kaki Khusus Tampilan Mobile HP -->
@@ -2721,6 +2757,115 @@
 
     </div>
 
+</div>
+
+<!-- ==================== MODAL 1: BANTUAN LUPA USERNAME ==================== -->
+<div id="modalLupaUsername" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title" style="display:flex;align-items:center;gap:8px;font-size:1.1rem;font-weight:700;color:#0f172a;">
+                <span style="font-size:1.2rem;">❓</span> Bantuan Lupa Username
+            </div>
+            <button type="button" class="btn-close-modal" onclick="closeModalLupaUsername()" title="Tutup">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="color:#64748b;font-size:0.86rem;line-height:1.5;margin-bottom:14px;">
+                Masukkan <b>Email terdaftar</b>, <b>NIP</b>, atau <b>Nama Lengkap</b> Anda. Sistem akan mencari akun dan mengirimkan detail username ke alamat email Anda.
+            </p>
+            <div id="alertLupaUsername" class="login-alert-box" style="display:none;margin-bottom:12px;"></div>
+            <div class="login-field-group" style="margin-bottom:12px;">
+                <label class="login-input-label" for="inputLupaUserKeyword">
+                    Email / NIP / Nama Lengkap
+                </label>
+                <div class="input-icon-wrap">
+                    <svg class="input-inner-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input id="inputLupaUserKeyword" type="text" class="login-text-input" placeholder="Contoh: user@ban-pdm.id atau NIP" onkeydown="if(event.key==='Enter')submitLupaUsername()">
+                </div>
+            </div>
+            <div id="resultLupaUsername" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-top:10px;color:#166534;font-size:0.85rem;line-height:1.45;"></div>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;flex-wrap:wrap;">
+            <a id="btnLupaUserWa" href="https://wa.me/6281234567890?text=Halo%20Admin%20BAN%20PDM%20NTT,%20saya%20membutuhkan%20bantuan%20lupa%20username%20akun%20e-TTE." target="_blank" class="btn-wa-helpdesk" style="text-decoration:none;">
+                💬 Hubungi Admin WA
+            </a>
+            <div style="display:flex;gap:8px;margin-left:auto;">
+                <button type="button" class="btn btn-secondary" onclick="closeModalLupaUsername()">Tutup</button>
+                <button type="button" class="btn btn-primary" id="btnSubmitLupaUsername" onclick="submitLupaUsername()">🔍 Cari &amp; Kirim</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL 2: BANTUAN LUPA PASSWORD ==================== -->
+<div id="modalLupaPassword" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title" style="display:flex;align-items:center;gap:8px;font-size:1.1rem;font-weight:700;color:#0f172a;">
+                <span style="font-size:1.2rem;">🔑</span> Pemulihan Kata Sandi
+            </div>
+            <button type="button" class="btn-close-modal" onclick="closeModalLupaPassword()" title="Tutup">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="alertLupaPassword" class="login-alert-box" style="display:none;margin-bottom:12px;"></div>
+
+            <!-- Tahap 1: Memasukkan Identifier (Username atau Email) -->
+            <div id="lupaPassStep1">
+                <p style="color:#64748b;font-size:0.86rem;line-height:1.5;margin-bottom:14px;">
+                    Masukkan <b>Username</b> atau <b>Email terdaftar</b> akun Anda. Kami akan mengirimkan kode verifikasi OTP 6-digit ke email Anda.
+                </p>
+                <div class="login-field-group" style="margin-bottom:12px;">
+                    <label class="login-input-label" for="inputLupaPassIdentifier">
+                        Username atau Email
+                    </label>
+                    <div class="input-icon-wrap">
+                        <svg class="input-inner-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <input id="inputLupaPassIdentifier" type="text" class="login-text-input" placeholder="Masukkan username atau email Anda" onkeydown="if(event.key==='Enter')submitLupaPassword()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tahap 2: Input OTP & Password Baru (Muncul setelah OTP berhasil dikirim) -->
+            <div id="lupaPassStep2" style="display:none;">
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px;margin-bottom:14px;color:#1e40af;font-size:0.85rem;line-height:1.4;">
+                    <span id="lupaPassEmailInfo">Kode OTP 6-digit telah dikirim ke email terdaftar Anda.</span>
+                </div>
+                <div class="login-field-group" style="margin-bottom:12px;">
+                    <label class="login-input-label" for="inputLupaPassOtp">
+                        Kode OTP 6-Digit (dari Email)
+                    </label>
+                    <input id="inputLupaPassOtp" type="text" maxlength="6" class="login-text-input" placeholder="123456" inputmode="numeric" style="letter-spacing:6px;font-size:1.15rem;font-weight:800;text-align:center;">
+                </div>
+                <div class="login-field-group" style="margin-bottom:12px;">
+                    <label class="login-input-label" for="inputLupaPassNew">
+                        Password Baru
+                    </label>
+                    <input id="inputLupaPassNew" type="password" class="login-text-input" placeholder="Minimal 5 karakter">
+                </div>
+                <div class="login-field-group" style="margin-bottom:12px;">
+                    <label class="login-input-label" for="inputLupaPassConfirm">
+                        Konfirmasi Password Baru
+                    </label>
+                    <input id="inputLupaPassConfirm" type="password" class="login-text-input" placeholder="Ulangi password baru" onkeydown="if(event.key==='Enter')submitResetPasswordOtp()">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;flex-wrap:wrap;">
+            <a id="btnLupaPassWa" href="https://wa.me/6281234567890?text=Halo%20Admin%20BAN%20PDM%20NTT,%20mohon%20bantuan%20reset%20kata%20sandi%20akun%20e-TTE." target="_blank" class="btn-wa-helpdesk" style="text-decoration:none;">
+                💬 Bantuan Admin WA
+            </a>
+            <div style="display:flex;gap:8px;margin-left:auto;">
+                <button type="button" class="btn btn-secondary" onclick="closeModalLupaPassword()">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSubmitLupaPassword" onclick="submitLupaPassword()">Kirim Kode OTP</button>
+                <button type="button" class="btn btn-success" id="btnSubmitResetPass" style="display:none;" onclick="submitResetPasswordOtp()">💾 Simpan Password Baru</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ====================================================================
@@ -2886,20 +3031,20 @@
         max-height: 100vh;
     }
 
-    /* Kartu Login Putih */
+    /* Kartu Login Putih - Disesuaikan presisi 1 layar penuh (Zero-Scroll 100vh) */
     .login-card-box {
         width: 100%;
-        max-width: 430px;
+        max-width: 420px;
         background: #ffffff;
-        border-radius: 24px;
-        padding: 38px 36px 42px;
+        border-radius: 22px;
+        padding: 24px 30px 22px;
         box-shadow: 0 24px 50px -12px rgba(15, 23, 42, 0.09), 0 0 1px 1px rgba(15, 23, 42, 0.04);
         margin: auto 0;
     }
 
     /* Judul Brand BAN PDM */
     .login-brand-title {
-        font-size: 2.2rem;
+        font-size: 2.1rem;
         font-weight: 900;
         letter-spacing: -0.03em;
         color: #0284c7;
@@ -2909,29 +3054,29 @@
 
     /* Sub-judul Provinsi Nusa Tenggara Timur */
     .login-brand-region {
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: #0369a1;
         text-align: center;
-        margin-top: 4px;
-        margin-bottom: 20px;
+        margin-top: 3px;
+        margin-bottom: 12px;
     }
 
     .login-alert-box {
         background: #fef2f2;
         border: 1px solid #fecaca;
         border-radius: 12px;
-        padding: 10px 14px;
-        margin-bottom: 16px;
+        padding: 8px 12px;
+        margin-bottom: 12px;
         color: #dc2626;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         line-height: 1.4;
     }
 
     .login-field-group {
-        margin-bottom: 16px;
+        margin-bottom: 11px;
     }
 
     .login-input-label {
@@ -3035,6 +3180,136 @@
         transform: none;
     }
 
+    /* Divider Pembatas Login */
+    .auth-divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 10px 0 8px;
+        color: #94a3b8;
+        font-size: 0.76rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .auth-divider span {
+        padding: 0 10px;
+    }
+
+    /* Tombol Login dengan Akun Google */
+    .google-login-btn {
+        width: 100%;
+        height: 42px;
+        background: #ffffff;
+        color: #1f2937;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+
+    .google-login-btn:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+    }
+
+    .google-login-btn:active {
+        transform: translateY(0);
+        background: #f1f5f9;
+    }
+
+    .google-icon-svg {
+        flex-shrink: 0;
+    }
+
+    /* Tautan Bantuan Lupa Username & Lupa Password */
+    .auth-helper-links {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 12px;
+        padding-top: 8px;
+        border-top: 1px dashed #e2e8f0;
+        font-size: 0.8rem;
+    }
+
+    .auth-helper-link {
+        color: #0284c7;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: color 0.15s ease;
+    }
+
+    .auth-helper-link:hover {
+        color: #0369a1;
+        text-decoration: underline;
+    }
+
+    .auth-helper-dot {
+        color: #cbd5e1;
+        font-size: 0.75rem;
+    }
+
+    .helper-svg-icon {
+        flex-shrink: 0;
+    }
+
+    /* Tombol Bantuan WhatsApp */
+    .btn-wa-helpdesk {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #25d366;
+        color: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 7px 14px;
+        border-radius: 8px;
+        transition: background 0.2s ease;
+    }
+
+    .btn-wa-helpdesk:hover {
+        background: #20ba5a;
+        color: #ffffff;
+    }
+
+    .btn-close-modal {
+        background: transparent;
+        border: none;
+        font-size: 1.5rem;
+        color: #94a3b8;
+        cursor: pointer;
+        line-height: 1;
+        padding: 2px 6px;
+        border-radius: 6px;
+    }
+
+    .btn-close-modal:hover {
+        color: #0f172a;
+        background: #f1f5f9;
+    }
+
     /* ==================== RESPONSIVE VIEWPORT (MODE VIEW HP) ==================== */
     @media (max-width: 960px) {
         .login-wrapper {
@@ -3067,8 +3342,8 @@
         /* 3. Kartu login presisi & proporsional untuk layar sentuh HP (Zero-Scroll 100vh) */
         .login-card-box {
             width: 100%;
-            max-width: 400px;
-            padding: 28px 24px 22px;
+            max-width: 390px;
+            padding: 20px 18px 16px;
             margin: 0 auto;
             box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15), 0 8px 10px -6px rgba(2, 132, 199, 0.1);
             box-sizing: border-box;
@@ -6627,8 +6902,55 @@
     }
 
     // ====================================================================
-    // SECTION 3: AUTENTIKASI (LOGIN / LOGOUT)
+    // SECTION 3: AUTENTIKASI (LOGIN / LOGOUT / GOOGLE / RECOVERY)
     // ====================================================================
+
+    /**
+     * Helper terpadu untuk inisialisasi sesi login sukses (Password & Google)
+     */
+    function handleAuthSuccess(res) {
+        if (!res || !res.success || !res.user) return;
+        APP.token = res.token;
+        APP.user = res.user;
+
+        // Simpan sesi autentikasi ke localStorage agar tidak logout saat refresh / new tab
+        try {
+            var ttlSecs = (res.expiresIn && res.expiresIn > 0) ? res.expiresIn : 600; // default 10 menit
+            localStorage.setItem('APP_AUTH_SESSION', JSON.stringify({
+                token: res.token,
+                user: res.user,
+                expiresAt: Date.now() + (ttlSecs * 1000),
+                timestamp: Date.now()
+            }));
+        } catch (e) {
+            console.warn('Gagal menyimpan sesi login ke localStorage:', e);
+        }
+
+        initAppShell();
+        showPage('APP');
+        startIdleAutoLogout();
+
+        // Buka tab tujuan jika ada di URL parameter, default 'dashboard'
+        var targetTab = 'dashboard';
+        try {
+            var params = new URLSearchParams(window.location.search);
+            var requestedTab = params.get('tab');
+            if (requestedTab) {
+                if (requestedTab === 'buatSurat' && res.user.role !== 'admin' && res.user.role !== 'operator') {
+                    targetTab = (res.user.role === 'pejabat') ? 'approval' : 'dashboard';
+                } else if (requestedTab === 'approval' && res.user.role !== 'pejabat' && res.user.role !== 'admin') {
+                    targetTab = 'dashboard';
+                } else if (requestedTab === 'kelolaUser' && res.user.role !== 'admin') {
+                    targetTab = 'dashboard';
+                } else {
+                    targetTab = requestedTab;
+                }
+            }
+        } catch (e) { }
+
+        switchTab(targetTab);
+        showToast('Selamat datang, ' + res.user.nama + '!', 'success');
+    }
 
     function doLogin() {
         var username = document.getElementById('inputUsername').value.trim();
@@ -6648,46 +6970,7 @@
             .withSuccessHandler(function (res) {
                 setLoading('btnLogin', false, '🔓 Masuk ke Portal e-TTE');
                 if (res && res.success) {
-                    APP.token = res.token;
-                    APP.user = res.user;
-
-                    // Simpan sesi autentikasi ke localStorage agar tidak logout saat refresh / new tab
-                    try {
-                        var ttlSecs = (res.expiresIn && res.expiresIn > 0) ? res.expiresIn : 600; // default 10 menit
-                        localStorage.setItem('APP_AUTH_SESSION', JSON.stringify({
-                            token: res.token,
-                            user: res.user,
-                            expiresAt: Date.now() + (ttlSecs * 1000),
-                            timestamp: Date.now()
-                        }));
-                    } catch (e) {
-                        console.warn('Gagal menyimpan sesi login ke localStorage:', e);
-                    }
-
-                    initAppShell();
-                    showPage('APP');
-                    startIdleAutoLogout();
-
-                    // Buka tab tujuan jika ada di URL parameter, default 'dashboard'
-                    var targetTab = 'dashboard';
-                    try {
-                        var params = new URLSearchParams(window.location.search);
-                        var requestedTab = params.get('tab');
-                        if (requestedTab) {
-                            if (requestedTab === 'buatSurat' && res.user.role !== 'admin' && res.user.role !== 'operator') {
-                                targetTab = (res.user.role === 'pejabat') ? 'approval' : 'dashboard';
-                            } else if (requestedTab === 'approval' && res.user.role !== 'pejabat' && res.user.role !== 'admin') {
-                                targetTab = 'dashboard';
-                            } else if (requestedTab === 'kelolaUser' && res.user.role !== 'admin') {
-                                targetTab = 'dashboard';
-                            } else {
-                                targetTab = requestedTab;
-                            }
-                        }
-                    } catch (e) { }
-
-                    switchTab(targetTab);
-                    showToast('Selamat datang, ' + res.user.nama + '!', 'success');
+                    handleAuthSuccess(res);
                 } else {
                     errEl.style.display = 'block';
                     errEl.textContent = (res && res.message) || 'Login gagal. Periksa kembali username dan password.';
@@ -6699,6 +6982,353 @@
                 errEl.textContent = 'Error koneksi: ' + (err && err.message ? err.message : err);
             })
             .apiLogin(username, password);
+    }
+
+    // Helper parse token JWT Google
+    function parseJwt(token) {
+        try {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Memproses alur masuk dengan Akun Google
+     */
+    function doGoogleLogin() {
+        var errEl = document.getElementById('loginError');
+        if (errEl) errEl.style.display = 'none';
+
+        var clientId = (window.GOOGLE_CLIENT_ID || localStorage.getItem('GOOGLE_CLIENT_ID') || '').trim();
+
+        // 1. Jika Google Client ID tersedia dan Google Identity Services (GIS) aktif
+        if (clientId && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+            try {
+                google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: handleGoogleCredentialResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+                google.accounts.id.prompt(function (notification) {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        promptGoogleEmailDirect();
+                    }
+                });
+                return;
+            } catch (gisErr) {
+                console.warn('GIS initialize error:', gisErr);
+            }
+        }
+
+        // 2. Direct Google Email Login (Tanpa konfigurasi Cloud Console yang rumit)
+        promptGoogleEmailDirect();
+    }
+
+    function promptGoogleEmailDirect() {
+        var errEl = document.getElementById('loginError');
+        var entered = prompt(
+            "🔐 MASUK DENGAN AKUN GOOGLE\n\n" +
+            "Silakan masukkan alamat Email Google Anda yang terdaftar di sistem e-TTE BAN PDM NTT:\n" +
+            "(Contoh: user@ban-pdm.id atau email@gmail.com)\n\n" +
+            "Catatan: Hanya email yang telah terdaftar di database yang dapat masuk.",
+            ""
+        );
+
+        if (!entered || entered.trim() === '') return;
+        var cleanEmail = entered.trim();
+
+        if (cleanEmail.indexOf('@') === -1) {
+            if (errEl) {
+                errEl.style.display = 'block';
+                errEl.textContent = 'Format email Google tidak valid!';
+            }
+            return;
+        }
+
+        setLoading('btnGoogleLogin', true, 'Memverifikasi...');
+        google.script.run
+            .withSuccessHandler(function (res) {
+                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                if (res && res.success) {
+                    handleAuthSuccess(res);
+                } else {
+                    if (errEl) {
+                        errEl.style.display = 'block';
+                        errEl.textContent = (res && res.message) || 'Akun Google tidak terdaftar di sistem e-TTE.';
+                    }
+                }
+            })
+            .withFailureHandler(function (err) {
+                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                if (errEl) {
+                    errEl.style.display = 'block';
+                    errEl.textContent = 'Gagal terhubung ke server: ' + (err && err.message ? err.message : err);
+                }
+            })
+            .apiLoginWithGoogle(cleanEmail, '');
+    }
+
+    function handleGoogleCredentialResponse(response) {
+        var errEl = document.getElementById('loginError');
+        if (!response || !response.credential) {
+            if (errEl) {
+                errEl.style.display = 'block';
+                errEl.textContent = 'Gagal memperoleh kredensial akun Google.';
+            }
+            return;
+        }
+
+        var payload = parseJwt(response.credential);
+        if (!payload || !payload.email) {
+            if (errEl) {
+                errEl.style.display = 'block';
+                errEl.textContent = 'Gagal membaca identitas Google.';
+            }
+            return;
+        }
+
+        setLoading('btnGoogleLogin', true, 'Memverifikasi...');
+        google.script.run
+            .withSuccessHandler(function (res) {
+                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                if (res && res.success) {
+                    handleAuthSuccess(res);
+                } else {
+                    if (errEl) {
+                        errEl.style.display = 'block';
+                        errEl.textContent = (res && res.message) || 'Akun Google Anda belum terdaftar di sistem e-TTE.';
+                    }
+                }
+            })
+            .withFailureHandler(function (err) {
+                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                if (errEl) {
+                    errEl.style.display = 'block';
+                    errEl.textContent = 'Gagal terhubung: ' + (err && err.message ? err.message : err);
+                }
+            })
+            .apiLoginWithGoogle(payload.email, payload.name || '', response.credential);
+    }
+
+    // ====================================================================
+    // PEMULIHAN AKUN: LUPA USERNAME & LUPA PASSWORD
+    // ====================================================================
+
+    function openModalLupaUsername() {
+        var modal = document.getElementById('modalLupaUsername');
+        var input = document.getElementById('inputLupaUserKeyword');
+        var alertBox = document.getElementById('alertLupaUsername');
+        var resultBox = document.getElementById('resultLupaUsername');
+
+        if (input) input.value = '';
+        if (alertBox) { alertBox.style.display = 'none'; alertBox.textContent = ''; }
+        if (resultBox) { resultBox.style.display = 'none'; resultBox.innerHTML = ''; }
+        if (modal) modal.style.display = 'flex';
+        if (input) setTimeout(function () { input.focus(); }, 100);
+    }
+
+    function closeModalLupaUsername() {
+        var modal = document.getElementById('modalLupaUsername');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function submitLupaUsername() {
+        var keyword = (document.getElementById('inputLupaUserKeyword').value || '').trim();
+        var alertBox = document.getElementById('alertLupaUsername');
+        var resultBox = document.getElementById('resultLupaUsername');
+
+        if (alertBox) alertBox.style.display = 'none';
+        if (resultBox) resultBox.style.display = 'none';
+
+        if (!keyword) {
+            if (alertBox) {
+                alertBox.style.display = 'block';
+                alertBox.textContent = 'Masukkan Email, NIP, atau Nama Lengkap Anda terlebih dahulu.';
+            }
+            return;
+        }
+
+        setLoading('btnSubmitLupaUsername', true, 'Mencari...');
+        google.script.run
+            .withSuccessHandler(function (res) {
+                setLoading('btnSubmitLupaUsername', false, '🔍 Cari & Kirim');
+                if (res && res.success) {
+                    if (resultBox) {
+                        resultBox.style.display = 'block';
+                        resultBox.innerHTML = '<b>✅ Berhasil:</b> ' + (res.message || 'Informasi username telah dikirim.');
+                    }
+                } else {
+                    if (alertBox) {
+                        alertBox.style.display = 'block';
+                        alertBox.textContent = (res && res.message) || 'Data tidak ditemukan.';
+                    }
+                }
+            })
+            .withFailureHandler(function (err) {
+                setLoading('btnSubmitLupaUsername', false, '🔍 Cari & Kirim');
+                if (alertBox) {
+                    alertBox.style.display = 'block';
+                    alertBox.textContent = 'Terjadi kesalahan sistem: ' + (err && err.message ? err.message : err);
+                }
+            })
+            .apiLupaUsername(keyword);
+    }
+
+    var tempResetUsername = '';
+
+    function openModalLupaPassword() {
+        var modal = document.getElementById('modalLupaPassword');
+        var inputId = document.getElementById('inputLupaPassIdentifier');
+        var inputOtp = document.getElementById('inputLupaPassOtp');
+        var inputNew = document.getElementById('inputLupaPassNew');
+        var inputConfirm = document.getElementById('inputLupaPassConfirm');
+        var alertBox = document.getElementById('alertLupaPassword');
+        var step1 = document.getElementById('lupaPassStep1');
+        var step2 = document.getElementById('lupaPassStep2');
+        var btnKirim = document.getElementById('btnSubmitLupaPassword');
+        var btnSimpan = document.getElementById('btnSubmitResetPass');
+
+        tempResetUsername = '';
+        if (inputId) inputId.value = '';
+        if (inputOtp) inputOtp.value = '';
+        if (inputNew) inputNew.value = '';
+        if (inputConfirm) inputConfirm.value = '';
+
+        if (alertBox) { alertBox.style.display = 'none'; alertBox.textContent = ''; }
+        if (step1) step1.style.display = 'block';
+        if (step2) step2.style.display = 'none';
+        if (btnKirim) btnKirim.style.display = 'inline-block';
+        if (btnSimpan) btnSimpan.style.display = 'none';
+
+        if (modal) modal.style.display = 'flex';
+        if (inputId) setTimeout(function () { inputId.focus(); }, 100);
+    }
+
+    function closeModalLupaPassword() {
+        var modal = document.getElementById('modalLupaPassword');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function submitLupaPassword() {
+        var identifier = (document.getElementById('inputLupaPassIdentifier').value || '').trim();
+        var alertBox = document.getElementById('alertLupaPassword');
+
+        if (alertBox) alertBox.style.display = 'none';
+
+        if (!identifier) {
+            if (alertBox) {
+                alertBox.style.display = 'block';
+                alertBox.textContent = 'Masukkan Username atau Email Anda terlebih dahulu.';
+            }
+            return;
+        }
+
+        setLoading('btnSubmitLupaPassword', true, 'Mengirim OTP...');
+        google.script.run
+            .withSuccessHandler(function (res) {
+                setLoading('btnSubmitLupaPassword', false, 'Kirim Kode OTP');
+                if (res && res.success) {
+                    if (res.otpSent) {
+                        tempResetUsername = res.username || identifier;
+                        var step1 = document.getElementById('lupaPassStep1');
+                        var step2 = document.getElementById('lupaPassStep2');
+                        var btnKirim = document.getElementById('btnSubmitLupaPassword');
+                        var btnSimpan = document.getElementById('btnSubmitResetPass');
+                        var infoEl = document.getElementById('lupaPassEmailInfo');
+
+                        if (infoEl && res.message) infoEl.textContent = res.message;
+                        if (step1) step1.style.display = 'none';
+                        if (step2) step2.style.display = 'block';
+                        if (btnKirim) btnKirim.style.display = 'none';
+                        if (btnSimpan) btnSimpan.style.display = 'inline-block';
+
+                        var otpInput = document.getElementById('inputLupaPassOtp');
+                        if (otpInput) setTimeout(function () { otpInput.focus(); }, 100);
+                    } else {
+                        // User tidak memiliki email terdaftar atau butuh bantuan helpdesk
+                        if (alertBox) {
+                            alertBox.style.display = 'block';
+                            alertBox.textContent = res.message || 'Silakan hubungi Administrator via WhatsApp untuk reset password.';
+                        }
+                    }
+                } else {
+                    if (alertBox) {
+                        alertBox.style.display = 'block';
+                        alertBox.textContent = (res && res.message) || 'Akun tidak ditemukan.';
+                    }
+                }
+            })
+            .withFailureHandler(function (err) {
+                setLoading('btnSubmitLupaPassword', false, 'Kirim Kode OTP');
+                if (alertBox) {
+                    alertBox.style.display = 'block';
+                    alertBox.textContent = 'Terjadi kesalahan sistem: ' + (err && err.message ? err.message : err);
+                }
+            })
+            .apiLupaPassword(identifier);
+    }
+
+    function submitResetPasswordOtp() {
+        var otp = (document.getElementById('inputLupaPassOtp').value || '').trim();
+        var passNew = document.getElementById('inputLupaPassNew').value;
+        var passConfirm = document.getElementById('inputLupaPassConfirm').value;
+        var alertBox = document.getElementById('alertLupaPassword');
+
+        if (alertBox) alertBox.style.display = 'none';
+
+        if (!otp) {
+            if (alertBox) { alertBox.style.display = 'block'; alertBox.textContent = 'Masukkan 6-digit Kode OTP dari email Anda.'; }
+            return;
+        }
+
+        if (!passNew || passNew.length < 5) {
+            if (alertBox) { alertBox.style.display = 'block'; alertBox.textContent = 'Password baru minimal 5 karakter.'; }
+            return;
+        }
+
+        if (passNew !== passConfirm) {
+            if (alertBox) { alertBox.style.display = 'block'; alertBox.textContent = 'Konfirmasi password baru tidak cocok!'; }
+            return;
+        }
+
+        var usernameToReset = tempResetUsername || (document.getElementById('inputLupaPassIdentifier').value || '').trim();
+
+        setLoading('btnSubmitResetPass', true, 'Menyimpan...');
+        google.script.run
+            .withSuccessHandler(function (res) {
+                setLoading('btnSubmitResetPass', false, '💾 Simpan Password Baru');
+                if (res && res.success) {
+                    closeModalLupaPassword();
+                    showToast(res.message || 'Password berhasil diubah! Silakan login.', 'success');
+                    var userInp = document.getElementById('inputUsername');
+                    var passInp = document.getElementById('inputPassword');
+                    if (userInp) userInp.value = usernameToReset;
+                    if (passInp) {
+                        passInp.value = '';
+                        setTimeout(function () { passInp.focus(); }, 200);
+                    }
+                } else {
+                    if (alertBox) {
+                        alertBox.style.display = 'block';
+                        alertBox.textContent = (res && res.message) || 'Gagal mengubah kata sandi.';
+                    }
+                }
+            })
+            .withFailureHandler(function (err) {
+                setLoading('btnSubmitResetPass', false, '💾 Simpan Password Baru');
+                if (alertBox) {
+                    alertBox.style.display = 'block';
+                    alertBox.textContent = 'Terjadi kesalahan sistem: ' + (err && err.message ? err.message : err);
+                }
+            })
+            .apiResetPasswordWithOtp(usernameToReset, otp, passNew);
     }
 
     function doLogout(logoutMessage) {
