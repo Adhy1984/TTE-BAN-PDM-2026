@@ -548,15 +548,51 @@
         max-height: 100vh;
     }
 
+    @keyframes loginCardPopIn {
+        0% {
+            opacity: 0;
+            transform: translateY(16px) scale(0.985);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
     /* Kartu Login Putih - Disesuaikan presisi 1 layar penuh (Zero-Scroll 100vh) */
     .login-card-box {
+        position: relative;
+        overflow: hidden;
         width: 100%;
         max-width: 420px;
         background: #ffffff;
         border-radius: 22px;
         padding: 24px 30px 22px;
-        box-shadow: 0 24px 50px -12px rgba(15, 23, 42, 0.09), 0 0 1px 1px rgba(15, 23, 42, 0.04);
+        box-shadow: 0 20px 45px -10px rgba(2, 132, 199, 0.12),
+                    0 10px 22px -5px rgba(15, 23, 42, 0.05),
+                    0 0 0 1px rgba(226, 232, 240, 0.85);
         margin: auto 0;
+        animation: loginCardPopIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
+    }
+
+    /* Aksen Garis Cahaya Gradasi Modern di Atas Kartu Login */
+    .login-card-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #0284c7 0%, #38bdf8 45%, #f97316 85%, #ea580c 100%);
+        border-radius: 22px 22px 0 0;
+    }
+
+    .login-card-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 26px 55px -12px rgba(2, 132, 199, 0.18),
+                    0 12px 26px -6px rgba(15, 23, 42, 0.08),
+                    0 0 0 1px rgba(186, 230, 253, 0.95);
     }
 
     /* Judul Brand BAN PDM */
@@ -632,7 +668,8 @@
 
     .login-text-input:focus {
         border-color: #0284c7;
-        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        box-shadow: 0 0 0 3.5px rgba(2, 132, 199, 0.16);
+        background: #f8fbff;
     }
 
     .login-text-input::placeholder {
@@ -660,11 +697,11 @@
         color: #334155;
     }
 
-    /* Tombol Masuk Biru Solid */
+    /* Tombol Masuk Biru Solid dengan Micro-Interaction Mewah */
     .login-submit-btn {
         width: 100%;
         height: 48px;
-        background: #0284c7;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
         color: #ffffff;
         border: none;
         border-radius: 12px;
@@ -678,17 +715,18 @@
         cursor: pointer;
         margin-top: 8px;
         box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
-        transition: all 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .login-submit-btn:hover {
-        background: #0369a1;
-        box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
-        transform: translateY(-1px);
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+        box-shadow: 0 8px 22px -3px rgba(2, 132, 199, 0.48);
+        transform: translateY(-1.5px);
     }
 
     .login-submit-btn:active {
         transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
     }
 
     .login-submit-btn:disabled {
@@ -737,14 +775,14 @@
         gap: 10px;
         cursor: pointer;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        transition: all 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .google-login-btn:hover {
         background: #f8fafc;
         border-color: #94a3b8;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.1);
+        transform: translateY(-1.5px);
     }
 
     .google-login-btn:active {
@@ -858,12 +896,19 @@
 
         /* 3. Kartu login presisi & proporsional untuk layar sentuh HP (Zero-Scroll 100vh) */
         .login-card-box {
+            position: relative;
+            overflow: hidden;
             width: 100%;
             max-width: 390px;
             padding: 20px 18px 16px;
             margin: 0 auto;
-            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15), 0 8px 10px -6px rgba(2, 132, 199, 0.1);
+            box-shadow: 0 12px 30px -8px rgba(2, 132, 199, 0.18), 0 8px 12px -6px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.9);
             box-sizing: border-box;
+            animation: loginCardPopIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .login-card-box:hover {
+            transform: none; /* Stabil di layar sentuh HP tanpa pergeseran */
         }
 
         /* 4. Tampilkan catatan kaki tepat di bawah kartu login pada mode HP tanpa terdorong ke bawah */

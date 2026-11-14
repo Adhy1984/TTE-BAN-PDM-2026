@@ -3033,15 +3033,51 @@
         max-height: 100vh;
     }
 
+    @keyframes loginCardPopIn {
+        0% {
+            opacity: 0;
+            transform: translateY(16px) scale(0.985);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
     /* Kartu Login Putih - Disesuaikan presisi 1 layar penuh (Zero-Scroll 100vh) */
     .login-card-box {
+        position: relative;
+        overflow: hidden;
         width: 100%;
         max-width: 420px;
         background: #ffffff;
         border-radius: 22px;
         padding: 24px 30px 22px;
-        box-shadow: 0 24px 50px -12px rgba(15, 23, 42, 0.09), 0 0 1px 1px rgba(15, 23, 42, 0.04);
+        box-shadow: 0 20px 45px -10px rgba(2, 132, 199, 0.12),
+                    0 10px 22px -5px rgba(15, 23, 42, 0.05),
+                    0 0 0 1px rgba(226, 232, 240, 0.85);
         margin: auto 0;
+        animation: loginCardPopIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
+    }
+
+    /* Aksen Garis Cahaya Gradasi Modern di Atas Kartu Login */
+    .login-card-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #0284c7 0%, #38bdf8 45%, #f97316 85%, #ea580c 100%);
+        border-radius: 22px 22px 0 0;
+    }
+
+    .login-card-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 26px 55px -12px rgba(2, 132, 199, 0.18),
+                    0 12px 26px -6px rgba(15, 23, 42, 0.08),
+                    0 0 0 1px rgba(186, 230, 253, 0.95);
     }
 
     /* Judul Brand BAN PDM */
@@ -3117,7 +3153,8 @@
 
     .login-text-input:focus {
         border-color: #0284c7;
-        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        box-shadow: 0 0 0 3.5px rgba(2, 132, 199, 0.16);
+        background: #f8fbff;
     }
 
     .login-text-input::placeholder {
@@ -3145,11 +3182,11 @@
         color: #334155;
     }
 
-    /* Tombol Masuk Biru Solid */
+    /* Tombol Masuk Biru Solid dengan Micro-Interaction Mewah */
     .login-submit-btn {
         width: 100%;
         height: 48px;
-        background: #0284c7;
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
         color: #ffffff;
         border: none;
         border-radius: 12px;
@@ -3163,17 +3200,18 @@
         cursor: pointer;
         margin-top: 8px;
         box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
-        transition: all 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .login-submit-btn:hover {
-        background: #0369a1;
-        box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
-        transform: translateY(-1px);
+        background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+        box-shadow: 0 8px 22px -3px rgba(2, 132, 199, 0.48);
+        transform: translateY(-1.5px);
     }
 
     .login-submit-btn:active {
         transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
     }
 
     .login-submit-btn:disabled {
@@ -3222,14 +3260,14 @@
         gap: 10px;
         cursor: pointer;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        transition: all 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .google-login-btn:hover {
         background: #f8fafc;
         border-color: #94a3b8;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.1);
+        transform: translateY(-1.5px);
     }
 
     .google-login-btn:active {
@@ -3343,12 +3381,19 @@
 
         /* 3. Kartu login presisi & proporsional untuk layar sentuh HP (Zero-Scroll 100vh) */
         .login-card-box {
+            position: relative;
+            overflow: hidden;
             width: 100%;
             max-width: 390px;
             padding: 20px 18px 16px;
             margin: 0 auto;
-            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15), 0 8px 10px -6px rgba(2, 132, 199, 0.1);
+            box-shadow: 0 12px 30px -8px rgba(2, 132, 199, 0.18), 0 8px 12px -6px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.9);
             box-sizing: border-box;
+            animation: loginCardPopIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .login-card-box:hover {
+            transform: none; /* Stabil di layar sentuh HP tanpa pergeseran */
         }
 
         /* 4. Tampilkan catatan kaki tepat di bawah kartu login pada mode HP tanpa terdorong ke bawah */
@@ -6641,7 +6686,11 @@
         document.getElementById('pageLOGIN').style.display = 'none';
         document.getElementById('pageAPP').style.display = 'none';
         document.getElementById('pageVERIFY').style.display = 'none';
-        if (pageName === 'LOGIN') document.getElementById('pageLOGIN').style.display = 'block';
+        if (pageName === 'LOGIN') {
+            document.getElementById('pageLOGIN').style.display = 'block';
+            if (typeof resetGoogleLoginButton === 'function') resetGoogleLoginButton();
+            if (typeof resetLoginSubmitButton === 'function') resetLoginSubmitButton();
+        }
         if (pageName === 'APP') document.getElementById('pageAPP').style.display = 'block';
         if (pageName === 'VERIFY') document.getElementById('pageVERIFY').style.display = 'block';
     }
@@ -6954,6 +7003,63 @@
         showToast('Selamat datang, ' + res.user.nama + '!', 'success');
     }
 
+    /**
+     * Mengembalikan tombol submit login ke tampilan resmi dengan ikon SVG utuh
+     */
+    function resetLoginSubmitButton(text) {
+        var btn = document.getElementById('btnLogin');
+        if (!btn) return;
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>' +
+            '<polyline points="10 17 15 12 10 7"></polyline>' +
+            '<line x1="15" y1="12" x2="3" y2="12"></line>' +
+            '</svg><span>' + (text || 'Masuk ke Portal e-TTE') + '</span>';
+    }
+
+    /**
+     * Mengatur status loading tombol submit login dengan spinner halus
+     */
+    function setLoginSubmitLoading(isLoading, text) {
+        var btn = document.getElementById('btnLogin');
+        if (!btn) return;
+        btn.disabled = isLoading;
+        if (isLoading) {
+            btn.innerHTML = '<span class="loading-spinner-sm" style="display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,0.35);border-top-color:#ffffff;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle;"></span><span>' + (text || 'Memverifikasi...') + '</span>';
+        } else {
+            resetLoginSubmitButton(text);
+        }
+    }
+
+    /**
+     * Mengembalikan tombol Google Login ke tampilan resmi lengkap dengan logo 4-warna Google SVG asli
+     */
+    function resetGoogleLoginButton(text) {
+        var btn = document.getElementById('btnGoogleLogin');
+        if (!btn) return;
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="google-icon-svg" width="18" height="18" viewBox="0 0 24 24">' +
+            '<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>' +
+            '<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>' +
+            '<path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>' +
+            '<path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>' +
+            '</svg><span>' + (text || 'Masuk dengan Google') + '</span>';
+    }
+
+    /**
+     * Mengatur status loading khusus tombol Google Login tanpa merusak struktur SVG saat idle
+     */
+    function setGoogleLoginLoading(isLoading, text) {
+        var btn = document.getElementById('btnGoogleLogin');
+        if (!btn) return;
+        btn.disabled = isLoading;
+        if (isLoading) {
+            btn.innerHTML = '<span class="loading-spinner-sm" style="display:inline-block;width:15px;height:15px;border:2px solid #cbd5e1;border-top-color:#0284c7;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle;"></span><span>' + (text || 'Memproses Google...') + '</span>';
+        } else {
+            resetGoogleLoginButton(text);
+        }
+    }
+
     function doLogin() {
         var username = document.getElementById('inputUsername').value.trim();
         var password = document.getElementById('inputPassword').value.trim();
@@ -6966,11 +7072,11 @@
             return;
         }
 
-        setLoading('btnLogin', true, '🔓 Masuk ke Portal e-TTE');
+        setLoginSubmitLoading(true, 'Memverifikasi Akun...');
 
         google.script.run
             .withSuccessHandler(function (res) {
-                setLoading('btnLogin', false, '🔓 Masuk ke Portal e-TTE');
+                setLoginSubmitLoading(false);
                 if (res && res.success) {
                     handleAuthSuccess(res);
                 } else {
@@ -6979,7 +7085,7 @@
                 }
             })
             .withFailureHandler(function (err) {
-                setLoading('btnLogin', false, '🔓 Masuk ke Portal e-TTE');
+                setLoginSubmitLoading(false);
                 errEl.style.display = 'block';
                 errEl.textContent = 'Error koneksi: ' + (err && err.message ? err.message : err);
             })
@@ -7006,11 +7112,11 @@
     function verifyGoogleEmailWithBackend(googleEmail, googleName, idToken) {
         var errEl = document.getElementById('loginError');
         if (errEl) errEl.style.display = 'none';
-        setLoading('btnGoogleLogin', true, 'Memverifikasi Akun...');
+        setGoogleLoginLoading(true, 'Memverifikasi Akun...');
 
         google.script.run
             .withSuccessHandler(function (res) {
-                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                setGoogleLoginLoading(false);
                 if (res && res.success) {
                     handleAuthSuccess(res);
                 } else {
@@ -7021,7 +7127,7 @@
                 }
             })
             .withFailureHandler(function (err) {
-                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                setGoogleLoginLoading(false);
                 if (errEl) {
                     errEl.style.display = 'block';
                     errEl.textContent = 'Gagal terhubung ke server: ' + (err && err.message ? err.message : err);
@@ -7041,17 +7147,17 @@
 
         // Pastikan pustaka Google Identity Services (GIS) siap
         if (typeof google === 'undefined' || !google.accounts) {
-            setLoading('btnGoogleLogin', true, 'Memuat Google...');
+            setGoogleLoginLoading(true, 'Memuat Google...');
             var script = document.createElement('script');
             script.src = 'https://accounts.google.com/gsi/client';
             script.async = true;
             script.defer = true;
             script.onload = function () {
-                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                setGoogleLoginLoading(false);
                 triggerGoogleOAuthPopup(clientId);
             };
             script.onerror = function () {
-                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                setGoogleLoginLoading(false);
                 if (errEl) {
                     errEl.style.display = 'block';
                     errEl.textContent = 'Gagal memuat pustaka Google Sign-In. Periksa koneksi internet Anda.';
@@ -7075,7 +7181,7 @@
                     scope: 'email profile openid',
                     callback: function (tokenResponse) {
                         if (tokenResponse && tokenResponse.access_token) {
-                            setLoading('btnGoogleLogin', true, 'Mengambil Profil...');
+                            setGoogleLoginLoading(true, 'Mengambil Profil...');
                             fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                                 headers: { 'Authorization': 'Bearer ' + tokenResponse.access_token }
                             })
@@ -7084,7 +7190,7 @@
                                 if (userInfo && userInfo.email) {
                                     verifyGoogleEmailWithBackend(userInfo.email, userInfo.name || '');
                                 } else {
-                                    setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                                    setGoogleLoginLoading(false);
                                     if (errEl) {
                                         errEl.style.display = 'block';
                                         errEl.textContent = 'Gagal membaca alamat email dari akun Google Anda.';
@@ -7092,19 +7198,19 @@
                                 }
                             })
                             .catch(function (fetchErr) {
-                                setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                                setGoogleLoginLoading(false);
                                 if (errEl) {
                                     errEl.style.display = 'block';
                                     errEl.textContent = 'Gagal mengambil profil Google: ' + fetchErr.message;
                                 }
                             });
                         } else if (tokenResponse && tokenResponse.error) {
-                            setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                            setGoogleLoginLoading(false);
                             console.warn('Google Sign-In dibatalkan atau ditutup:', tokenResponse.error);
                         }
                     },
                     error_callback: function (nonOAuthError) {
-                        setLoading('btnGoogleLogin', false, 'Masuk dengan Google');
+                        setGoogleLoginLoading(false);
                         console.warn('Google OAuth Error:', nonOAuthError);
                     }
                 });
@@ -7403,6 +7509,8 @@
         document.getElementById('inputUsername').value = '';
         document.getElementById('inputPassword').value = '';
         document.getElementById('loginError').style.display = 'none';
+        if (typeof resetLoginSubmitButton === 'function') resetLoginSubmitButton();
+        if (typeof resetGoogleLoginButton === 'function') resetGoogleLoginButton();
         showPage('LOGIN');
         showToast(logoutMessage || 'Anda berhasil keluar dari sistem.', 'success');
     }
