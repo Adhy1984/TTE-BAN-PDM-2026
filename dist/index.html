@@ -569,7 +569,9 @@
     }
 
     .form-label {
-        display: block;
+        display: flex;
+        align-items: center;
+        min-height: 20px;
         font-size: 0.825rem;
         font-weight: 600;
         color: var(--slate-700);
@@ -3926,9 +3928,10 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label">📌 Perihal (Judul Surat) <span style="color:red;">*</span></label>
+            <label class="form-label">📌 Perihal <span style="color:red;">*</span></label>
             <input id="inputPerihal" class="form-control" type="text"
                 placeholder="Contoh: Undangan Rapat Koordinasi Dinas">
+            <p style="font-size:.75rem;color:#94a3b8;margin-top:4px;">💡 Tuliskan perihal atau judul pokok surat.</p>
         </div>
 
         <!-- Field Kepada: textarea multi-baris -->
@@ -10448,7 +10451,158 @@
 
                 // Set konten iframe via srcdoc untuk dokumen bertipe Template
                 if (iframe) {
-                    iframe.srcdoc = res.html;
+                    var previewHtml = res.html || '';
+                    // Sisipkan stylesheet responsif mobile langsung agar pratinjau surat di HP rapi 100%
+                    var mobilePreviewCss =
+                        '<style id="injectedMobilePreviewCss">' +
+                        '@media screen and (max-width: 640px) {' +
+                        '  html, body {' +
+                        '    background-color: #525659 !important;' +
+                        '    margin: 0 !important;' +
+                        '    padding: 8px 4px 24px 4px !important;' +
+                        '    box-sizing: border-box !important;' +
+                        '  }' +
+                        '  .preview-paper-sheet {' +
+                        '    padding: 14px 12px 20px 12px !important;' +
+                        '    margin: 0 auto !important;' +
+                        '    width: 100% !important;' +
+                        '    max-width: 100% !important;' +
+                        '    min-height: auto !important;' +
+                        '    box-sizing: border-box !important;' +
+                        '    border-radius: 4px !important;' +
+                        '    overflow: hidden !important;' +
+                        '    font-size: 9.5pt !important;' +
+                        '    line-height: 1.35 !important;' +
+                        '  }' +
+                        '  .kop-table {' +
+                        '    width: 100% !important;' +
+                        '    margin-bottom: 2px !important;' +
+                        '  }' +
+                        '  .kop-table td.kop-logo {' +
+                        '    width: 58px !important;' +
+                        '    max-width: 58px !important;' +
+                        '    padding-right: 8px !important;' +
+                        '    vertical-align: middle !important;' +
+                        '  }' +
+                        '  .kop-logo img {' +
+                        '    height: 50px !important;' +
+                        '    width: auto !important;' +
+                        '    max-width: 58px !important;' +
+                        '    object-fit: contain !important;' +
+                        '    margin: 0 auto !important;' +
+                        '  }' +
+                        '  .kop-table td.kop-text {' +
+                        '    vertical-align: middle !important;' +
+                        '    padding-left: 0 !important;' +
+                        '  }' +
+                        '  .kop-line1 {' +
+                        '    font-size: 12.5px !important;' +
+                        '    line-height: 1.15 !important;' +
+                        '    margin: 0 !important;' +
+                        '  }' +
+                        '  .kop-line2 {' +
+                        '    font-size: 6.8px !important;' +
+                        '    line-height: 1.2 !important;' +
+                        '    margin: 1px 0 !important;' +
+                        '  }' +
+                        '  .kop-line3 {' +
+                        '    font-size: 12.5px !important;' +
+                        '    line-height: 1.15 !important;' +
+                        '    margin: 0 0 1px 0 !important;' +
+                        '  }' +
+                        '  .kop-alamat {' +
+                        '    font-size: 7px !important;' +
+                        '    line-height: 1.2 !important;' +
+                        '    margin: 0 !important;' +
+                        '  }' +
+                        '  .kop-hr {' +
+                        '    border-top: 1.5px solid #000000 !important;' +
+                        '    margin: 4px 0 8px 0 !important;' +
+                        '  }' +
+                        '  .info-table {' +
+                        '    width: 100% !important;' +
+                        '    margin-bottom: 6px !important;' +
+                        '    font-size: 9pt !important;' +
+                        '  }' +
+                        '  .info-table td {' +
+                        '    font-size: 9pt !important;' +
+                        '    padding: 1px 0 !important;' +
+                        '  }' +
+                        '  .info-table td:first-child {' +
+                        '    width: 62% !important;' +
+                        '  }' +
+                        '  .info-table td:last-child {' +
+                        '    width: 38% !important;' +
+                        '    text-align: right !important;' +
+                        '    white-space: nowrap !important;' +
+                        '    font-size: 8.5pt !important;' +
+                        '    vertical-align: top !important;' +
+                        '  }' +
+                        '  .meta-sub-table td {' +
+                        '    font-size: 9pt !important;' +
+                        '    padding: 1px 0 !important;' +
+                        '  }' +
+                        '  .meta-label {' +
+                        '    width: 55px !important;' +
+                        '    font-size: 9pt !important;' +
+                        '  }' +
+                        '  .meta-sep {' +
+                        '    width: 8px !important;' +
+                        '    font-size: 9pt !important;' +
+                        '  }' +
+                        '  .kepada-box {' +
+                        '    margin: 10px 0 14px 0 !important;' +
+                        '    font-size: 9.5pt !important;' +
+                        '    line-height: 1.35 !important;' +
+                        '  }' +
+                        '  .isi-container {' +
+                        '    font-size: 9.5pt !important;' +
+                        '    line-height: 1.45 !important;' +
+                        '    margin-top: 12px !important;' +
+                        '    margin-bottom: 12px !important;' +
+                        '    text-align: justify !important;' +
+                        '  }' +
+                        '  .isi-container p {' +
+                        '    font-size: 9.5pt !important;' +
+                        '    margin-bottom: 4px !important;' +
+                        '  }' +
+                        '  .ttd-table {' +
+                        '    width: 100% !important;' +
+                        '    margin-top: 8px !important;' +
+                        '  }' +
+                        '  .ttd-box {' +
+                        '    width: 58% !important;' +
+                        '    font-size: 9.5pt !important;' +
+                        '  }' +
+                        '  .ttd-jabatan, .ttd-nama {' +
+                        '    font-size: 9.5pt !important;' +
+                        '  }' +
+                        '  .ttd-qr {' +
+                        '    height: 60px !important;' +
+                        '    min-height: 60px !important;' +
+                        '    margin: 4px 0 !important;' +
+                        '  }' +
+                        '  .ttd-qr img {' +
+                        '    width: 60px !important;' +
+                        '    height: 60px !important;' +
+                        '  }' +
+                        '  div[style*="transform:rotate(45deg)"] {' +
+                        '    top: 16px !important;' +
+                        '    right: -38px !important;' +
+                        '    width: 130px !important;' +
+                        '    font-size: 7pt !important;' +
+                        '    padding: 4px 0 !important;' +
+                        '  }' +
+                        '}' +
+                        '</style>';
+
+                    if (previewHtml.indexOf('</head>') !== -1) {
+                        previewHtml = previewHtml.replace('</head>', mobilePreviewCss + '</head>');
+                    } else {
+                        previewHtml = mobilePreviewCss + previewHtml;
+                    }
+
+                    iframe.srcdoc = previewHtml;
                     iframe.style.display = 'block';
                 }
                 if (pdfWrap) pdfWrap.style.display = 'none';

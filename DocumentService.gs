@@ -448,6 +448,26 @@ function generatePreviewHtml(suratData, pejabatData) {
     '    border-radius: 2px !important;' +
     '    overflow: hidden !important;' +
     '  }' +
+    '  @media (max-width: 640px) {' +
+    '    body { padding: 8px 4px 20px 4px !important; }' +
+    '    .preview-paper-sheet {' +
+    '      padding: 14px 12px 20px 12px !important;' +
+    '      width: 100% !important;' +
+    '      max-width: 100% !important;' +
+    '      min-height: auto !important;' +
+    '      border-radius: 4px !important;' +
+    '    }' +
+    '    .kop-table td.kop-logo { width: 58px !important; max-width: 58px !important; padding-right: 8px !important; }' +
+    '    .kop-logo img { height: 50px !important; max-width: 58px !important; }' +
+    '    .kop-line1 { font-size: 12.5px !important; line-height: 1.15 !important; }' +
+    '    .kop-line2 { font-size: 6.8px !important; line-height: 1.2 !important; }' +
+    '    .kop-line3 { font-size: 12.5px !important; line-height: 1.15 !important; }' +
+    '    .kop-alamat { font-size: 7px !important; line-height: 1.2 !important; }' +
+    '    .kop-hr { border-top: 1.5px solid #000 !important; margin: 4px 0 8px 0 !important; }' +
+    '    .info-table td:first-child { width: 62% !important; }' +
+    '    .info-table td:last-child { width: 38% !important; text-align: right !important; white-space: nowrap !important; font-size: 8.5pt !important; }' +
+    '    .meta-label { width: 55px !important; }' +
+    '  }' +
     '</style>';
 
   const watermarkHtml =
