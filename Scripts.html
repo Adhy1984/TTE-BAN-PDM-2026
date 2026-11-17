@@ -244,24 +244,40 @@
         }
     }
 
-    // Inisialisasi Deteksi IP Publik Klien (Ringan & Cepat via ipify)
-    window._clientPublicIp = '';
+    // Inisialisasi Deteksi IP Publik Klien (Ringan, Multi-Provider & Cepat)
+    window._clientPublicIp = (function () {
+        try { return localStorage.getItem('LAST_KNOWN_IP') || ''; } catch (e) { return ''; }
+    })();
+
     function initClientIpDetection() {
-        try {
-            fetch('https://api.ipify.org?format=json')
-                .then(function (r) { return r.json(); })
-                .then(function (d) {
-                    if (d && d.ip) window._clientPublicIp = d.ip;
-                })
-                .catch(function () {
-                    fetch('https://api64.ipify.org?format=json')
-                        .then(function (r) { return r.json(); })
-                        .then(function (d) {
-                            if (d && d.ip) window._clientPublicIp = d.ip;
-                        })
-                        .catch(function () {});
-                });
-        } catch (e) { }
+        var providers = [
+            'https://api.ipify.org?format=json',
+            'https://api64.ipify.org?format=json',
+            'https://ipapi.co/json/',
+            'https://api.myip.com'
+        ];
+        function tryProvider(idx) {
+            if (idx >= providers.length) return;
+            try {
+                fetch(providers[idx], { cache: 'no-store' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        var ip = d && (d.ip || d.query);
+                        if (ip && typeof ip === 'string' && ip.trim()) {
+                            window._clientPublicIp = ip.trim();
+                            try { localStorage.setItem('LAST_KNOWN_IP', ip.trim()); } catch (e) {}
+                        } else {
+                            tryProvider(idx + 1);
+                        }
+                    })
+                    .catch(function () {
+                        tryProvider(idx + 1);
+                    });
+            } catch (err) {
+                tryProvider(idx + 1);
+            }
+        }
+        tryProvider(0);
     }
 
     // Panggil loadAppLogo, initAutoCopyrightYear, dan initClientIpDetection segera setelah DOM siap
@@ -5737,10 +5753,17 @@
             cb.checked = instruksiVal.indexOf(cb.value) !== -1;
         });
 
+        var localSavedCatatan = '';
+        try {
+            localSavedCatatan = localStorage.getItem('DISP_CATATAN_' + item.id_surat_masuk) || 
+                                (item.nomor_surat ? localStorage.getItem('DISP_CATATAN_NO_' + item.nomor_surat) : '') || '';
+        } catch (e) {}
+
         // Set catatan khusus (defensif membaca dari berbagai kemungkinan alias properti)
         var catatanVal = String(
             item.disposisi_catatan || item.catatan || item.catatan_khusus || 
-            item.catatan_pejabat || item.DISPOSISI_CATATAN || item.CATATAN || ''
+            item.catatan_pejabat || item.DISPOSISI_CATATAN || item.CATATAN || 
+            localSavedCatatan || ''
         ).trim();
         document.getElementById('dispCatatan').value = catatanVal;
 
@@ -5845,6 +5868,15 @@
                 }
 
                 showToast('Disposisi surat berhasil disimpan!', 'success');
+                // Backup di localStorage per idSuratMasuk dan nomorSurat
+                try {
+                    localStorage.setItem('DISP_CATATAN_' + idSuratMasuk, catatan);
+                    var targetSm = (_suratMasukData || []).find(function (x) { return String(x.id_surat_masuk) === String(idSuratMasuk); });
+                    if (targetSm && targetSm.nomor_surat) {
+                        localStorage.setItem('DISP_CATATAN_NO_' + targetSm.nomor_surat, catatan);
+                    }
+                } catch (e) {}
+
                 // Optimistic cache update agar catatan langsung tersedia
                 if (_suratMasukData && _suratMasukData.length > 0) {
                     for (var k = 0; k < _suratMasukData.length; k++) {
@@ -5856,7 +5888,7 @@
                             _suratMasukData[k].disposisi_catatan = catatan;
                             _suratMasukData[k].catatan = catatan;
                             _suratMasukData[k].catatan_khusus = catatan;
-                            _suratMasukData[k].disposisi_oleh = (APP.user ? (APP.user.nama || APP.user.username) : 'Pejabat');
+                            _suratMasukData[k].disposisi_oleh = (APP.user && APP.user.role === 'pejabat') ? APP.user.nama : 'Dr. Arifin Djenawa, M.Pd';
                             break;
                         }
                     }
@@ -5899,9 +5931,16 @@
         document.getElementById('printSmKepada').textContent = item.disposisi_kepada || '-';
         document.getElementById('printSmInstruksi').textContent = item.disposisi_instruksi || '-';
 
+        var localSavedCatatan = '';
+        try {
+            localSavedCatatan = localStorage.getItem('DISP_CATATAN_' + item.id_surat_masuk) || 
+                                (item.nomor_surat ? localStorage.getItem('DISP_CATATAN_NO_' + item.nomor_surat) : '') || '';
+        } catch (e) {}
+
         var catatanText = String(
             item.disposisi_catatan || item.catatan || item.catatan_khusus || 
-            item.catatan_pejabat || item.DISPOSISI_CATATAN || item.CATATAN || ''
+            item.catatan_pejabat || item.DISPOSISI_CATATAN || item.CATATAN || 
+            localSavedCatatan || ''
         ).trim();
 
         var catEl = document.getElementById('printSmCatatan');
@@ -5909,17 +5948,24 @@
             if (catatanText) {
                 catEl.textContent = catatanText;
                 catEl.style.fontStyle = 'normal';
-                catEl.style.fontWeight = '500';
+                catEl.style.fontWeight = '600';
+                catEl.style.color = '#0f172a';
             } else {
                 catEl.textContent = '— (Tidak ada catatan khusus) —';
                 catEl.style.fontStyle = 'italic';
                 catEl.style.fontWeight = 'normal';
+                catEl.style.color = '#64748b';
             }
         }
 
         var tglDisp = item.disposisi_tgl ? item.disposisi_tgl.split(' ')[0] : new Date().toLocaleDateString('id-ID');
         document.getElementById('printSmTglDisposisi').textContent = 'Kupang, ' + tglDisp;
-        document.getElementById('printSmPejabatNama').textContent = item.disposisi_oleh || (APP.user ? APP.user.nama : 'Dr. Arifin Djenawa, M.Pd');
+        
+        var disBy = String(item.disposisi_oleh || '').trim();
+        var safePejabatNama = (disBy && disBy.toLowerCase() !== 'admin' && disBy.toLowerCase() !== 'operator')
+            ? disBy
+            : ((APP.user && APP.user.role === 'pejabat') ? APP.user.nama : 'Dr. Arifin Djenawa, M.Pd');
+        document.getElementById('printSmPejabatNama').textContent = safePejabatNama;
 
         var modal = document.getElementById('modalLembarDisposisi');
         if (modal) modal.style.display = 'flex';

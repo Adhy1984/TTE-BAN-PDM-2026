@@ -195,12 +195,20 @@ function recordLoginSession(userObj, clientIp, userAgent) {
       status_sesi: "ONLINE"
     };
 
-    appendRowToSheet(sheetName, newLog);
+    appendDataRow(sheetName, newLog);
+    SpreadsheetApp.flush();
     return idLog;
   } catch (err) {
     Logger.log("recordLoginSession error: " + err.message);
     return null;
   }
+}
+
+/**
+ * Helper alias appendRowToSheet yang merujuk ke appendDataRow
+ */
+function appendRowToSheet(sheetName, dataObj) {
+  return appendDataRow(sheetName, dataObj);
 }
 
 /**
@@ -339,6 +347,7 @@ function appendDataRow(sheetName, dataObj) {
   }
   
   sheet.appendRow(newRow);
+  SpreadsheetApp.flush();
   return true;
 }
 

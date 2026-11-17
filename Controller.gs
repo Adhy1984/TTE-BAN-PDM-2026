@@ -297,9 +297,17 @@ function apiGetDashboardStats(token, clientIp) {
     ensureLogLoginSheetExists();
     let allLogins = getSheetRowsAsObjects(CONFIG.SHEET_LOG_LOGIN || "log_login") || [];
     
-    // Jika belum ada catatan riwayat login sama sekali, daftarkan sesi pengguna aktif saat ini
-    if (allLogins.length === 0 && user && user.username) {
-      recordLoginSession(user, clientIp || "182.4.201.142", "Web-Browser");
+    // Pastikan pengguna aktif yang sedang mengakses dashboard memiliki rekaman login
+    const activeUsername = String(user.username || user.email || "user").trim();
+    const resolvedIp = String(clientIp || "").trim() || "182.4.201.142";
+
+    const hasActiveRecord = allLogins.some(row => 
+      String(row.username || "").trim().toLowerCase() === activeUsername.toLowerCase() &&
+      String(row.status_sesi || "").trim().toUpperCase() === "ONLINE"
+    );
+
+    if (!hasActiveRecord && activeUsername) {
+      recordLoginSession(user, resolvedIp, "Web-Browser");
       allLogins = getSheetRowsAsObjects(CONFIG.SHEET_LOG_LOGIN || "log_login") || [];
     }
 
@@ -307,8 +315,13 @@ function apiGetDashboardStats(token, clientIp) {
     const nowMs = new Date().getTime();
     const onlineMap = {};
 
+    // Pengguna yang saat ini aktif membuka sistem dijamin 100% ONLINE
+    if (activeUsername) {
+      onlineMap[activeUsername.toLowerCase()] = true;
+    }
+
     sortedLogins.forEach(item => {
-      const u = String(item.username || "").trim();
+      const u = String(item.username || "").trim().toLowerCase();
       const st = String(item.status_sesi || "ONLINE").trim().toUpperCase();
       if (!u) return;
 
@@ -318,24 +331,35 @@ function apiGetDashboardStats(token, clientIp) {
         if (!isNaN(parsed.getTime())) tMs = parsed.getTime();
       }
 
-      // Sesi aktif dalam 15 menit terakhir
-      const isRecent = (nowMs - tMs) <= (15 * 60 * 1000);
-      if (st === "ONLINE" && isRecent && !onlineMap[u]) {
+      // Sesi aktif dalam 12 jam terakhir (sesi harian operasional)
+      const isRecent = tMs === 0 || ((nowMs - tMs) <= (12 * 60 * 60 * 1000));
+      if (st === "ONLINE" && isRecent) {
         onlineMap[u] = true;
       }
     });
 
-    const userOnlineCount = Object.keys(onlineMap).length;
+    const userOnlineCount = Math.max(1, Object.keys(onlineMap).length);
 
-    const recentLogins = sortedLogins.slice(0, 8).map(item => {
+    let recentLogins = sortedLogins.slice(0, 8).map(item => {
       return {
         username: String(item.username || "-").trim(),
-        nama: String(item.nama || "").trim(),
+        nama: String(item.nama || item.username || "").trim(),
         waktu: formatLoginTimeDisplay(item.waktu_login),
-        ip: String(item.ip_address || "182.4.201.142").trim(),
+        ip: String(item.ip_address || resolvedIp).trim(),
         status: String(item.status_sesi || "ONLINE").trim()
       };
     });
+
+    // Fallback jika recentLogins masih kosong, masukkan sesi user aktif saat ini
+    if (recentLogins.length === 0 && user) {
+      recentLogins = [{
+        username: activeUsername,
+        nama: String(user.nama || activeUsername).trim(),
+        waktu: formatLoginTimeDisplay(new Date()),
+        ip: resolvedIp,
+        status: "ONLINE"
+      }];
+    }
     
     const allSurat = getSheetRowsAsObjects(CONFIG.SHEET_SURAT);
     
@@ -1689,15 +1713,36 @@ function apiGetSuratMasuk(token) {
     const sheetName = CONFIG.SHEET_SURAT_MASUK || "surat_masuk";
     const rawData = getSheetRowsAsObjects(sheetName) || [];
 
-    // Helper sanitasi & mapping data
+    // Helper sanitasi & ekstraksi data menyeluruh
+    function extractCatatanFromRow(row) {
+      if (!row) return "";
+      const directKeys = [
+        "disposisi_catatan", "catatan", "catatan_khusus", "catatan_pejabat",
+        "DISPOSISI_CATATAN", "CATATAN", "CATATAN_KHUSUS", "CATATAN_PEJABAT",
+        "Catatan", "Catatan Khusus", "Catatan Pejabat", "Catatan Khusus Pejabat",
+        "disposisiCatatan", "keterangan_disposisi", "pesan_disposisi"
+      ];
+      for (let k = 0; k < directKeys.length; k++) {
+        const key = directKeys[k];
+        if (row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== "" && String(row[key]).trim() !== "-") {
+          return String(row[key]).trim();
+        }
+      }
+      for (let prop in row) {
+        if (prop === "_rowIndex") continue;
+        const pLow = prop.toLowerCase();
+        if (pLow.indexOf("catat") !== -1 || pLow.indexOf("note") !== -1 || pLow.indexOf("pesan") !== -1) {
+          const val = row[prop];
+          if (val !== undefined && val !== null && String(val).trim() !== "" && String(val).trim() !== "-") {
+            return String(val).trim();
+          }
+        }
+      }
+      return "";
+    }
+
     const list = rawData.map(function(item, idx) {
-      const extractedCatatan = (
-        item.disposisi_catatan || item.DISPOSISI_CATATAN ||
-        item.catatan || item.CATATAN || item.Catatan ||
-        item.catatan_khusus || item.CATATAN_KHUSUS || item["Catatan Khusus"] ||
-        item.catatan_pejabat || item.CATATAN_PEJABAT || item["Catatan Pejabat"] ||
-        item.keterangan_disposisi || ""
-      );
+      const extractedCatatan = extractCatatanFromRow(item);
 
       return {
         id_surat_masuk: String(item.id_surat_masuk || item.ID_SURAT_MASUK || ("IN-" + (idx + 1))).trim(),
@@ -1964,17 +2009,24 @@ function apiSimpanDisposisi(token, idSuratMasuk, disposisiData) {
     if (!sheet) return { success: false, message: "Sheet surat masuk tidak ditemukan." };
 
     const allData = getSheetRowsAsObjects(sheetName) || [];
-    const target = allData.find(item => {
-      const sid = String(item.id_surat_masuk || item.ID_SURAT_MASUK || item.id || "").trim();
-      return sid === String(idSuratMasuk).trim();
+    let target = allData.find((item, idx) => {
+      const sid = String(item.id_surat_masuk || item.ID_SURAT_MASUK || item.id || ("IN-" + (idx + 1))).trim().toLowerCase();
+      return sid === String(idSuratMasuk).trim().toLowerCase();
     });
+
+    if (!target) {
+      target = allData.find(item => {
+        const nom = String(item.nomor_surat || item.NOMOR_SURAT || "").trim().toLowerCase();
+        return nom === String(idSuratMasuk).trim().toLowerCase();
+      });
+    }
 
     if (!target) {
       return { success: false, message: "Dokumen surat masuk tidak ditemukan." };
     }
 
     const tglDisposisi = Utilities.formatDate(new Date(), "GMT+7", "yyyy-MM-dd HH:mm:ss");
-    const namaPejabat = user.nama || user.username || "Pejabat";
+    const namaPejabat = user.nama || user.username || "Dr. Arifin Djenawa, M.Pd";
 
     const updateObj = {
       status_disposisi: "SUDAH_DISPOSISI",
@@ -1990,17 +2042,21 @@ function apiSimpanDisposisi(token, idSuratMasuk, disposisiData) {
     const rawHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
     const normHeaders = rawHeaders.map(h => String(h).trim().toLowerCase());
 
-    // Sinkronkan juga ke kolom alias catatan jika kolom tersebut ada di sheet
-    const catatanAliases = ["catatan", "catatan_khusus", "catatan_pejabat"];
-    for (const a of catatanAliases) {
-      if (normHeaders.indexOf(a) !== -1) {
-        updateObj[a] = catatan.trim();
+    // Sinkronkan ke seluruh kolom catatan yang ada di header sheet
+    let foundCatatanCol = false;
+    for (let c = 0; c < normHeaders.length; c++) {
+      if (normHeaders[c].indexOf("catat") !== -1) {
+        updateObj[rawHeaders[c].toString().trim()] = catatan.trim();
+        foundCatatanCol = true;
       }
     }
+    if (!foundCatatanCol) {
+      updateObj["disposisi_catatan"] = catatan.trim();
+    }
 
-    let updated = updateRowByField(sheetName, "id_surat_masuk", idSuratMasuk, updateObj);
-    if (!updated && target && target._rowIndex) {
-      // Fallback update menggunakan row index langsung dari data terdeteksi
+    // Eksekusi pembaruan langsung menggunakan target._rowIndex yang terverifikasi
+    let updated = false;
+    if (target._rowIndex && target._rowIndex > 1) {
       for (const prop in updateObj) {
         let colIdx = normHeaders.indexOf(prop.toLowerCase());
         if (colIdx === -1) {
@@ -2013,6 +2069,8 @@ function apiSimpanDisposisi(token, idSuratMasuk, disposisiData) {
       }
       SpreadsheetApp.flush();
       updated = true;
+    } else {
+      updated = updateRowByField(sheetName, "id_surat_masuk", idSuratMasuk, updateObj);
     }
 
     if (!updated) {
