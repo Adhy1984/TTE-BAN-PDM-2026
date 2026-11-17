@@ -13,7 +13,7 @@ const CONFIG = {
   DRIVE_FOLDER_ID: "1-sdC6uaHqA88CT4U4YdgWgpTsYpYeys_",
   
   // URL Web App Resmi Portal e-TTE (Vercel Frontend Mandiri)
-  WEB_APP_URL: "https://tte-banpdmntt.vercel.app",
+  WEB_APP_URL: "https://e-ttebanpdmntt.vercel.app",
   
   // Identitas & Pengaturan Instansi (Format Kop Surat BAN PDM)
   APP_NAME: "e-TTE Signature Portal",

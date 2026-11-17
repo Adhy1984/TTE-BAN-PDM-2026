@@ -30,7 +30,10 @@ function getOrCreateStorageFolder() {
  * Menghasilkan URL Verifikasi Publik untuk dokumen
  */
 function getVerificationUrl(docId, customBaseUrl) {
-  let baseUrl = (customBaseUrl || CONFIG.WEB_APP_URL || "").trim();
+  let baseUrl = (CONFIG.WEB_APP_URL || "").trim();
+  if (customBaseUrl && customBaseUrl.indexOf("vercel.app") !== -1) {
+    baseUrl = customBaseUrl.trim();
+  }
   if (!baseUrl) {
     try {
       baseUrl = ScriptApp.getService().getUrl() || "";
@@ -49,7 +52,7 @@ function getVerificationUrl(docId, customBaseUrl) {
   
   // Fallback resmi ke domain portal Vercel BAN PDM NTT
   if (!baseUrl) {
-    baseUrl = "https://tte-banpdmntt.vercel.app";
+    baseUrl = "https://e-ttebanpdmntt.vercel.app";
   }
   
   return baseUrl + (baseUrl.indexOf("?") === -1 ? "?" : "&") + "p=verify&id=" + encodeURIComponent(docId);

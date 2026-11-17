@@ -11,5 +11,5 @@ window.GAS_API_URL = "https://script.google.com/macros/s/AKfycbw-L6i-x3o_SK2fcFv
 window.GOOGLE_CLIENT_ID = "937444204077-ure9hl2ao0q9sinkpq2cqcvi4amgtg6i.apps.googleusercontent.com";
 window.ADMIN_EMAIL = "ntt@ban-pdm.id";
 window.ADMIN_WA = "6282302014000";
-window.WEB_APP_URL = "https://tte-banpdmntt.vercel.app";
+window.WEB_APP_URL = "https://e-ttebanpdmntt.vercel.app";
 

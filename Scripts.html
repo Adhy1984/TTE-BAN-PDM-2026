@@ -3495,7 +3495,9 @@
         // Tampilkan loading sementara
         showToast('Menyiapkan link verifikasi...', 'info');
 
-        var clientOrigin = (window.location && window.location.origin) ? window.location.origin : 'https://tte-banpdmntt.vercel.app';
+        var clientOrigin = (window.location && window.location.origin && window.location.origin.indexOf('vercel.app') !== -1)
+            ? window.location.origin
+            : (window.WEB_APP_URL || 'https://e-ttebanpdmntt.vercel.app');
         google.script.run
             .withSuccessHandler(function (res) {
                 if (res && res.success && res.url) {
@@ -3658,7 +3660,9 @@
         var btnEl = document.querySelector('#modalPinTte .btn-success');
         btnEl.disabled = true;
         btnEl.textContent = '⏳ Memproses TTE...';
-        var clientOrigin = (window.location && window.location.origin) ? window.location.origin : 'https://tte-banpdmntt.vercel.app';
+        var clientOrigin = (window.location && window.location.origin && window.location.origin.indexOf('vercel.app') !== -1)
+            ? window.location.origin
+            : (window.WEB_APP_URL || 'https://e-ttebanpdmntt.vercel.app');
 
         google.script.run
             .withSuccessHandler(function (res) {

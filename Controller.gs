@@ -42,7 +42,7 @@ function doGet(e) {
   // Menjamin jika ada yang men-scan QR code lama atau membuka link Google Script, otomatis dialihkan ke Vercel tanpa layar blank
   const pageParam = (queryParams.p || "").toLowerCase();
   const idParam = queryParams.id || "";
-  const vercelBase = (CONFIG.WEB_APP_URL || "https://tte-banpdmntt.vercel.app").trim().replace(/\/+$/, "");
+  const vercelBase = (CONFIG.WEB_APP_URL || "https://e-ttebanpdmntt.vercel.app").trim().replace(/\/+$/, "");
 
   if (pageParam === "verify" && idParam && vercelBase) {
     const targetUrl = vercelBase + "/?p=verify&id=" + encodeURIComponent(idParam);
