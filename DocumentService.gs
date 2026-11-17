@@ -42,8 +42,8 @@ function getVerificationUrl(docId, customBaseUrl) {
     }
   }
   
-  // Hapus trailing slash jika ada agar format parameter URL rapi
-  baseUrl = baseUrl.replace(/\/+$/, "");
+  // Hapus trailing slash jika ada agar penambahan path/query konsisten
+  baseUrl = (baseUrl || "").trim().replace(/\/+$/, "");
   
   // Jika URL mengarah ke /dev (versi test Google Script), ubah otomatis ke /exec agar dapat dibuka publik tanpa login
   if (baseUrl.endsWith("/dev")) {
@@ -55,7 +55,28 @@ function getVerificationUrl(docId, customBaseUrl) {
     baseUrl = "https://e-ttebanpdmntt.vercel.app";
   }
   
-  return baseUrl + (baseUrl.indexOf("?") === -1 ? "?" : "&") + "p=verify&id=" + encodeURIComponent(docId);
+  const cleanDocId = encodeURIComponent(String(docId || "").trim());
+
+  // Pastikan URL selalu memiliki root slash '/' sebelum query parameter '?p=verify&id=' (Sesuai RFC 3986)
+  // Contoh: 'https://e-ttebanpdmntt.vercel.app' -> 'https://e-ttebanpdmntt.vercel.app/?p=verify&id=...'
+  // PENTING: Tanpa '/' setelah domain, pemindai barcode / kamera HP (MIUI/Xiaomi Scanner, Lens, dll.)
+  // tidak mengenali format sebagai Web URL (TYPE_URL) dan salah membacanya sebagai teks biasa (Teks -> Cari / Salin teks).
+  let separator = "/?";
+  if (baseUrl.indexOf("?") !== -1) {
+    separator = "&";
+  } else if (baseUrl.endsWith("/")) {
+    separator = "?";
+  } else {
+    // Periksa apakah URL sudah memiliki sub-path seperti /exec
+    const afterProtocol = baseUrl.replace(/^https?:\/\/[^\/]+/, "");
+    if (afterProtocol.length > 0) {
+      separator = "?";
+    } else {
+      separator = "/?";
+    }
+  }
+
+  return baseUrl + separator + "p=verify&id=" + cleanDocId;
 }
 
 /**
@@ -428,14 +449,13 @@ function generatePreviewHtml(suratData, pejabatData) {
 
   // =========================================================
   // 4. SISIPKAN GAYA LEMBAR KERTAS A4 & WATERMARK PRATINJAU
-  //    Membungkus konten dalam container lembar cetak A4 dengan bayangan (drop shadow)
-  //    di atas latar abu-abu PDF viewer, agar batas/tepi kertas terlihat jelas.
+  //    Membungkus konten dalam container lembar cetak A4 dengan batas garis bersih (tanpa bayangan tebal)
+  //    di atas latar profesional slate, agar dokumen tampil rapi, tegas, dan bebas distorsi bayangan.
   // =========================================================
   const previewCss =
     '<style>' +
-    '  html { background-color: #525659 !important; }' +
-    '  body {' +
-    '    background-color: #525659 !important;' +
+    '  html, body {' +
+    '    background-color: #f1f5f9 !important;' +
     '    margin: 0 !important;' +
     '    padding: 24px 16px 40px 16px !important;' +
     '    display: flex !important;' +
@@ -449,20 +469,23 @@ function generatePreviewHtml(suratData, pejabatData) {
     '    max-width: 210mm !important;' +
     '    min-height: 297mm !important;' +
     '    padding: 15mm 20mm 20mm 20mm !important;' +
-    '    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.12) !important;' +
+    '    box-shadow: none !important;' +
+    '    border: 1px solid #cbd5e1 !important;' +
     '    box-sizing: border-box !important;' +
     '    position: relative !important;' +
-    '    border-radius: 2px !important;' +
+    '    border-radius: 4px !important;' +
     '    overflow: hidden !important;' +
     '  }' +
     '  @media (max-width: 640px) {' +
-    '    body { padding: 8px 4px 20px 4px !important; }' +
+    '    html, body { padding: 8px 4px 20px 4px !important; background-color: #f1f5f9 !important; }' +
     '    .preview-paper-sheet {' +
     '      padding: 14px 12px 20px 12px !important;' +
     '      width: 100% !important;' +
     '      max-width: 100% !important;' +
     '      min-height: auto !important;' +
     '      border-radius: 4px !important;' +
+    '      box-shadow: none !important;' +
+    '      border: 1px solid #cbd5e1 !important;' +
     '    }' +
     '    .kop-table td.kop-logo { width: 58px !important; max-width: 58px !important; padding-right: 8px !important; }' +
     '    .kop-logo img { height: 50px !important; max-width: 58px !important; }' +

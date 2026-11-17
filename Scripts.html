@@ -3907,7 +3907,7 @@
                         '<style id="injectedMobilePreviewCss">' +
                         '@media screen and (max-width: 640px) {' +
                         '  html, body {' +
-                        '    background-color: #525659 !important;' +
+                        '    background-color: #f1f5f9 !important;' +
                         '    margin: 0 !important;' +
                         '    padding: 8px 4px 24px 4px !important;' +
                         '    box-sizing: border-box !important;' +
@@ -3920,6 +3920,8 @@
                         '    min-height: auto !important;' +
                         '    box-sizing: border-box !important;' +
                         '    border-radius: 4px !important;' +
+                        '    box-shadow: none !important;' +
+                        '    border: 1px solid #cbd5e1 !important;' +
                         '    overflow: hidden !important;' +
                         '    font-size: 9.5pt !important;' +
                         '    line-height: 1.35 !important;' +
@@ -4226,7 +4228,7 @@
             card.id = 'previewPageCard_' + p;
             card.className = 'preview-page-card';
             card.setAttribute('data-page-num', p);
-            card.style.cssText = 'position:relative;width:100%;max-width:740px;background:#ffffff;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.35);overflow:hidden;box-sizing:border-box;margin-bottom:20px;';
+            card.style.cssText = 'position:relative;width:100%;max-width:740px;background:#ffffff;border-radius:6px;box-shadow:none;border:1px solid #cbd5e1;overflow:hidden;box-sizing:border-box;margin-bottom:20px;';
 
             var headerHtml = '<div style="background:#1e293b;color:#cbd5e1;font-size:11px;padding:6px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155;user-select:none;">' +
                 '<span style="font-weight:600;display:flex;align-items:center;gap:6px;">📄 Halaman ' + p + ' dari ' + _modalPdfTotalPages + '</span>' +
