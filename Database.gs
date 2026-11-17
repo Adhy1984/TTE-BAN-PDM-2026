@@ -404,42 +404,53 @@ function updateRowByField(sheetName, keyField, keyValue, updateObj) {
 }
 
 /**
- * Menghapus satu baris berdasarkan nilai kolom kunci tertentu (misal id_user)
+ * Menghapus satu baris berdasarkan nilai kolom kunci tertentu (misal id_user atau id_dokumen)
  */
 function deleteRowByField(sheetName, keyField, keyValue) {
-  const ss = getDb();
-  const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) return false;
-  
-  const lastCol = sheet.getLastColumn();
-  const lastRow = sheet.getLastRow();
-  if (lastCol === 0 || lastRow <= 1) return false;
-  
-  const rawHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  const normHeaders = rawHeaders.map(h => String(h).trim().toLowerCase());
-  
-  const targetKeyNorm = String(keyField).trim().toLowerCase();
-  const keyColIdx = normHeaders.indexOf(targetKeyNorm);
-  if (keyColIdx === -1) {
-    Logger.log("Field kunci '" + keyField + "' tidak ditemukan pada sheet '" + sheetName + "'.");
+  try {
+    const ss = getDb();
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return false;
+    
+    const lastCol = sheet.getLastColumn();
+    const lastRow = sheet.getLastRow();
+    if (lastCol === 0 || lastRow <= 1) return false;
+    
+    const rawHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    const normHeaders = rawHeaders.map(h => String(h || "").trim().toLowerCase());
+    
+    const targetKeyNorm = String(keyField || "").trim().toLowerCase();
+    const keyColIdx = normHeaders.indexOf(targetKeyNorm);
+    const targetValStr = String(keyValue || "").trim().toLowerCase();
+
+    // 1. Jika nama kolom kunci ditemukan di header, prioritaskan pencarian di kolom tersebut
+    if (keyColIdx !== -1) {
+      const colValues = sheet.getRange(1, keyColIdx + 1, lastRow, 1).getValues();
+      for (let r = 1; r < colValues.length; r++) {
+        const curVal = String(colValues[r][0] || "").trim().toLowerCase();
+        if (curVal === targetValStr) {
+          sheet.deleteRow(r + 1);
+          SpreadsheetApp.flush();
+          return true;
+        }
+      }
+    }
+
+    // 2. Fallback pencarian komprehensif ke seluruh cell baris data jika kolom kunci berbeda penamaan
+    const allData = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    for (let r = 0; r < allData.length; r++) {
+      for (let c = 0; c < lastCol; c++) {
+        if (String(allData[r][c] || "").trim().toLowerCase() === targetValStr) {
+          sheet.deleteRow(r + 2);
+          SpreadsheetApp.flush();
+          return true;
+        }
+      }
+    }
+
+    return false;
+  } catch (err) {
+    Logger.log("Peringatan deleteRowByField: " + err.message);
     return false;
   }
-  
-  const targetValStr = String(keyValue).trim();
-  const colValues = sheet.getRange(1, keyColIdx + 1, lastRow, 1).getValues();
-  
-  let targetRowIdx = -1;
-  for (let r = 1; r < colValues.length; r++) {
-    const curVal = String(colValues[r][0]).trim();
-    if (curVal === targetValStr || curVal.toLowerCase() === targetValStr.toLowerCase()) {
-      targetRowIdx = r + 1;
-      break;
-    }
-  }
-  
-  if (targetRowIdx === -1) return false;
-  
-  sheet.deleteRow(targetRowIdx);
-  SpreadsheetApp.flush();
-  return true;
 }

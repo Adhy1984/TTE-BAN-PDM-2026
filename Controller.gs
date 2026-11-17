@@ -987,34 +987,83 @@ function apiDeleteSurat(token, docId) {
       return { success: false, message: "ID Dokumen tidak valid." };
     }
 
-    const allSurat = getSheetRowsAsObjects(CONFIG.SHEET_SURAT);
-    const targetSurat = allSurat.find(s => String(s.id_dokumen).trim() === String(docId).trim());
+    const cleanDocId = String(docId).trim();
+    const allSurat = getSheetRowsAsObjects(CONFIG.SHEET_SURAT) || [];
+    const targetSurat = allSurat.find(s => {
+      const sid = String(s.id_dokumen || s.ID_DOKUMEN || s.id || s.Id || "").trim().toLowerCase();
+      return sid === cleanDocId.toLowerCase();
+    });
+
     if (!targetSurat) {
-      return { success: false, message: "Dokumen surat tidak ditemukan." };
+      return { success: false, message: "Dokumen surat '" + cleanDocId + "' tidak ditemukan di database." };
     }
 
     // Dokumen yang sudah DITANDATANGANI hanya boleh dihapus oleh Administrator
-    if (targetSurat.status === "DITANDATANGANI" && user.role !== "admin") {
+    if (String(targetSurat.status || "").toUpperCase() === "DITANDATANGANI" && user.role !== "admin") {
       return { success: false, message: "Dokumen yang sudah ditandatangani secara elektronik (TTE) resmi hanya dapat dihapus oleh akun Administrator!" };
     }
 
     // Hapus file draf/resmi PDF terkait di Google Drive jika ada
-    if (targetSurat.pdf_id) {
+    const pdfId = targetSurat.pdf_id || targetSurat.PDF_ID || targetSurat.file_id;
+    if (pdfId && String(pdfId).trim()) {
       try {
-        DriveApp.getFileById(targetSurat.pdf_id).setTrashed(true);
+        DriveApp.getFileById(String(pdfId).trim()).setTrashed(true);
       } catch (e) {
-        Logger.log("Gagal menghapus file PDF di Drive: " + e.message);
+        Logger.log("Peringatan: Berkas PDF tidak ditemukan atau sudah dihapus di Drive: " + e.message);
       }
     }
 
-    const deleted = deleteRowByField(CONFIG.SHEET_SURAT, "id_dokumen", docId);
-    if (!deleted) {
-      return { success: false, message: "Gagal menghapus baris data surat di database spreadsheet." };
+    const ss = getDb();
+    const sheet = ss.getSheetByName(CONFIG.SHEET_SURAT);
+    if (!sheet) {
+      return { success: false, message: "Sheet database surat ('" + CONFIG.SHEET_SURAT + "') tidak ditemukan." };
     }
 
-    return { success: true, message: "Dokumen surat '" + (targetSurat.nomor_surat || docId) + "' dan berkas terkait berhasil dihapus." };
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
+    let deletedRow = -1;
+
+    // 1. Prioritas: Gunakan _rowIndex dari targetSurat jika terverifikasi memiliki docId
+    if (targetSurat._rowIndex && targetSurat._rowIndex > 1 && targetSurat._rowIndex <= lastRow) {
+      const rowVals = sheet.getRange(targetSurat._rowIndex, 1, 1, lastCol).getValues()[0];
+      const hasId = rowVals.some(v => String(v).trim().toLowerCase() === cleanDocId.toLowerCase());
+      if (hasId) {
+        deletedRow = targetSurat._rowIndex;
+      }
+    }
+
+    // 2. Scan langsung pada tabel spreadsheet jika _rowIndex tidak cocok
+    if (deletedRow === -1 && lastRow > 1) {
+      const allVals = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+      for (let r = 0; r < allVals.length; r++) {
+        const row = allVals[r];
+        if (row.some(v => String(v).trim().toLowerCase() === cleanDocId.toLowerCase())) {
+          deletedRow = r + 2;
+          break;
+        }
+      }
+    }
+
+    if (deletedRow > 1) {
+      sheet.deleteRow(deletedRow);
+      SpreadsheetApp.flush();
+      return { 
+        success: true, 
+        message: "Dokumen surat '" + (targetSurat.nomor_surat || cleanDocId) + "' dan berkas terkait berhasil dihapus permanen." 
+      };
+    } else {
+      // 3. Fallback pemanggilan helper deleteRowByField
+      const deletedFallback = deleteRowByField(CONFIG.SHEET_SURAT, "id_dokumen", cleanDocId);
+      if (deletedFallback) {
+        return { 
+          success: true, 
+          message: "Dokumen surat '" + (targetSurat.nomor_surat || cleanDocId) + "' dan berkas terkait berhasil dihapus." 
+        };
+      }
+      return { success: false, message: "Gagal menemukan baris data surat '" + cleanDocId + "' di spreadsheet." };
+    }
   } catch (err) {
-    return { success: false, message: "Gagal menghapus surat: " + err.message };
+    return { success: false, message: "Gagal menghapus surat: " + (err.stack || err.message) };
   }
 }
 
@@ -1642,6 +1691,14 @@ function apiGetSuratMasuk(token) {
 
     // Helper sanitasi & mapping data
     const list = rawData.map(function(item, idx) {
+      const extractedCatatan = (
+        item.disposisi_catatan || item.DISPOSISI_CATATAN ||
+        item.catatan || item.CATATAN || item.Catatan ||
+        item.catatan_khusus || item.CATATAN_KHUSUS || item["Catatan Khusus"] ||
+        item.catatan_pejabat || item.CATATAN_PEJABAT || item["Catatan Pejabat"] ||
+        item.keterangan_disposisi || ""
+      );
+
       return {
         id_surat_masuk: String(item.id_surat_masuk || item.ID_SURAT_MASUK || ("IN-" + (idx + 1))).trim(),
         nomor_surat: String(item.nomor_surat || item.NOMOR_SURAT || "-").trim(),
@@ -1658,10 +1715,11 @@ function apiGetSuratMasuk(token) {
         uploaded_by: String(item.uploaded_by || item.UPLOADED_BY || "-").trim(),
         created_at: String(item.created_at || item.CREATED_AT || "").trim(),
         status_disposisi: String(item.status_disposisi || item.STATUS_DISPOSISI || "BELUM_DISPOSISI").trim(),
-        disposisi_kepada: String(item.disposisi_kepada || item.DISPOSISI_KEPADA || "").trim(),
-        disposisi_sifat: String(item.disposisi_sifat || item.DISPOSISI_SIFAT || "Biasa").trim(),
-        disposisi_instruksi: String(item.disposisi_instruksi || item.DISPOSISI_INSTRUKSI || "").trim(),
-        disposisi_catatan: String(item.disposisi_catatan || item.DISPOSISI_CATATAN || "").trim(),
+        disposisi_kepada: String(item.disposisi_kepada || item.DISPOSISI_KEPADA || item.kepada || item.KEPADA || "").trim(),
+        disposisi_sifat: String(item.disposisi_sifat || item.DISPOSISI_SIFAT || item.sifat || item.SIFAT || "Biasa").trim(),
+        disposisi_instruksi: String(item.disposisi_instruksi || item.DISPOSISI_INSTRUKSI || item.instruksi || item.INTRUKSI || "").trim(),
+        disposisi_catatan: String(extractedCatatan).trim(),
+        catatan: String(extractedCatatan).trim(),
         disposisi_oleh: String(item.disposisi_oleh || item.DISPOSISI_OLEH || "").trim(),
         disposisi_tgl: String(item.disposisi_tgl || item.DISPOSISI_TGL || "").trim()
       };
@@ -1893,7 +1951,7 @@ function apiSimpanDisposisi(token, idSuratMasuk, disposisiData) {
     const kepada = (disposisiData && (disposisiData.disposisi_kepada || disposisiData.kepada || "")) + "";
     const sifat = (disposisiData && (disposisiData.disposisi_sifat || disposisiData.sifat || "Biasa")) + "";
     const instruksi = (disposisiData && (disposisiData.disposisi_instruksi || disposisiData.instruksi || "")) + "";
-    const catatan = (disposisiData && (disposisiData.disposisi_catatan || disposisiData.catatan || "")) + "";
+    const catatan = (disposisiData && (disposisiData.disposisi_catatan || disposisiData.catatan || disposisiData.catatan_khusus || "")) + "";
 
     if (!kepada.trim()) {
       return { success: false, message: "Tujuan disposisi (Diteruskan Kepada) wajib diisi!" };
@@ -1901,8 +1959,15 @@ function apiSimpanDisposisi(token, idSuratMasuk, disposisiData) {
 
     ensureSuratMasukSheetExists();
     const sheetName = CONFIG.SHEET_SURAT_MASUK || "surat_masuk";
+    const ss = getDb();
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return { success: false, message: "Sheet surat masuk tidak ditemukan." };
+
     const allData = getSheetRowsAsObjects(sheetName) || [];
-    const target = allData.find(item => String(item.id_surat_masuk || item.ID_SURAT_MASUK).trim() === String(idSuratMasuk).trim());
+    const target = allData.find(item => {
+      const sid = String(item.id_surat_masuk || item.ID_SURAT_MASUK || item.id || "").trim();
+      return sid === String(idSuratMasuk).trim();
+    });
 
     if (!target) {
       return { success: false, message: "Dokumen surat masuk tidak ditemukan." };
@@ -1921,27 +1986,33 @@ function apiSimpanDisposisi(token, idSuratMasuk, disposisiData) {
       disposisi_tgl: tglDisposisi
     };
 
+    const lastCol = sheet.getLastColumn();
+    const rawHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    const normHeaders = rawHeaders.map(h => String(h).trim().toLowerCase());
+
+    // Sinkronkan juga ke kolom alias catatan jika kolom tersebut ada di sheet
+    const catatanAliases = ["catatan", "catatan_khusus", "catatan_pejabat"];
+    for (const a of catatanAliases) {
+      if (normHeaders.indexOf(a) !== -1) {
+        updateObj[a] = catatan.trim();
+      }
+    }
+
     let updated = updateRowByField(sheetName, "id_surat_masuk", idSuratMasuk, updateObj);
     if (!updated && target && target._rowIndex) {
       // Fallback update menggunakan row index langsung dari data terdeteksi
-      const ss = getDb();
-      const sheet = ss.getSheetByName(sheetName);
-      if (sheet) {
-        const lastCol = sheet.getLastColumn();
-        const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim().toLowerCase());
-        for (const prop in updateObj) {
-          let colIdx = headers.indexOf(prop.toLowerCase());
-          if (colIdx === -1) {
-            const newCol = sheet.getLastColumn() + 1;
-            sheet.getRange(1, newCol).setValue(prop).setFontWeight("bold").setBackground("#1e293b").setFontColor("#ffffff");
-            headers.push(prop.toLowerCase());
-            colIdx = newCol - 1;
-          }
-          sheet.getRange(target._rowIndex, colIdx + 1).setValue(updateObj[prop]);
+      for (const prop in updateObj) {
+        let colIdx = normHeaders.indexOf(prop.toLowerCase());
+        if (colIdx === -1) {
+          const newCol = sheet.getLastColumn() + 1;
+          sheet.getRange(1, newCol).setValue(prop).setFontWeight("bold").setBackground("#1e293b").setFontColor("#ffffff");
+          normHeaders.push(prop.toLowerCase());
+          colIdx = newCol - 1;
         }
-        SpreadsheetApp.flush();
-        updated = true;
+        sheet.getRange(target._rowIndex, colIdx + 1).setValue(updateObj[prop]);
       }
+      SpreadsheetApp.flush();
+      updated = true;
     }
 
     if (!updated) {
@@ -1953,7 +2024,18 @@ function apiSimpanDisposisi(token, idSuratMasuk, disposisiData) {
       message: "Disposisi surat berhasil disimpan!",
       id: idSuratMasuk,
       pejabat: namaPejabat,
-      waktu: tglDisposisi
+      waktu: tglDisposisi,
+      data: {
+        id_surat_masuk: idSuratMasuk,
+        status_disposisi: "SUDAH_DISPOSISI",
+        disposisi_kepada: kepada.trim(),
+        disposisi_sifat: sifat.trim() || "Biasa",
+        disposisi_instruksi: instruksi.trim(),
+        disposisi_catatan: catatan.trim(),
+        catatan: catatan.trim(),
+        disposisi_oleh: namaPejabat,
+        disposisi_tgl: tglDisposisi
+      }
     };
   } catch (err) {
     return { success: false, message: "Gagal memproses disposisi: " + err.message };

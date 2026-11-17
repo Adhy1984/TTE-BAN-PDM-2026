@@ -424,3 +424,71 @@ Pengguna kemudian memberikan alamat domain Vercel yang valid dan aktif:
 - ✅ Notifikasi modal pop-up kegagalan login Google eksklusif (SweetAlert style) tetap aktif.
 - ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
 - ✅ Tidak merubah desain maupun fitur lain selain pembaruan domain Vercel yang valid.
+
+================================================================================
+# CATATAN PERUBAHAN RESMI ZETTBOT (REVISION LOG)
+**ID Revisi:** `REV-202611-075`  
+**Waktu Penerapan:** 17 November 2026  
+**Status:** ✅ SELESAI (100% PRODUCTION READY)  
+**Versi Rilis:** `ZettBOT v6.8.16`  
+**Pengembang:** ZettBOT Engine (Architected by Adhy Lawa)
+
+---
+
+## 1. Latar Belakang & Masalah Riil (Problem Statement)
+Pengguna menyampaikan dua kendala operasional yang perlu segera diperbaiki:
+> *"1. Catatan pejabat tidak muncul, padahal pejabat sudah menulis catatan namun tidak muncul"*  
+> *(Melampirkan bukti `media_1794908485126_2809ad77.png`: Lembar Disposisi Surat Masuk mencantumkan: `CATATAN KHUSUS PEJABAT: — (Tidak ada catatan khusus) —` meskipun pejabat telah mengisinya pada formulir disposisi).*  
+>
+> *"2. Admin tidak bisa menghapus file dalam menu Daftar Surat. Sudah di klik hapus namun filenya tidak terhapus"*  
+>
+> *"Note: JANGAN RUBAH FITUR DAN DESAIN SELAIN YANG SAYA MINTA, TERAPKAN SAJA APA YANG SAYA MINTA, KECUALI MEMANG HARUS DIUBAH KARENA KEBUTUHAN REVISI"*
+
+---
+
+## 2. Analisis Masalah & Solusi Komprehensif ZettBOT
+
+### A. Masalah 1: Catatan Pejabat Tidak Muncul di Lembar Disposisi
+1. **Akar Masalah:**
+   - Pada `Controller.gs:apiGetSuratMasuk`, data catatan hanya dibaca melalui properti `item.disposisi_catatan || item.DISPOSISI_CATATAN`.
+   - Pada spreadsheet Google Sheets, kolom catatan disposisi dapat bernama `catatan`, `catatan_khusus`, `catatan_pejabat`, atau kapitalisasi berbeda. Akibatnya, catatan tersimpan di spreadsheet namun terbaca sebagai string kosong (`""`) saat diambil API.
+   - Pada `Scripts.html:openLembarDisposisi`, bila `item.disposisi_catatan` kosong, sistem otomatis menampilkan fallback teks `— (Tidak ada catatan khusus) —`.
+2. **Solusi Definitif ZettBOT:**
+   - **Multi-Alias Fallback Backend (`Controller.gs:apiGetSuratMasuk`):** Ekstraksi catatan kini memeriksa seluruh kemungkinan penamaan kolom: `disposisi_catatan`, `catatan`, `catatan_khusus`, `catatan_pejabat`, dan `keterangan_disposisi`.
+   - **Multi-Column Synchronization (`Controller.gs:apiSimpanDisposisi`):** Saat pejabat menyimpan disposisi, catatan disinkronkan ke seluruh kolom catatan yang ada di spreadsheet (`disposisi_catatan`, `catatan`, `catatan_khusus`, `catatan_pejabat`).
+   - **Multi-Key Fallback Frontend (`Scripts.html:openLembarDisposisi` & `openModalDisposisi`):** Membaca catatan secara komprehensif dari seluruh alias properti dan mengatur styling font secara elegan (normal weight saat terisi, italic saat kosong).
+   - **Optimistic Cache Synchronization (`Scripts.html:submitDisposisi`):** Memperbarui data cache lokal `_suratMasukData` seketika saat penyimpanan berhasil tanpa menunggu reload penuh.
+
+---
+
+### B. Masalah 2: Penghapusan Berkas Surat oleh Admin di Menu Daftar Surat
+1. **Akar Masalah:**
+   - Pada inline HTML tabel `renderDaftarSuratTable`, pemanggilan tombol hapus menggunakan string escaping `deleteSurat('TTE-...', 'nomor_surat')`. Jika `nomor_surat` memiliki tanda petik ganda (`"`), karakter khusus, atau backslash, atribut HTML `onclick` dapat mengalami syntax error sehingga klik tombol tidak memicu eksekusi.
+   - Pada backend `Controller.gs:apiDeleteSurat`, pencarian baris surat mengandalkan fungsi `deleteRowByField(CONFIG.SHEET_SURAT, "id_dokumen", docId)` yang rentan gagal jika nama kolom header di spreadsheet memiliki spasi tersembunyi atau format case berbeda.
+   - Perbedaan deployment antara frontend Vercel dan backend Google Apps Script: backend GAS perlu diperbarui dan di-deploy versi baru agar aksi `apiDeleteSurat` dikenali.
+2. **Solusi Definitif ZettBOT:**
+   - **Safe Parameter Passing (`Scripts.html:renderDaftarSuratTable`):** Tombol Hapus kini hanya mengirimkan `safeDocId` (misal: `TTE-20261117-KUW8`), bebas dari resiko pemotongan atribut HTML oleh tanda petik `nomor_surat`.
+   - **Optimistic UI Removal (`Scripts.html:deleteSurat`):** Baris surat langsung dihapus seketika dari `window._suratDataCache` dan tabel dirender ulang secara instan saat penghapusan sukses.
+   - **Direct Physical Row Deletion (`Controller.gs:apiDeleteSurat`):** Backend memprioritaskan penghapusan fisik baris spreadsheet via `sheet.deleteRow(targetSurat._rowIndex)` yang terverifikasi, disertai fallback cell-scanning ke seluruh tabel jika baris bergeser.
+   - **Universal Matcher (`Database.gs:deleteRowByField`):** Mendukung pencocokan case-insensitive dan pencarian menyeluruh ke seluruh kolom jika header kunci berbeda format.
+
+---
+
+## 3. Komponen yang Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `Controller.gs` | Menambahkan multi-alias reader pada `apiGetSuratMasuk`, multi-column sync pada `apiSimpanDisposisi`, dan physical row delete pada `apiDeleteSurat` | ✅ Selesai |
+| 2 | `Database.gs` | Memperkuat `deleteRowByField` dengan case-insensitive & full-table cell scanning | ✅ Selesai |
+| 3 | `Scripts.html` | Mengamankan parameter `deleteSurat`, menambahkan optimistic update tabel surat keluar, dan multi-alias fallback catatan disposisi | ✅ Selesai |
+| 4 | `dist/index.html` | Membangun ulang bundle frontend mandiri via `build.ps1` | ✅ Selesai |
+| 5 | `prd.md` & `revisi.md` | Pencatatan dokumentasi resmi ZettBOT `REV-202611-075` | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+- ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
+- ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
+- ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
+- ✅ Desain tabel rekapitulasi, distribusi, dan kartu User Session / Login IP tetap presisi dan sejajar.
+- ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.

@@ -10186,8 +10186,9 @@
 
             var isAdmin = (APP.user && APP.user.role === 'admin');
             var canDeleteRole = isAdmin || (canEditRole && s.status !== 'DITANDATANGANI');
+            var safeDocId = String(s.id_dokumen || '').replace(/['"\\]/g, '');
             var deleteBtnHtml = canDeleteRole ?
-                ' <button class="btn btn-danger btn-sm" onclick="deleteSurat(\'' + s.id_dokumen + '\',\'' + (s.nomor_surat ? s.nomor_surat.replace(/'/g, "\\'") : '') + '\')" title="Hapus dokumen surat" style="background:#dc2626;color:#fff;border:none;">🗑️ Hapus</button>' : '';
+                ' <button class="btn btn-danger btn-sm" onclick="deleteSurat(\'' + safeDocId + '\')" title="Hapus dokumen surat" style="background:#dc2626;color:#fff;border:none;">🗑️ Hapus</button>' : '';
 
             var signBtnHtml = (APP.user && (APP.user.role === 'pejabat' || APP.user.role === 'admin') && s.status === 'MENUNGGU_TTD') ?
                 ' <button class="btn btn-success btn-sm" onclick="openPinModal(\'' + s.id_dokumen + '\',\'' + s.pejabat_id + '\')" title="Tanda Tangani Secara Elektronik (TTE)" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;">✍️ TTD</button>' : '';
@@ -10338,7 +10339,16 @@
 
     function deleteSurat(docId, nomorSurat) {
         if (!docId) return;
-        var label = nomorSurat ? ('surat "' + nomorSurat + '"') : 'dokumen ini';
+        var cleanDocId = String(docId).trim();
+        var target = null;
+        if (window._suratDataCache && window._suratDataCache.length > 0) {
+            target = window._suratDataCache.find(function(s) {
+                var sid = String(s.id_dokumen || s.ID_DOKUMEN || '').trim().toLowerCase();
+                return sid === cleanDocId.toLowerCase();
+            });
+        }
+        var nom = (target && target.nomor_surat) ? target.nomor_surat : (nomorSurat || cleanDocId);
+        var label = 'surat "' + nom + '" (' + cleanDocId + ')';
         var isAdmin = (APP.user && APP.user.role === 'admin');
         var warnMsg = isAdmin
             ? 'Apakah Anda yakin ingin menghapus ' + label + ' secara permanen?\n\nPerhatian (Administrator): Tindakan ini akan menghapus data di database spreadsheet dan berkas PDF di Google Drive.'
@@ -10353,19 +10363,40 @@
                 hideLoading();
                 if (res && res.success) {
                     showToast(res.message || 'Dokumen surat berhasil dihapus.', 'success');
-                    loadDaftarSurat();
+                    // Optimistic update cache data surat keluar
+                    if (window._suratDataCache && window._suratDataCache.length > 0) {
+                        window._suratDataCache = window._suratDataCache.filter(function (s) {
+                            var sid = String(s.id_dokumen || s.ID_DOKUMEN || '').trim().toLowerCase();
+                            return sid !== cleanDocId.toLowerCase();
+                        });
+                        var status = document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : 'ALL';
+                        var kategori = document.getElementById('filterKategoriKeluar') ? document.getElementById('filterKategoriKeluar').value : 'ALL';
+                        var list = window._suratDataCache;
+                        if (status !== 'ALL') {
+                            list = list.filter(function (s) { return s.status === status; });
+                        }
+                        if (kategori !== 'ALL') {
+                            list = list.filter(function (s) { return (s.kategori || 'Surat Dinas') === kategori; });
+                        }
+                        renderDaftarSuratTable(list);
+                    }
+                    // Refresh silent dari server agar data spreadsheet terbaru tetap tersinkron
+                    loadDaftarSurat(true);
                     if (typeof loadDashboardData === 'function') {
                         loadDashboardData();
                     }
+                    if (typeof loadDashboard === 'function') {
+                        loadDashboard();
+                    }
                 } else {
-                    showToast(res ? res.message : 'Gagal menghapus dokumen surat.', 'error');
+                    showToast((res && res.message) ? res.message : 'Gagal menghapus dokumen surat.', 'error');
                 }
             })
             .withFailureHandler(function (err) {
                 hideLoading();
                 showToast('Kesalahan server: ' + (err.message || err), 'error');
             })
-            .apiDeleteSurat(APP.token, docId);
+            .apiDeleteSurat(APP.token, cleanDocId);
     }
 
     /**
@@ -12677,8 +12708,12 @@
             cb.checked = instruksiVal.indexOf(cb.value) !== -1;
         });
 
-        // Set catatan khusus
-        document.getElementById('dispCatatan').value = item.disposisi_catatan || '';
+        // Set catatan khusus (defensif membaca dari berbagai kemungkinan alias properti)
+        var catatanVal = String(
+            item.disposisi_catatan || item.catatan || item.catatan_khusus || 
+            item.catatan_pejabat || item.DISPOSISI_CATATAN || item.CATATAN || ''
+        ).trim();
+        document.getElementById('dispCatatan').value = catatanVal;
 
         if (modal) modal.style.display = 'flex';
     }
@@ -12781,6 +12816,22 @@
                 }
 
                 showToast('Disposisi surat berhasil disimpan!', 'success');
+                // Optimistic cache update agar catatan langsung tersedia
+                if (_suratMasukData && _suratMasukData.length > 0) {
+                    for (var k = 0; k < _suratMasukData.length; k++) {
+                        if (String(_suratMasukData[k].id_surat_masuk) === String(idSuratMasuk)) {
+                            _suratMasukData[k].status_disposisi = 'SUDAH_DISPOSISI';
+                            _suratMasukData[k].disposisi_kepada = kepada;
+                            _suratMasukData[k].disposisi_sifat = sifat;
+                            _suratMasukData[k].disposisi_instruksi = instruksi;
+                            _suratMasukData[k].disposisi_catatan = catatan;
+                            _suratMasukData[k].catatan = catatan;
+                            _suratMasukData[k].catatan_khusus = catatan;
+                            _suratMasukData[k].disposisi_oleh = (APP.user ? (APP.user.nama || APP.user.username) : 'Pejabat');
+                            break;
+                        }
+                    }
+                }
                 closeModalDisposisi();
                 loadSuratMasuk();
                 loadDashboard();
@@ -12818,7 +12869,24 @@
         document.getElementById('printSmSifatVal').textContent = item.disposisi_sifat || 'Biasa';
         document.getElementById('printSmKepada').textContent = item.disposisi_kepada || '-';
         document.getElementById('printSmInstruksi').textContent = item.disposisi_instruksi || '-';
-        document.getElementById('printSmCatatan').textContent = item.disposisi_catatan || '— (Tidak ada catatan khusus) —';
+
+        var catatanText = String(
+            item.disposisi_catatan || item.catatan || item.catatan_khusus || 
+            item.catatan_pejabat || item.DISPOSISI_CATATAN || item.CATATAN || ''
+        ).trim();
+
+        var catEl = document.getElementById('printSmCatatan');
+        if (catEl) {
+            if (catatanText) {
+                catEl.textContent = catatanText;
+                catEl.style.fontStyle = 'normal';
+                catEl.style.fontWeight = '500';
+            } else {
+                catEl.textContent = '— (Tidak ada catatan khusus) —';
+                catEl.style.fontStyle = 'italic';
+                catEl.style.fontWeight = 'normal';
+            }
+        }
 
         var tglDisp = item.disposisi_tgl ? item.disposisi_tgl.split(' ')[0] : new Date().toLocaleDateString('id-ID');
         document.getElementById('printSmTglDisposisi').textContent = 'Kupang, ' + tglDisp;
