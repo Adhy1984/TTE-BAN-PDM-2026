@@ -414,6 +414,8 @@ Pengguna mengajukan revisi dengan dua butir pertanyaan dan perbaikan:
 - ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
 - ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
 
+---
+
 ## 1. Latar Belakang & Masalah Riil (Problem Statement)
 Pengguna melaporkan bahwa scan QR Code dokumen masih memunculkan halaman galat Vercel:
 > *"mengapa saya masih gagal verifikasi dokumen. Masih saja muncul erorr seperti diatas. Tolong diperbaiki lagi"*  
@@ -541,6 +543,57 @@ Pengguna menyampaikan dua kendala operasional yang perlu segera diperbaiki:
 - ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
 - ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
 
+---
+
+# LAPORAN REVISI SISTEM ZETTBOT (REV-202611-078)
+**Tanggal:** 17 November 2026  
+**Versi Rilis:** v6.8.19  
+**ID Permintaan:** REV-202611-078  
+**Fokus Revisi:** Penggantian Alamat IP dengan Titik Koordinat Geografis (Metode 2: HTML5 Geolocation GPS API)
+
+---
+
+## 1. Ringkasan Permintaan Pengguna
+- Pengguna memilih untuk mengaktifkan **Metode 2**: Mengganti alamat IP Address pada kartu login terbaru dengan titik koordinat geografis (**Latitude & Longitude / Lintang & Bujur**) menggunakan sensor GPS peramban/HP (`navigator.geolocation`).
+
+---
+
+## 2. Arsitektur & Solusi Terapan
+1. **HTML5 Geolocation GPS Engine (`Scripts.html:initClientGeolocation`):**
+   - Menggunakan API bawaan `navigator.geolocation.getCurrentPosition()` dengan opsi presisi tinggi `enableHighAccuracy: true`.
+   - Mengambil titik Latitude dan Longitude dengan ketepatan 4 desimal (~11 meter ketelitian area, misal: `-10.1772, 123.6070`).
+   - Menyimpan hasil deteksi ke `window._clientCoordinates` dan mempresistensikannya di `localStorage.setItem('LAST_KNOWN_COORDS', coordStr)`.
+   - Dilengkapi fallback otomatis dari koordinat ISP (`ipapi.co`) jika izin lokasi peramban belum disetujui, sehingga kartu riwayat login tidak pernah kosong/blank.
+2. **Penyimpanan Titik Koordinat di Database (`Database.gs:ensureLogLoginSheetExists` & `recordLoginSession`):**
+   - Menambahkan kolom `koordinat` pada sheet `log_login` secara otomatis melalui `ensureColumnExists`.
+   - Menyimpan nilai koordinat GPS bersamaan dengan data login akun standar maupun login Google OAuth.
+3. **Penyajian Interaktif pada Kartu Login (`Styles.html` & `Scripts.html`):**
+   - Pada kartu Login Terbaru, baris di bawah tanggal menampilkan titik koordinat (misal: `-10.1772, 123.6070`).
+   - Teks koordinat dilengkapi tautan langsung ke Google Maps (`https://www.google.com/maps?q=lat,lng`) dengan atribut `target="_blank"`, sehingga pengguna/admin dapat langsung mengeklik koordinat untuk melihat peta lokasi fisik riil perangkat secara instan.
+
+---
+
+## 3. Komponen yang Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `Database.gs` | Menambahkan kolom `koordinat` pada `log_login` dan parameter `clientCoords` pada `recordLoginSession` | ✅ Selesai |
+| 2 | `AuthService.gs` | Mengalirkan `clientCoords` pada `authenticateUser` dan `authenticateGoogleUser` | ✅ Selesai |
+| 3 | `Controller.gs` | Menerima `clientCoords` di `doPost`, `apiLogin`, `apiLoginWithGoogle`, dan `apiGetDashboardStats` | ✅ Selesai |
+| 4 | `Styles.html` | Menambahkan class `.recent-login-coord-link` dengan efek hover link Google Maps | ✅ Selesai |
+| 5 | `Scripts.html` | Menambahkan engine `initClientGeolocation`, transmisi koordinat saat login/dashboard, dan link Google Maps | ✅ Selesai |
+| 6 | `dist/index.html` | Membangun ulang bundle frontend via `build.ps1` (570 div, 35 svg, 111 button) | ✅ Selesai |
+| 7 | `prd.md` & `revisi.md` | Pencatatan dokumentasi resmi ZettBOT `REV-202611-078` (v6.8.19) | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+- ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
+- ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
+- ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
+- ✅ Desain tabel rekapitulasi, distribusi, dan kartu User Session / Login tetap presisi dan sejajar.
+- ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
+
 ================================================================================
 # CATATAN PERUBAHAN RESMI ZETTBOT (REVISION LOG)
 **ID Revisi:** `REV-202611-076`  
@@ -622,6 +675,57 @@ Pengguna menyampaikan tiga poin revisi operasional:
 
 ---
 
+# LAPORAN REVISI SISTEM ZETTBOT (REV-202611-078)
+**Tanggal:** 17 November 2026  
+**Versi Rilis:** v6.8.19  
+**ID Permintaan:** REV-202611-078  
+**Fokus Revisi:** Penggantian Alamat IP dengan Titik Koordinat Geografis (Metode 2: HTML5 Geolocation GPS API)
+
+---
+
+## 1. Ringkasan Permintaan Pengguna
+- Pengguna memilih untuk mengaktifkan **Metode 2**: Mengganti alamat IP Address pada kartu login terbaru dengan titik koordinat geografis (**Latitude & Longitude / Lintang & Bujur**) menggunakan sensor GPS peramban/HP (`navigator.geolocation`).
+
+---
+
+## 2. Arsitektur & Solusi Terapan
+1. **HTML5 Geolocation GPS Engine (`Scripts.html:initClientGeolocation`):**
+   - Menggunakan API bawaan `navigator.geolocation.getCurrentPosition()` dengan opsi presisi tinggi `enableHighAccuracy: true`.
+   - Mengambil titik Latitude dan Longitude dengan ketepatan 4 desimal (~11 meter ketelitian area, misal: `-10.1772, 123.6070`).
+   - Menyimpan hasil deteksi ke `window._clientCoordinates` dan mempresistensikannya di `localStorage.setItem('LAST_KNOWN_COORDS', coordStr)`.
+   - Dilengkapi fallback otomatis dari koordinat ISP (`ipapi.co`) jika izin lokasi peramban belum disetujui, sehingga kartu riwayat login tidak pernah kosong/blank.
+2. **Penyimpanan Titik Koordinat di Database (`Database.gs:ensureLogLoginSheetExists` & `recordLoginSession`):**
+   - Menambahkan kolom `koordinat` pada sheet `log_login` secara otomatis melalui `ensureColumnExists`.
+   - Menyimpan nilai koordinat GPS bersamaan dengan data login akun standar maupun login Google OAuth.
+3. **Penyajian Interaktif pada Kartu Login (`Styles.html` & `Scripts.html`):**
+   - Pada kartu Login Terbaru, baris di bawah tanggal menampilkan titik koordinat (misal: `-10.1772, 123.6070`).
+   - Teks koordinat dilengkapi tautan langsung ke Google Maps (`https://www.google.com/maps?q=lat,lng`) dengan atribut `target="_blank"`, sehingga pengguna/admin dapat langsung mengeklik koordinat untuk melihat peta lokasi fisik riil perangkat secara instan.
+
+---
+
+## 3. Komponen yang Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `Database.gs` | Menambahkan kolom `koordinat` pada `log_login` dan parameter `clientCoords` pada `recordLoginSession` | ✅ Selesai |
+| 2 | `AuthService.gs` | Mengalirkan `clientCoords` pada `authenticateUser` dan `authenticateGoogleUser` | ✅ Selesai |
+| 3 | `Controller.gs` | Menerima `clientCoords` di `doPost`, `apiLogin`, `apiLoginWithGoogle`, dan `apiGetDashboardStats` | ✅ Selesai |
+| 4 | `Styles.html` | Menambahkan class `.recent-login-coord-link` dengan efek hover link Google Maps | ✅ Selesai |
+| 5 | `Scripts.html` | Menambahkan engine `initClientGeolocation`, transmisi koordinat saat login/dashboard, dan link Google Maps | ✅ Selesai |
+| 6 | `dist/index.html` | Membangun ulang bundle frontend via `build.ps1` (570 div, 35 svg, 111 button) | ✅ Selesai |
+| 7 | `prd.md` & `revisi.md` | Pencatatan dokumentasi resmi ZettBOT `REV-202611-078` (v6.8.19) | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+- ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
+- ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
+- ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
+- ✅ Desain tabel rekapitulasi, distribusi, dan kartu User Session / Login tetap presisi dan sejajar.
+- ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
+
+---
+
 # LAPORAN REVISI SISTEM ZETTBOT (REV-202611-077)
 **Tanggal:** 17 November 2026  
 **Versi Rilis:** v6.8.18  
@@ -665,5 +769,56 @@ Pengguna menyampaikan tiga poin revisi operasional:
 - ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
 - ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
 - ✅ Desain tabel rekapitulasi, distribusi, dan kartu User Session / Login IP tetap presisi dan sejajar.
+- ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
+
+---
+
+# LAPORAN REVISI SISTEM ZETTBOT (REV-202611-078)
+**Tanggal:** 17 November 2026  
+**Versi Rilis:** v6.8.19  
+**ID Permintaan:** REV-202611-078  
+**Fokus Revisi:** Penggantian Alamat IP dengan Titik Koordinat Geografis (Metode 2: HTML5 Geolocation GPS API)
+
+---
+
+## 1. Ringkasan Permintaan Pengguna
+- Pengguna memilih untuk mengaktifkan **Metode 2**: Mengganti alamat IP Address pada kartu login terbaru dengan titik koordinat geografis (**Latitude & Longitude / Lintang & Bujur**) menggunakan sensor GPS peramban/HP (`navigator.geolocation`).
+
+---
+
+## 2. Arsitektur & Solusi Terapan
+1. **HTML5 Geolocation GPS Engine (`Scripts.html:initClientGeolocation`):**
+   - Menggunakan API bawaan `navigator.geolocation.getCurrentPosition()` dengan opsi presisi tinggi `enableHighAccuracy: true`.
+   - Mengambil titik Latitude dan Longitude dengan ketepatan 4 desimal (~11 meter ketelitian area, misal: `-10.1772, 123.6070`).
+   - Menyimpan hasil deteksi ke `window._clientCoordinates` dan mempresistensikannya di `localStorage.setItem('LAST_KNOWN_COORDS', coordStr)`.
+   - Dilengkapi fallback otomatis dari koordinat ISP (`ipapi.co`) jika izin lokasi peramban belum disetujui, sehingga kartu riwayat login tidak pernah kosong/blank.
+2. **Penyimpanan Titik Koordinat di Database (`Database.gs:ensureLogLoginSheetExists` & `recordLoginSession`):**
+   - Menambahkan kolom `koordinat` pada sheet `log_login` secara otomatis melalui `ensureColumnExists`.
+   - Menyimpan nilai koordinat GPS bersamaan dengan data login akun standar maupun login Google OAuth.
+3. **Penyajian Interaktif pada Kartu Login (`Styles.html` & `Scripts.html`):**
+   - Pada kartu Login Terbaru, baris di bawah tanggal menampilkan titik koordinat (misal: `-10.1772, 123.6070`).
+   - Teks koordinat dilengkapi tautan langsung ke Google Maps (`https://www.google.com/maps?q=lat,lng`) dengan atribut `target="_blank"`, sehingga pengguna/admin dapat langsung mengeklik koordinat untuk melihat peta lokasi fisik riil perangkat secara instan.
+
+---
+
+## 3. Komponen yang Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `Database.gs` | Menambahkan kolom `koordinat` pada `log_login` dan parameter `clientCoords` pada `recordLoginSession` | ✅ Selesai |
+| 2 | `AuthService.gs` | Mengalirkan `clientCoords` pada `authenticateUser` dan `authenticateGoogleUser` | ✅ Selesai |
+| 3 | `Controller.gs` | Menerima `clientCoords` di `doPost`, `apiLogin`, `apiLoginWithGoogle`, dan `apiGetDashboardStats` | ✅ Selesai |
+| 4 | `Styles.html` | Menambahkan class `.recent-login-coord-link` dengan efek hover link Google Maps | ✅ Selesai |
+| 5 | `Scripts.html` | Menambahkan engine `initClientGeolocation`, transmisi koordinat saat login/dashboard, dan link Google Maps | ✅ Selesai |
+| 6 | `dist/index.html` | Membangun ulang bundle frontend via `build.ps1` (570 div, 35 svg, 111 button) | ✅ Selesai |
+| 7 | `prd.md` & `revisi.md` | Pencatatan dokumentasi resmi ZettBOT `REV-202611-078` (v6.8.19) | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+- ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
+- ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
+- ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
+- ✅ Desain tabel rekapitulasi, distribusi, dan kartu User Session / Login tetap presisi dan sejajar.
 - ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
 - ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.

@@ -83,7 +83,7 @@ function destroySessionToken(token) {
 /**
  * Autentikasi Pengguna saat Login
  */
-function authenticateUser(username, password, clientIp, userAgent) {
+function authenticateUser(username, password, clientIp, userAgent, clientCoords) {
   if (!username || !password) {
     return { success: false, message: "Username dan password wajib diisi." };
   }
@@ -113,7 +113,7 @@ function authenticateUser(username, password, clientIp, userAgent) {
   
   // Catat riwayat login pengguna ke database sheet log_login
   try {
-    recordLoginSession(user, clientIp, userAgent);
+    recordLoginSession(user, clientIp, userAgent, clientCoords);
   } catch (eLog) {
     Logger.log("Peringatan pencatatan log login: " + eLog.message);
   }
@@ -164,7 +164,7 @@ function verifyPejabatPin(pejabatId, inputPin) {
 /**
  * Autentikasi Pengguna via Akun Google (Google Sign-In)
  */
-function authenticateGoogleUser(googleEmail, googleName, idToken, clientIp, userAgent) {
+function authenticateGoogleUser(googleEmail, googleName, idToken, clientIp, userAgent, clientCoords) {
   if (!googleEmail || typeof googleEmail !== "string") {
     return { success: false, message: "Email Google tidak valid atau tidak terbaca." };
   }
@@ -206,7 +206,7 @@ function authenticateGoogleUser(googleEmail, googleName, idToken, clientIp, user
 
   // Catat riwayat login pengguna ke database sheet log_login
   try {
-    recordLoginSession(user, clientIp, userAgent);
+    recordLoginSession(user, clientIp, userAgent, clientCoords);
   } catch (eLog) {
     Logger.log("Peringatan pencatatan log login Google: " + eLog.message);
   }

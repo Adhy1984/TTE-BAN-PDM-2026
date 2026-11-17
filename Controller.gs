@@ -92,10 +92,10 @@ function doPost(e) {
         result = apiInitialSetup();
         break;
       case "apiLogin":
-        result = apiLogin(args[0], args[1], args[2], args[3]);
+        result = apiLogin(args[0], args[1], args[2], args[3], args[4]);
         break;
       case "apiLoginWithGoogle":
-        result = apiLoginWithGoogle(args[0], args[1], args[2], args[3], args[4]);
+        result = apiLoginWithGoogle(args[0], args[1], args[2], args[3], args[4], args[5]);
         break;
       case "apiLupaUsername":
         result = apiLupaUsername(args[0]);
@@ -107,7 +107,7 @@ function doPost(e) {
         result = apiResetPasswordWithOtp(args[0], args[1], args[2]);
         break;
       case "apiGetDashboardStats":
-        result = apiGetDashboardStats(args[0], args[1]);
+        result = apiGetDashboardStats(args[0], args[1], args[2]);
         break;
       case "apiGetSuratList":
         result = apiGetSuratList(args[0], args[1], args[2]);
@@ -216,9 +216,9 @@ function apiInitialSetup() {
 /**
  * API: Autentikasi Pengguna (Login)
  */
-function apiLogin(username, password, clientIp, userAgent) {
+function apiLogin(username, password, clientIp, userAgent, clientCoords) {
   try {
-    return authenticateUser(username, password, clientIp, userAgent);
+    return authenticateUser(username, password, clientIp, userAgent, clientCoords);
   } catch (err) {
     return { success: false, message: "Error login: " + err.message };
   }
@@ -227,9 +227,9 @@ function apiLogin(username, password, clientIp, userAgent) {
 /**
  * API: Autentikasi via Akun Google
  */
-function apiLoginWithGoogle(googleEmail, googleName, idToken, clientIp, userAgent) {
+function apiLoginWithGoogle(googleEmail, googleName, idToken, clientIp, userAgent, clientCoords) {
   try {
-    return authenticateGoogleUser(googleEmail, googleName, idToken, clientIp, userAgent);
+    return authenticateGoogleUser(googleEmail, googleName, idToken, clientIp, userAgent, clientCoords);
   } catch (err) {
     return { success: false, message: "Error login Google: " + err.message };
   }
@@ -288,7 +288,7 @@ function apiLogout(sessionToken) {
 /**
  * API: Mengambil data statistik dashboard
  */
-function apiGetDashboardStats(token, clientIp) {
+function apiGetDashboardStats(token, clientIp, clientCoords) {
   try {
     const user = validateSessionToken(token);
     if (!user) return { success: false, message: "Sesi tidak valid / telah berakhir." };
@@ -300,6 +300,7 @@ function apiGetDashboardStats(token, clientIp) {
     // Pastikan pengguna aktif yang sedang mengakses dashboard memiliki rekaman login
     const activeUsername = String(user.username || user.email || "user").trim();
     const resolvedIp = String(clientIp || "").trim() || "182.4.201.142";
+    const resolvedCoords = String(clientCoords || "").trim();
 
     const hasActiveRecord = allLogins.some(row => 
       String(row.username || "").trim().toLowerCase() === activeUsername.toLowerCase() &&
@@ -307,7 +308,7 @@ function apiGetDashboardStats(token, clientIp) {
     );
 
     if (!hasActiveRecord && activeUsername) {
-      recordLoginSession(user, resolvedIp, "Web-Browser");
+      recordLoginSession(user, resolvedIp, "Web-Browser", resolvedCoords);
       allLogins = getSheetRowsAsObjects(CONFIG.SHEET_LOG_LOGIN || "log_login") || [];
     }
 
@@ -357,11 +358,21 @@ function apiGetDashboardStats(token, clientIp) {
       if (!u || seenUsers[u]) continue;
       seenUsers[u] = true;
 
+      let locDisplay = String(item.koordinat || "").trim();
+      if (!locDisplay) {
+        if (resolvedCoords && String(item.username || "").toLowerCase() === activeUsername.toLowerCase()) {
+          locDisplay = resolvedCoords;
+        } else {
+          locDisplay = String(item.ip_address || resolvedIp).trim();
+        }
+      }
+
       recentLogins.push({
         username: String(item.username || "-").trim(),
         nama: String(item.nama || item.username || "").trim(),
         waktu: formatLoginTimeDisplay(item.waktu_login),
-        ip: String(item.ip_address || resolvedIp).trim(),
+        ip: locDisplay,
+        koordinat: locDisplay,
         status: String(item.status_sesi || "ONLINE").trim()
       });
 
@@ -370,11 +381,13 @@ function apiGetDashboardStats(token, clientIp) {
 
     // Fallback jika recentLogins masih kosong, masukkan sesi user aktif saat ini
     if (recentLogins.length === 0 && user) {
+      const locDisplay = resolvedCoords || resolvedIp;
       recentLogins.push({
         username: activeUsername,
         nama: String(user.nama || activeUsername).trim(),
         waktu: formatLoginTimeDisplay(new Date()),
-        ip: resolvedIp,
+        ip: locDisplay,
+        koordinat: locDisplay,
         status: "ONLINE"
       });
     }

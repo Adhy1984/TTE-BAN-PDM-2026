@@ -244,10 +244,52 @@
         }
     }
 
-    // Inisialisasi Deteksi IP Publik Klien (Ringan, Multi-Provider & Cepat)
+    // Inisialisasi Deteksi IP Publik Klien & Geolocation Koordinat Geografis (Metode 2)
     window._clientPublicIp = (function () {
         try { return localStorage.getItem('LAST_KNOWN_IP') || ''; } catch (e) { return ''; }
     })();
+    window._clientCoordinates = (function () {
+        try { return localStorage.getItem('LAST_KNOWN_COORDS') || ''; } catch (e) { return ''; }
+    })();
+    window._clientCoordinatesFallback = '';
+
+    /**
+     * Metode 2: Menggunakan GPS Browser / HP (HTML5 Geolocation API)
+     * Mengambil titik koordinat presisi tinggi (Latitude & Longitude)
+     */
+    function initClientGeolocation(onSuccessCallback) {
+        if (!navigator.geolocation) {
+            console.warn('[ZettBOT Geolocation GPS] Geolocation API tidak didukung browser ini.');
+            return;
+        }
+        try {
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    if (pos && pos.coords) {
+                        var lat = Number(pos.coords.latitude).toFixed(4);
+                        var lng = Number(pos.coords.longitude).toFixed(4);
+                        var coordStr = lat + ', ' + lng;
+                        window._clientCoordinates = coordStr;
+                        try { localStorage.setItem('LAST_KNOWN_COORDS', coordStr); } catch (e) {}
+                        console.log('[ZettBOT Geolocation GPS] Koordinat presisi GPS terdeteksi:', coordStr);
+                        if (typeof onSuccessCallback === 'function') {
+                            onSuccessCallback(coordStr);
+                        }
+                    }
+                },
+                function (err) {
+                    console.warn('[ZettBOT Geolocation GPS] Info izin/akses lokasi:', err.message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        } catch (errGeo) {
+            console.warn('[ZettBOT Geolocation GPS] Error trigger:', errGeo);
+        }
+    }
 
     function initClientIpDetection() {
         var providers = [
@@ -266,6 +308,21 @@
                         if (ip && typeof ip === 'string' && ip.trim()) {
                             window._clientPublicIp = ip.trim();
                             try { localStorage.setItem('LAST_KNOWN_IP', ip.trim()); } catch (e) {}
+                        }
+                        // Tangkap koordinat IP sebagai fallback cadangan otomatis
+                        if (d && d.latitude && d.longitude) {
+                            var ipCoords = Number(d.latitude).toFixed(4) + ', ' + Number(d.longitude).toFixed(4);
+                            window._clientCoordinatesFallback = ipCoords;
+                            if (!window._clientCoordinates) {
+                                try {
+                                    if (!localStorage.getItem('LAST_KNOWN_COORDS')) {
+                                        localStorage.setItem('LAST_KNOWN_COORDS', ipCoords);
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+                        if (ip && typeof ip === 'string' && ip.trim()) {
+                            // Sukses
                         } else {
                             tryProvider(idx + 1);
                         }
@@ -280,17 +337,19 @@
         tryProvider(0);
     }
 
-    // Panggil loadAppLogo, initAutoCopyrightYear, dan initClientIpDetection segera setelah DOM siap
+    // Panggil loadAppLogo, initAutoCopyrightYear, deteksi IP dan GPS Geolocation segera setelah DOM siap
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
             loadAppLogo();
             initAutoCopyrightYear();
             initClientIpDetection();
+            initClientGeolocation();
         });
     } else {
         loadAppLogo();
         initAutoCopyrightYear();
         initClientIpDetection();
+        initClientGeolocation();
     }
 
     /**
@@ -625,7 +684,7 @@
                 errEl.style.display = 'block';
                 errEl.textContent = 'Error koneksi: ' + (err && err.message ? err.message : err);
             })
-            .apiLogin(username, password, (window._clientPublicIp || ''), (navigator.userAgent || 'Web-Browser'));
+            .apiLogin(username, password, (window._clientPublicIp || ''), (navigator.userAgent || 'Web-Browser'), (window._clientCoordinates || window._clientCoordinatesFallback || ''));
     }
 
     // Helper parse token JWT Google
@@ -728,7 +787,7 @@
                     errEl.textContent = errMsg;
                 }
             })
-            .apiLoginWithGoogle(googleEmail, googleName || '', idToken || '', (window._clientPublicIp || ''), (navigator.userAgent || 'Web-Browser'));
+            .apiLoginWithGoogle(googleEmail, googleName || '', idToken || '', (window._clientPublicIp || ''), (navigator.userAgent || 'Web-Browser'), (window._clientCoordinates || window._clientCoordinatesFallback || ''));
     }
 
     /**
@@ -1515,7 +1574,7 @@
                 }
             })
             .withFailureHandler(function () { })
-            .apiGetDashboardStats(APP.token, (window._clientPublicIp || ''));
+            .apiGetDashboardStats(APP.token, (window._clientPublicIp || ''), (window._clientCoordinates || window._clientCoordinatesFallback || ''));
     }
 
     /**
@@ -1547,12 +1606,23 @@
                         displayUser = displayUser.substring(0, 22) + '...';
                     }
                     var waktuStr = escapeHtml(item.waktu || '-');
-                    var ipStr = escapeHtml(item.ip || '182.4.201.142');
+                    var locRaw = (item.koordinat || item.ip || window._clientCoordinates || window._clientCoordinatesFallback || '182.4.201.142').trim();
+                    var locStr = escapeHtml(locRaw);
+
+                    // Periksa apakah string berupa koordinat geografis (misal: -10.1772, 123.6070)
+                    var isCoord = /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(locRaw.replace(/\s+/g, ''));
+                    var locHtml = '';
+                    if (isCoord) {
+                        var mapUrl = 'https://www.google.com/maps?q=' + encodeURIComponent(locRaw.replace(/\s+/g, ''));
+                        locHtml = '<a href="' + mapUrl + '" target="_blank" rel="noopener noreferrer" class="recent-login-ip recent-login-coord-link" title="Buka titik koordinat di Google Maps">' + locStr + '</a>';
+                    } else {
+                        locHtml = '<div class="recent-login-ip">' + locStr + '</div>';
+                    }
 
                     html += '<div class="recent-login-item">' +
                         '<div class="recent-login-username" title="' + uName + '">' + displayUser + '</div>' +
                         '<div class="recent-login-time">' + waktuStr + ' ·</div>' +
-                        '<div class="recent-login-ip">' + ipStr + '</div>' +
+                        locHtml +
                     '</div>';
                 });
                 recentListEl.innerHTML = html;

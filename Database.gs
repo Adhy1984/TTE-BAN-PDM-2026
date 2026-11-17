@@ -157,7 +157,7 @@ function ensureLogLoginSheetExists(ss) {
   const sheetName = CONFIG.SHEET_LOG_LOGIN || "log_login";
   let sheet = ss.getSheetByName(sheetName);
   const defaultHeaders = [
-    "id_log", "username", "nama", "role", "waktu_login", "ip_address", "user_agent", "status_sesi"
+    "id_log", "username", "nama", "role", "waktu_login", "ip_address", "koordinat", "user_agent", "status_sesi"
   ];
 
   if (!sheet) {
@@ -173,7 +173,7 @@ function ensureLogLoginSheetExists(ss) {
 /**
  * Mencatat riwayat login pengguna ke database sheet log_login
  */
-function recordLoginSession(userObj, clientIp, userAgent) {
+function recordLoginSession(userObj, clientIp, userAgent, clientCoords) {
   try {
     const ss = getDb();
     ensureLogLoginSheetExists(ss);
@@ -182,6 +182,7 @@ function recordLoginSession(userObj, clientIp, userAgent) {
     const idLog = "LOG-" + new Date().getTime() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
     const waktuLogin = Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss");
     const ip = String(clientIp || "").trim() || "182.4.201.142";
+    const coords = String(clientCoords || "").trim();
     const ua = String(userAgent || "Web-Browser").trim();
 
     const newLog = {
@@ -191,6 +192,7 @@ function recordLoginSession(userObj, clientIp, userAgent) {
       role: String(userObj.role || "user").trim(),
       waktu_login: waktuLogin,
       ip_address: ip,
+      koordinat: coords,
       user_agent: ua,
       status_sesi: "ONLINE"
     };
