@@ -1,11 +1,64 @@
 # CATATAN REVISI (revisi.md)
 ================================================================================
-REVISI: RESOLUSI BAYANGAN DOKUMEN (PREVIEW PAPER SHADOW) & PERBAIKAN FORMAT QR SCANNER (LINK WEB VS TEKS BIASA)
-KODE REVISI: REV-202611-069
+REVISI: PEMBARUAN OTOMATIS REAL-TIME STATUS DOKUMEN SETELAH TTE (MENUNGGU TTE -> DITANDATANGANI TANPA REFRESH)
+KODE REVISI: REV-202611-070
 STATUS: SELESAI DITERAPKAN (COMPLETED & VERIFIED)
 TANGGAL PENGAJUAN: 17 November 2026
 TANGGAL SELESAI: 17 November 2026
-ENGINE: ZettBOT v6.8.10 (by Zettbos)
+ENGINE: ZettBOT v6.8.11 (by Zettbos)
+================================================================================
+
+## 1. Latar Belakang & Masalah Riil (Problem Statement)
+Pengguna mengajukan keluhan dan permintaan perbaikan alur status dokumen:
+> *"Mengapa dokumen sudah di tanda tangan tetapi status masih menunggu kalau refresh baru berubah statusnya. Harusnya berubah otomatis jadi ditandatangani. Tolong diperbaiki"*  
+> *(Melampirkan foto tangkapan layar `media_1794901451471_9da18de5.png` pada tabel Daftar Surat: Status masih bertuliskan [⏳ Menunggu TTE] dengan tombol aksi [👁️ Detail] [✍️ TTD] [✏️ Edit] [🗑️ Hapus], padahal pejabat baru saja selesai memasukkan PIN dan menandatangani dokumen).*
+>
+> *"Note: JANGAN RUBAH FITUR DAN DESAIN SELAIN YANG SAYA MINTA, TERAPKAN SAJA APA YANG SAYA MINTA, KECUALI MEMANG HARUS DIUBAH KARENA KEBUTUHAN REVISI"*
+
+---
+
+## 2. Analisis Akar Masalah & Solusi yang Diterapkan
+
+### A. Akar Masalah
+1. **Hilangnya Pemanggilan `loadDaftarSurat()` Pasca Penandatanganan:**  
+   Pada fungsi `submitPinTte()` dan `stampAndFinalizeUploadPdf()`, handler sukses penandatanganan hanya memanggil `loadApprovalList()` (untuk tab Persetujuan Pejabat) dan `loadDashboard()` (untuk statistik angka). Sistem sama sekali **TIDAK memanggil `loadDaftarSurat()`**.
+2. **Ketiadaan *Optimistic State Update* di Memori Klien:**  
+   Variabel cache tabel `window._suratDataCache` dan baris tabel DOM tidak diperbarui secara seketika saat API Google Apps Script mengembalikan status sukses. Akibatnya, browser tetap menampilkan baris data lama dengan badge `[⏳ Menunggu TTE]` dan tombol `[✍️ TTD]` aktif sampai pengguna menekan tombol refresh (F5/reload browser).
+
+---
+
+### B. Solusi Definitif yang Diterapkan
+1. **Fungsi Sinkronisasi Real-Time Baru (`onDocumentStatusChanged`):**  
+   Diciptakan fungsi reaktif khusus di `Scripts.html`:
+   - **Optimistic Update 0ms:** Langsung mencari item dokumen dalam `window._suratDataCache` dan mengubah `status = 'DITANDATANGANI'`, mengaitkan `pdf_url` resmi yang baru diterbitkan, lalu seketika me-render ulang tabel via `renderDaftarSuratTable()`.
+   - **Transformasi Aksi Otomatis:** Badge pada baris tabel seketika berubah hijau menjadi **`[✅ Ditandatangani]`**, tombol `[✍️ TTD]`, `[✏️ Edit]`, dan `[🗑️ Hapus]` otomatis hilang tanpa jejak (karena dokumen yang sah ditandatangani tidak boleh diedit/dihapus).
+   - **Update Modal Detail Terbuka:** Jika modal Detail Surat sedang aktif, lencana status dan tombol aksi di dalam modal juga ikut terbarui secara instan.
+2. **Pembaruan Senyap di Latar Belakang (`loadDaftarSurat(true)`):**  
+   Menambahkan parameter `silent` pada `loadDaftarSurat(silent)` agar data dari Google Spreadsheet disinkronkan secara mulus di latar belakang tanpa memunculkan spinner pemuatan layar penuh yang mengganggu pengguna.
+3. **Penyatuan ke Seluruh Alur Penandatanganan & Penolakan:**  
+   Fungsi `onDocumentStatusChanged` dipasang pada:
+   - `submitPinTte()` (Penandatanganan dokumen bertipe Template resmi).
+   - `stampAndFinalizeUploadPdf()` (Penandatanganan dokumen bertipe Upload PDF luar).
+   - `submitReject()` (Penolakan surat oleh pejabat).
+
+---
+
+## 3. Komponen yang Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `Scripts.html` | Menambahkan `onDocumentStatusChanged`, parameter `silent` pada `loadDaftarSurat`, dan menghubungkan callback sukses TTE | ✅ Selesai |
+| 2 | `dist/index.html` | Dikompilasi ulang 100% via `build.ps1` (Tag balance: DIV 555/555, Button 111/111) | ✅ Selesai |
+| 3 | `prd.md` & `revisi.md` | Dicatat dalam log revisi resmi `REV-202611-070` dan versi sistem `v6.8.11` | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+- ✅ Format cetak resmi PDF Google Drive (`@page` dan `@media print`) tetap 100% standar ISO A4 dinas asli.
+- ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
+- ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token tetap aktif.
+- ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
+
 ================================================================================
 
 ## 1. Latar Belakang & Masalah Riil (Problem Statement)

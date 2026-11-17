@@ -9811,12 +9811,14 @@
 
     var _currentDetailDoc = null;
 
-    function loadDaftarSurat() {
+    function loadDaftarSurat(silent) {
         var status = document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : 'ALL';
         var kategori = document.getElementById('filterKategoriKeluar') ? document.getElementById('filterKategoriKeluar').value : 'ALL';
-        document.getElementById('daftarSuratLoading').style.display = 'block';
-        document.getElementById('daftarSuratTableWrap').style.display = 'none';
-        document.getElementById('daftarSuratEmpty').style.display = 'none';
+        if (!silent) {
+            document.getElementById('daftarSuratLoading').style.display = 'block';
+            document.getElementById('daftarSuratTableWrap').style.display = 'none';
+            document.getElementById('daftarSuratEmpty').style.display = 'none';
+        }
 
         function showDaftarSuratEmpty() {
             var el = document.getElementById('daftarSuratEmpty');
@@ -9865,8 +9867,10 @@
             })
             .withFailureHandler(function (err) {
                 document.getElementById('daftarSuratLoading').style.display = 'none';
-                showDaftarSuratEmpty();
-                showToast('Gagal memuat data: ' + (err && err.message ? err.message : err), 'error');
+                if (!silent) {
+                    showDaftarSuratEmpty();
+                    showToast('Gagal memuat data: ' + (err && err.message ? err.message : err), 'error');
+                }
             })
             .apiGetSuratList(APP.token, status, kategori);
     }
@@ -10455,6 +10459,93 @@
         });
     }
 
+    // ---- Manajemen Sinkronisasi Status Dokumen Real-Time ----
+    /**
+     * Memperbarui status dokumen secara seketika (optimistic update & sinkronisasi multi-view)
+     * saat dokumen selesai ditandatangani atau ditolak.
+     * Status baris tabel Daftar Surat langsung berubah menjadi DITANDATANGANI seketika itu juga
+     * tanpa perlu refresh browser manual oleh pengguna.
+     */
+    function onDocumentStatusChanged(docId, newStatus, extraData) {
+        if (!docId) return;
+
+        // 1. Optimistic Update pada window._suratDataCache (Tabel Arsip Surat)
+        if (window._suratDataCache && Array.isArray(window._suratDataCache)) {
+            var foundDoc = window._suratDataCache.find(function (s) { return s.id_dokumen === docId; });
+            if (foundDoc) {
+                foundDoc.status = newStatus;
+                if (extraData) {
+                    if (extraData.pdfUrl) foundDoc.pdf_url = extraData.pdfUrl;
+                    if (extraData.pdfId) foundDoc.pdf_id = extraData.pdfId;
+                    if (extraData.waktuTtd) foundDoc.waktu_ttd = extraData.waktuTtd;
+                }
+
+                var currentFilterStatus = document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : 'ALL';
+                var currentFilterKategori = document.getElementById('filterKategoriKeluar') ? document.getElementById('filterKategoriKeluar').value : 'ALL';
+
+                var displayList = window._suratDataCache;
+                if (currentFilterStatus !== 'ALL') {
+                    displayList = displayList.filter(function (s) { return s.status === currentFilterStatus; });
+                }
+                if (currentFilterKategori !== 'ALL') {
+                    displayList = displayList.filter(function (s) { return (s.kategori || 'Surat Dinas') === currentFilterKategori; });
+                }
+
+                if (displayList.length === 0) {
+                    var tbody = document.getElementById('daftarSuratBody');
+                    if (tbody) tbody.innerHTML = '';
+                    var elEmpty = document.getElementById('daftarSuratEmpty');
+                    if (elEmpty) elEmpty.style.display = 'block';
+                    var wrapTable = document.getElementById('daftarSuratTableWrap');
+                    if (wrapTable) wrapTable.style.display = 'none';
+                } else {
+                    var elEmpty = document.getElementById('daftarSuratEmpty');
+                    if (elEmpty) elEmpty.style.display = 'none';
+                    renderDaftarSuratTable(displayList);
+                }
+            }
+        }
+
+        // 2. Optimistic Update jika modal Detail Surat sedang terbuka
+        if (_currentDetailDoc && _currentDetailDoc.id_dokumen === docId) {
+            _currentDetailDoc.status = newStatus;
+            if (extraData) {
+                if (extraData.pdfUrl) _currentDetailDoc.pdf_url = extraData.pdfUrl;
+                if (extraData.pdfId) _currentDetailDoc.pdf_id = extraData.pdfId;
+                if (extraData.waktuTtd) _currentDetailDoc.waktu_ttd = extraData.waktuTtd;
+            }
+            var detStatusEl = document.getElementById('detStatus');
+            if (detStatusEl) detStatusEl.innerHTML = getBadgeHtml(newStatus);
+            var detSignBtn = document.getElementById('detBtnSign');
+            if (detSignBtn) detSignBtn.style.display = 'none';
+            if (newStatus === 'DITANDATANGANI') {
+                var detEditBtn = document.getElementById('detBtnEdit');
+                if (detEditBtn) detEditBtn.style.display = 'none';
+                var detDelBtn = document.getElementById('detBtnDelete');
+                if (detDelBtn) detDelBtn.style.display = 'none';
+                var detPdfSec = document.getElementById('detPdfSection');
+                if (detPdfSec) {
+                    detPdfSec.style.display = 'block';
+                    var viewBtn = document.getElementById('detBtnView');
+                    if (viewBtn && extraData && extraData.pdfUrl) {
+                        viewBtn.href = extraData.pdfUrl;
+                    }
+                }
+            }
+        }
+
+        // 3. Sinkronisasi data server secara otomatis & senyap di latar belakang
+        if (typeof loadDaftarSurat === 'function') {
+            loadDaftarSurat(true); // Silent refresh (tanpa memunculkan loading spinner yang merusak UI)
+        }
+        if (typeof loadApprovalList === 'function') {
+            loadApprovalList();
+        }
+        if (typeof loadDashboard === 'function') {
+            loadDashboard();
+        }
+    }
+
     // ---- Modal PIN TTE ----
     function openPinModal(docId, pejabatId) {
         APP.currentDocId = docId;
@@ -10481,6 +10572,8 @@
             ? window.location.origin
             : (window.WEB_APP_URL || 'https://e-ttebanpdmntt.vercel.app');
 
+        var docIdToSign = APP.currentDocId;
+
         google.script.run
             .withSuccessHandler(function (res) {
                 if (res && res.success && res.requiresClientStamping) {
@@ -10495,8 +10588,12 @@
                 closePinModal();
                 if (res && res.success) {
                     showToast('🎉 Dokumen berhasil ditandatangani secara elektronik!', 'success');
-                    loadApprovalList();
-                    loadDashboard();
+                    var signedId = (res && res.docId) || docIdToSign;
+                    onDocumentStatusChanged(signedId, 'DITANDATANGANI', {
+                        pdfUrl: res.pdfUrl,
+                        pdfId: res.pdfId,
+                        downloadUrl: res.downloadUrl
+                    });
 
                     // Tunjukkan notifikasi dengan link PDF
                     setTimeout(function () {
@@ -10585,8 +10682,10 @@
                     closePinModal();
                     if (saveRes && saveRes.success) {
                         showToast('🎉 Dokumen PDF berhasil dibubuhi TTE resmi!', 'success');
-                        loadApprovalList();
-                        loadDashboard();
+                        onDocumentStatusChanged(res.docId, 'DITANDATANGANI', {
+                            pdfUrl: saveRes.pdfUrl,
+                            pdfId: saveRes.pdfId
+                        });
                         setTimeout(function () {
                             if (saveRes.pdfUrl) {
                                 var konfirm = confirm('✅ Dokumen PDF resmi bertanda tangan elektronik telah selesai dan tersimpan di Google Drive!\n\nKlik OK untuk membuka file PDF tersebut.');
@@ -10628,6 +10727,7 @@
     }
 
     function submitReject() {
+        var docIdToReject = APP.currentDocId;
         var alasan = document.getElementById('inputAlasanTolak').value.trim();
         if (!alasan) { showToast('Alasan penolakan wajib diisi!', 'warning'); return; }
 
@@ -10636,8 +10736,7 @@
                 closeRejectModal();
                 if (res && res.success) {
                     showToast('Surat berhasil ditolak.', 'warning');
-                    loadApprovalList();
-                    loadDashboard();
+                    onDocumentStatusChanged(docIdToReject, 'DITOLAK', { alasan: alasan });
                 } else {
                     showToast('Gagal: ' + ((res && res.message) || 'Terjadi kesalahan'), 'error');
                 }

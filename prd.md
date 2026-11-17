@@ -2,7 +2,7 @@
 ================================================================================
 PROJEK: APLIKASI TANDA TANGAN ELEKTRONIK (TTE) SURAT RESMI BERBASIS QR-CODE
 INSTANSI: BADAN AKREDITASI NASIONAL PDM PROVINSI NUSA TENGGARA TIMUR (BAN PDM PROV. NTT)
-ENGINE: ZettBOT v6.8.10 (by Zettbos)
+ENGINE: ZettBOT v6.8.11 (by Zettbos)
 STATUS DOKUMEN: LIVING DOCUMENT (ACTIVE)
 ================================================================================
 
