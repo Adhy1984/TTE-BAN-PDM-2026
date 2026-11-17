@@ -726,6 +726,54 @@ Pengguna menyampaikan tiga poin revisi operasional:
 
 ---
 
+# LAPORAN REVISI SISTEM ZETTBOT (REV-202611-079)
+**Tanggal:** 17 November 2026  
+**Versi Rilis:** v6.8.20  
+**ID Permintaan:** REV-202611-079  
+**Fokus Revisi:** Optimasi Tampilan View Mode HP (Eliminasi Horizontal Overflow & Penyempurnaan Responsif Kartu Dashboard)
+
+---
+
+## 1. Ringkasan Permintaan Pengguna
+- Pengguna melaporkan bahwa tampilan aplikasi pada mode HP terlalu melebar sekali (*horizontal overflow / stretching out*), menyebabkan teks dan grafik terpotong ke samping dan tidak enak dipandang. Pengguna meminta agar tampilan HP diperbaiki agar rapi, menarik, dan indah.
+
+---
+
+## 2. Analisis Masalah & Solusi Terapan
+1. **Akar Masalah (*Root Cause*):**
+   - Pada `.chart-scroll-inner` (Grafik Rekapitulasi Surat Bulanan), terdapat deklarasi `min-width: 650px;`. Karena wadah induk `.charts-grid` dan `.chart-card` tidak memiliki `min-width: 0;` dan `overflow: hidden;`, spesifikasi CSS Grid menghitung lebar minimum *content* menjadi 698px.
+   - Akibatnya, seluruh kontainer halaman utama (`.app-main-content` dan `.main-views-wrapper`) ikut membengkak hingga >730px pada layar HP, memicu *horizontal scroll* yang menggeser layar dan memotong separuh lingkaran *Doughnut Chart* serta teks kartu login (terlihat hanya `a`, `n`, `ator`).
+   - Selain itu, aturan `@media (max-width: 640px)` sebelumnya memaksa `.user-session-grid` menjadi 1 kolom (`grid-template-columns: 1fr;`), sehingga kotak hijau `USER ONLINE` melebar menjadi balok raksasa yang kosong.
+2. **Solusi Definitif ZettBOT:**
+   - **Karantina Anti-Overflow Total (`Styles.html`):**
+     - Menetapkan `html, body { max-width: 100vw; overflow-x: hidden; }` dan `.app-main-content, .main-views-wrapper { width: 100%; max-width: 100vw; overflow-x: hidden; box-sizing: border-box; }`.
+     - Memberikan `min-width: 0; max-width: 100%; overflow: hidden;` pada `.charts-grid` dan `.chart-card`, sehingga grafik batang 12 bulan bergulir halus *di dalam kartu* tanpa pernah meniup lebar halaman.
+   - **Harmonisasi Proporsional Kartu Sesi Pengguna di HP:**
+     - Mengunci tata letak 2 kolom elegan (`grid-template-columns: 110px 1fr; gap: 10px;`) pada layar HP, sehingga indikator mint `USER ONLINE` tetap tampil kompak di sisi kiri dan daftar riwayat login berada rapi di sisi kanan (100% konsisten dengan desain kartu acuan).
+     - Menyesuaikan proporsi tipografi dan padding pada elemen kartu sesi, banner ucapan selamat datang, serta 4 kartu KPI (tampil rapi 2x2 pada HP) sehingga pas 100% dalam satu layar tanpa ada bagian yang terpotong.
+
+---
+
+## 3. Komponen yang Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `Styles.html` | Mengunci anti-overflow (`overflow-x: hidden`), mengalibrasi responsif `.charts-grid`, `.chart-card`, `.chart-canvas-wrap`, dan menyempurnakan 2 kolom `.user-session-grid` mobile | ✅ Selesai |
+| 2 | `DashboardView.html` | Menambahkan kelas responsif `.dash-greeting-banner` | ✅ Selesai |
+| 3 | `dist/index.html` | Mengompilasi ulang bundle frontend via `build.ps1` (570 div, 35 svg, 111 button) | ✅ Selesai |
+| 4 | `prd.md` & `revisi.md` | Pencatatan dokumentasi resmi ZettBOT `REV-202611-079` (v6.8.20) | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+- ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
+- ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
+- ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
+- ✅ Fitur GPS koordinat geografis lintang & bujur serta tautan Google Maps tetap berfungsi 100%.
+- ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
+
+---
+
 # LAPORAN REVISI SISTEM ZETTBOT (REV-202611-077)
 **Tanggal:** 17 November 2026  
 **Versi Rilis:** v6.8.18  
@@ -820,5 +868,53 @@ Pengguna menyampaikan tiga poin revisi operasional:
 - ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
 - ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
 - ✅ Desain tabel rekapitulasi, distribusi, dan kartu User Session / Login tetap presisi dan sejajar.
+- ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
+
+---
+
+# LAPORAN REVISI SISTEM ZETTBOT (REV-202611-079)
+**Tanggal:** 17 November 2026  
+**Versi Rilis:** v6.8.20  
+**ID Permintaan:** REV-202611-079  
+**Fokus Revisi:** Optimasi Tampilan View Mode HP (Eliminasi Horizontal Overflow & Penyempurnaan Responsif Kartu Dashboard)
+
+---
+
+## 1. Ringkasan Permintaan Pengguna
+- Pengguna melaporkan bahwa tampilan aplikasi pada mode HP terlalu melebar sekali (*horizontal overflow / stretching out*), menyebabkan teks dan grafik terpotong ke samping dan tidak enak dipandang. Pengguna meminta agar tampilan HP diperbaiki agar rapi, menarik, dan indah.
+
+---
+
+## 2. Analisis Masalah & Solusi Terapan
+1. **Akar Masalah (*Root Cause*):**
+   - Pada `.chart-scroll-inner` (Grafik Rekapitulasi Surat Bulanan), terdapat deklarasi `min-width: 650px;`. Karena wadah induk `.charts-grid` dan `.chart-card` tidak memiliki `min-width: 0;` dan `overflow: hidden;`, spesifikasi CSS Grid menghitung lebar minimum *content* menjadi 698px.
+   - Akibatnya, seluruh kontainer halaman utama (`.app-main-content` dan `.main-views-wrapper`) ikut membengkak hingga >730px pada layar HP, memicu *horizontal scroll* yang menggeser layar dan memotong separuh lingkaran *Doughnut Chart* serta teks kartu login (terlihat hanya `a`, `n`, `ator`).
+   - Selain itu, aturan `@media (max-width: 640px)` sebelumnya memaksa `.user-session-grid` menjadi 1 kolom (`grid-template-columns: 1fr;`), sehingga kotak hijau `USER ONLINE` melebar menjadi balok raksasa yang kosong.
+2. **Solusi Definitif ZettBOT:**
+   - **Karantina Anti-Overflow Total (`Styles.html`):**
+     - Menetapkan `html, body { max-width: 100vw; overflow-x: hidden; }` dan `.app-main-content, .main-views-wrapper { width: 100%; max-width: 100vw; overflow-x: hidden; box-sizing: border-box; }`.
+     - Memberikan `min-width: 0; max-width: 100%; overflow: hidden;` pada `.charts-grid` dan `.chart-card`, sehingga grafik batang 12 bulan bergulir halus *di dalam kartu* tanpa pernah meniup lebar halaman.
+   - **Harmonisasi Proporsional Kartu Sesi Pengguna di HP:**
+     - Mengunci tata letak 2 kolom elegan (`grid-template-columns: 110px 1fr; gap: 10px;`) pada layar HP, sehingga indikator mint `USER ONLINE` tetap tampil kompak di sisi kiri dan daftar riwayat login berada rapi di sisi kanan (100% konsisten dengan desain kartu acuan).
+     - Menyesuaikan proporsi tipografi dan padding pada elemen kartu sesi, banner ucapan selamat datang, serta 4 kartu KPI (tampil rapi 2x2 pada HP) sehingga pas 100% dalam satu layar tanpa ada bagian yang terpotong.
+
+---
+
+## 3. Komponen yang Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `Styles.html` | Mengunci anti-overflow (`overflow-x: hidden`), mengalibrasi responsif `.charts-grid`, `.chart-card`, `.chart-canvas-wrap`, dan menyempurnakan 2 kolom `.user-session-grid` mobile | ✅ Selesai |
+| 2 | `DashboardView.html` | Menambahkan kelas responsif `.dash-greeting-banner` | ✅ Selesai |
+| 3 | `dist/index.html` | Mengompilasi ulang bundle frontend via `build.ps1` (570 div, 35 svg, 111 button) | ✅ Selesai |
+| 4 | `prd.md` & `revisi.md` | Pencatatan dokumentasi resmi ZettBOT `REV-202611-079` (v6.8.20) | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+- ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
+- ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
+- ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
+- ✅ Fitur GPS koordinat geografis lintang & bujur serta tautan Google Maps tetap berfungsi 100%.
 - ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
 - ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
