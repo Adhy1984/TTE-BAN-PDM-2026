@@ -366,6 +366,54 @@ Pengguna mengajukan revisi dengan dua butir pertanyaan dan perbaikan:
 - ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
 - ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
 
+---
+
+# LAPORAN REVISI SISTEM ZETTBOT (REV-202611-077)
+**Tanggal:** 17 November 2026  
+**Versi Rilis:** v6.8.18  
+**ID Permintaan:** REV-202611-077  
+**Fokus Revisi:** Deduplikasi Nama Pengguna pada Kartu Login & Pemisahan Baris IP Address di Bawah Tanggal
+
+---
+
+## 1. Ringkasan Permintaan Revisi Pengguna
+1. **Perbaikan Duplikasi Nama Pengguna di Kartu Login Terbaru:** Menghilangkan perulangan nama user (misal: `admin` muncul 2x atau lebih) sehingga setiap pengguna unik hanya tampil satu kali dengan waktu login terbarunya.
+2. **Penataan Alamat IP Address di Bawah Tanggal:** Menampilkan alamat IP address tepat di baris bawah tanggal dan jam login (format 2 baris terpisah dengan titik pemisah di baris tanggal), mencegah teks memanjang dan terpotong elipsis (`...`).
+
+---
+
+## 2. Analisis Teknis & Solusi Terapan
+1. **Deduplikasi Nama Pengguna (`seenUsers` Filter di Backend & Frontend):**
+   - **Backend (`Controller.gs:apiGetDashboardStats`):** Menggunakan `seenUsers` hash map untuk memfilter `sortedLogins`. Hanya entri login paling baru dari masing-masing akun (misal: `admin`, `kepala`) yang dimasukkan ke `recentLogins`.
+   - **Frontend (`Scripts.html:renderUserSessionCard`):** Menambahkan proteksi lapis kedua `seenUsersClient` pada perulangan render login card, menjamin keunikan 100% bahkan sebelum backend di-deploy ulang.
+   - **Hitungan User Online (`onlineMap` Window 10 Menit):** Memperbaiki toleransi waktu sesi aktif dari 12 jam menjadi 10 menit (`SESSION_TIMEOUT_MS = CONFIG.SESSION_EXPIRY_MINUTES * 60 * 1000`), sehingga pengguna yang sesi loginnya telah lampau tidak lagi dihitung sebagai pengguna online bersamaan.
+2. **Penyajian IP Address di Bawah Tanggal (`Styles.html` & `Scripts.html`):**
+   - Memisahkan elemen metadata menjadi dua div terpisah:
+     - `.recent-login-time`: menampilkan tanggal & jam (`17/11 18:44 ·`)
+     - `.recent-login-ip`: menampilkan alamat IP (`182.4.201.142`) di baris tepat di bawah tanggal.
+   - Mengatur `line-height: 1.25` dan `word-break: break-all` sehingga tulisan tidak pernah meluap atau terpotong tanda `...`.
+
+---
+
+## 3. Komponen yang Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `Controller.gs` | Menambahkan deduplikasi `seenUsers`, kalkulasi `SESSION_TIMEOUT_MS` (10 menit) untuk User Online, dan dukungan `Date` object | ✅ Selesai |
+| 2 | `Styles.html` | Menambahkan class `.recent-login-time` dan `.recent-login-ip` untuk layout vertikal 2 baris | ✅ Selesai |
+| 3 | `Scripts.html` | Menambahkan deduplikasi client-side dan merender waktu serta IP secara terpisah bertingkat | ✅ Selesai |
+| 4 | `dist/index.html` | Mengompilasi ulang bundle frontend via `build.ps1` | ✅ Selesai |
+| 5 | `prd.md` & `revisi.md` | Pencatatan dokumentasi resmi ZettBOT `REV-202611-077` (v6.8.18) | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+- ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
+- ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
+- ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
+- ✅ Desain tabel rekapitulasi, distribusi, dan kartu User Session / Login IP tetap presisi dan sejajar.
+- ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
+
 ## 1. Latar Belakang & Masalah Riil (Problem Statement)
 Pengguna melaporkan bahwa scan QR Code dokumen masih memunculkan halaman galat Vercel:
 > *"mengapa saya masih gagal verifikasi dokumen. Masih saja muncul erorr seperti diatas. Tolong diperbaiki lagi"*  
@@ -561,6 +609,54 @@ Pengguna menyampaikan tiga poin revisi operasional:
 | 4 | `Scripts.html` | Menambahkan multi-provider IP detection, local storage catatan backup, dan sanitasi nama pejabat lembar disposisi | ✅ Selesai |
 | 5 | `dist/index.html` | Membangun ulang bundle frontend mandiri via `build.ps1` | ✅ Selesai |
 | 6 | `prd.md` & `revisi.md` | Pencatatan dokumentasi resmi ZettBOT `REV-202611-076` | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+- ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
+- ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
+- ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
+- ✅ Desain tabel rekapitulasi, distribusi, dan kartu User Session / Login IP tetap presisi dan sejajar.
+- ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain apa yang diminta oleh pengguna.
+
+---
+
+# LAPORAN REVISI SISTEM ZETTBOT (REV-202611-077)
+**Tanggal:** 17 November 2026  
+**Versi Rilis:** v6.8.18  
+**ID Permintaan:** REV-202611-077  
+**Fokus Revisi:** Deduplikasi Nama Pengguna pada Kartu Login & Pemisahan Baris IP Address di Bawah Tanggal
+
+---
+
+## 1. Ringkasan Permintaan Revisi Pengguna
+1. **Perbaikan Duplikasi Nama Pengguna di Kartu Login Terbaru:** Menghilangkan perulangan nama user (misal: `admin` muncul 2x atau lebih) sehingga setiap pengguna unik hanya tampil satu kali dengan waktu login terbarunya.
+2. **Penataan Alamat IP Address di Bawah Tanggal:** Menampilkan alamat IP address tepat di baris bawah tanggal dan jam login (format 2 baris terpisah dengan titik pemisah di baris tanggal), mencegah teks memanjang dan terpotong elipsis (`...`).
+
+---
+
+## 2. Analisis Teknis & Solusi Terapan
+1. **Deduplikasi Nama Pengguna (`seenUsers` Filter di Backend & Frontend):**
+   - **Backend (`Controller.gs:apiGetDashboardStats`):** Menggunakan `seenUsers` hash map untuk memfilter `sortedLogins`. Hanya entri login paling baru dari masing-masing akun (misal: `admin`, `kepala`) yang dimasukkan ke `recentLogins`.
+   - **Frontend (`Scripts.html:renderUserSessionCard`):** Menambahkan proteksi lapis kedua `seenUsersClient` pada perulangan render login card, menjamin keunikan 100% bahkan sebelum backend di-deploy ulang.
+   - **Hitungan User Online (`onlineMap` Window 10 Menit):** Memperbaiki toleransi waktu sesi aktif dari 12 jam menjadi 10 menit (`SESSION_TIMEOUT_MS = CONFIG.SESSION_EXPIRY_MINUTES * 60 * 1000`), sehingga pengguna yang sesi loginnya telah lampau tidak lagi dihitung sebagai pengguna online bersamaan.
+2. **Penyajian IP Address di Bawah Tanggal (`Styles.html` & `Scripts.html`):**
+   - Memisahkan elemen metadata menjadi dua div terpisah:
+     - `.recent-login-time`: menampilkan tanggal & jam (`17/11 18:44 ·`)
+     - `.recent-login-ip`: menampilkan alamat IP (`182.4.201.142`) di baris tepat di bawah tanggal.
+   - Mengatur `line-height: 1.25` dan `word-break: break-all` sehingga tulisan tidak pernah meluap atau terpotong tanda `...`.
+
+---
+
+## 3. Komponen yang Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `Controller.gs` | Menambahkan deduplikasi `seenUsers`, kalkulasi `SESSION_TIMEOUT_MS` (10 menit) untuk User Online, dan dukungan `Date` object | ✅ Selesai |
+| 2 | `Styles.html` | Menambahkan class `.recent-login-time` dan `.recent-login-ip` untuk layout vertikal 2 baris | ✅ Selesai |
+| 3 | `Scripts.html` | Menambahkan deduplikasi client-side dan merender waktu serta IP secara terpisah bertingkat | ✅ Selesai |
+| 4 | `dist/index.html` | Mengompilasi ulang bundle frontend via `build.ps1` | ✅ Selesai |
+| 5 | `prd.md` & `revisi.md` | Pencatatan dokumentasi resmi ZettBOT `REV-202611-077` (v6.8.18) | ✅ Selesai |
 
 ---
 

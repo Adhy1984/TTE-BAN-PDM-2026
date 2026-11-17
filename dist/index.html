@@ -2477,6 +2477,21 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .recent-login-time {
+        font-size: 0.72rem;
+        color: #64748b;
+        margin-top: 2px;
+        line-height: 1.25;
+        white-space: nowrap;
+    }
+    .recent-login-ip {
+        font-size: 0.72rem;
+        color: #64748b;
+        margin-top: 1px;
+        line-height: 1.25;
+        word-break: break-all;
+        font-family: inherit;
+    }
     @media (max-width: 640px) {
         .user-session-grid {
             grid-template-columns: 1fr;
@@ -8506,19 +8521,24 @@
                 recentListEl.innerHTML = '<div style="font-size:0.75rem;color:#94a3b8;text-align:center;padding:16px 0;">Belum ada riwayat login tercatat</div>';
             } else {
                 var html = '';
+                var seenUsersClient = {};
                 logins.forEach(function (item) {
                     var uName = escapeHtml(item.username || '-');
+                    var uKey = (item.username || '-').trim().toLowerCase();
+                    if (!uKey || seenUsersClient[uKey]) return; // Deduplikasi username agar satu user hanya muncul 1x
+                    seenUsersClient[uKey] = true;
+
                     var displayUser = uName;
                     if (displayUser.length > 25) {
                         displayUser = displayUser.substring(0, 22) + '...';
                     }
                     var waktuStr = escapeHtml(item.waktu || '-');
                     var ipStr = escapeHtml(item.ip || '182.4.201.142');
-                    var metaText = waktuStr + ' · ' + ipStr;
 
                     html += '<div class="recent-login-item">' +
                         '<div class="recent-login-username" title="' + uName + '">' + displayUser + '</div>' +
-                        '<div class="recent-login-meta">' + metaText + '</div>' +
+                        '<div class="recent-login-time">' + waktuStr + ' ·</div>' +
+                        '<div class="recent-login-ip">' + ipStr + '</div>' +
                     '</div>';
                 });
                 recentListEl.innerHTML = html;

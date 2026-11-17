@@ -320,6 +320,9 @@ function apiGetDashboardStats(token, clientIp) {
       onlineMap[activeUsername.toLowerCase()] = true;
     }
 
+    // Hitung sesi pengguna lain yang benar-benar aktif (dalam 10 menit terakhir, sesuai batas sesi token)
+    const SESSION_TIMEOUT_MS = ((typeof CONFIG !== "undefined" && CONFIG.SESSION_EXPIRY_MINUTES) ? CONFIG.SESSION_EXPIRY_MINUTES : 10) * 60 * 1000;
+
     sortedLogins.forEach(item => {
       const u = String(item.username || "").trim().toLowerCase();
       const st = String(item.status_sesi || "ONLINE").trim().toUpperCase();
@@ -327,38 +330,53 @@ function apiGetDashboardStats(token, clientIp) {
 
       let tMs = 0;
       if (item.waktu_login) {
-        const parsed = new Date(String(item.waktu_login).replace(/-/g, "/"));
-        if (!isNaN(parsed.getTime())) tMs = parsed.getTime();
+        if (item.waktu_login instanceof Date) {
+          tMs = item.waktu_login.getTime();
+        } else {
+          const parsed = new Date(String(item.waktu_login).replace(/-/g, "/"));
+          if (!isNaN(parsed.getTime())) tMs = parsed.getTime();
+        }
       }
 
-      // Sesi aktif dalam 12 jam terakhir (sesi harian operasional)
-      const isRecent = tMs === 0 || ((nowMs - tMs) <= (12 * 60 * 60 * 1000));
-      if (st === "ONLINE" && isRecent) {
+      // Hanya anggap online jika st === "ONLINE" dan waktu login masih dalam batas sesi aktif (10 menit)
+      const isWithinSession = tMs > 0 && ((nowMs - tMs) <= SESSION_TIMEOUT_MS);
+      if (st === "ONLINE" && isWithinSession) {
         onlineMap[u] = true;
       }
     });
 
     const userOnlineCount = Math.max(1, Object.keys(onlineMap).length);
 
-    let recentLogins = sortedLogins.slice(0, 8).map(item => {
-      return {
+    // Deduplikasi user pada recentLogins agar satu user (misal: admin) tidak muncul berulang-ulang
+    const seenUsers = {};
+    const recentLogins = [];
+
+    for (let i = 0; i < sortedLogins.length; i++) {
+      const item = sortedLogins[i];
+      const u = String(item.username || "-").trim().toLowerCase();
+      if (!u || seenUsers[u]) continue;
+      seenUsers[u] = true;
+
+      recentLogins.push({
         username: String(item.username || "-").trim(),
         nama: String(item.nama || item.username || "").trim(),
         waktu: formatLoginTimeDisplay(item.waktu_login),
         ip: String(item.ip_address || resolvedIp).trim(),
         status: String(item.status_sesi || "ONLINE").trim()
-      };
-    });
+      });
+
+      if (recentLogins.length >= 8) break;
+    }
 
     // Fallback jika recentLogins masih kosong, masukkan sesi user aktif saat ini
     if (recentLogins.length === 0 && user) {
-      recentLogins = [{
+      recentLogins.push({
         username: activeUsername,
         nama: String(user.nama || activeUsername).trim(),
         waktu: formatLoginTimeDisplay(new Date()),
         ip: resolvedIp,
         status: "ONLINE"
-      }];
+      });
     }
     
     const allSurat = getSheetRowsAsObjects(CONFIG.SHEET_SURAT);
