@@ -39,13 +39,17 @@ function getVerificationUrl(docId) {
     }
   }
   
-  // Jika URL mengarah ke /dev (versi test), ubah otomatis ke /exec agar dapat dibuka publik tanpa login
+  // Hapus trailing slash jika ada agar format parameter URL rapi
+  baseUrl = baseUrl.replace(/\/+$/, "");
+  
+  // Jika URL mengarah ke /dev (versi test Google Script), ubah otomatis ke /exec agar dapat dibuka publik tanpa login
   if (baseUrl.endsWith("/dev")) {
     baseUrl = baseUrl.substring(0, baseUrl.length - 4) + "/exec";
   }
   
+  // Fallback resmi ke domain portal Vercel
   if (!baseUrl) {
-    baseUrl = "https://script.google.com/macros/s/CURRENT_DEPLOYMENT_ID/exec";
+    baseUrl = "https://ebanpdmntt.vercel.app";
   }
   
   return baseUrl + (baseUrl.indexOf("?") === -1 ? "?" : "&") + "p=verify&id=" + encodeURIComponent(docId);

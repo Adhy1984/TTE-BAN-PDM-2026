@@ -31,16 +31,40 @@ function doGet(e) {
     }
   }
 
-  // 2. Tampilan Web App standar bawaan Google Apps Script
-  const template = HtmlService.createTemplateFromFile("Index");
-  
-  // Normalisasi parameter URL (seperti ?p=verify&id=DOC-123) ke template
+  // 2. Normalisasi parameter URL (seperti ?p=verify&id=DOC-123)
   const rawParams = (e && e.parameter) ? e.parameter : {};
   const queryParams = {};
   for (const key in rawParams) {
     queryParams[key.toLowerCase()] = rawParams[key];
   }
-  
+
+  // 3. Pengalihan Otomatis ke Vercel jika mengakses tautan verifikasi publik (?p=verify&id=...)
+  // Menjamin jika ada yang men-scan QR code lama atau membuka link Google Script, otomatis dialihkan ke Vercel tanpa layar blank
+  const pageParam = (queryParams.p || "").toLowerCase();
+  const idParam = queryParams.id || "";
+  const vercelBase = (CONFIG.WEB_APP_URL || "https://ebanpdmntt.vercel.app").trim().replace(/\/+$/, "");
+
+  if (pageParam === "verify" && idParam && vercelBase) {
+    const targetUrl = vercelBase + "/?p=verify&id=" + encodeURIComponent(idParam);
+    const redirectHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+      '<meta http-equiv="refresh" content="0;url=' + targetUrl + '">' +
+      '<script>window.location.replace("' + targetUrl + '");<\/script>' +
+      '<title>Verifikasi Dokumen e-TTE - ' + CONFIG.INSTITUTION_NAME + '</title>' +
+      '</head><body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;text-align:center;padding:60px 20px;background:#f8fafc;color:#1e293b;">' +
+      '<div style="max-width:480px;margin:0 auto;background:#ffffff;padding:32px 24px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08);border:1px solid #e2e8f0;">' +
+      '<div style="font-size:36px;margin-bottom:12px;">🏛️</div>' +
+      '<h2 style="font-size:1.15rem;color:#0f172a;margin-bottom:8px;">Verifikasi Dokumen Resmi e-TTE</h2>' +
+      '<p style="font-size:0.9rem;color:#64748b;margin-bottom:20px;">Mengarahkan Anda ke Portal Verifikasi Resmi BAN PDM NTT...</p>' +
+      '<a href="' + targetUrl + '" style="display:inline-block;background:#0284c7;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:0.9rem;">Buka Halaman Verifikasi</a>' +
+      '</div></body></html>';
+    return HtmlService.createHtmlOutput(redirectHtml)
+      .setTitle("Verifikasi Dokumen e-TTE - " + CONFIG.INSTITUTION_NAME)
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  // 4. Tampilan Web App standar bawaan Google Apps Script
+  const template = HtmlService.createTemplateFromFile("Index");
   template.queryParams = queryParams;
   template.appName = CONFIG.APP_NAME;
   template.institutionName = CONFIG.INSTITUTION_NAME;

@@ -395,7 +395,7 @@
         APP.verifyDocId = docId;
 
         var instEl = document.getElementById('verifyInstitutionName');
-        // Institution name injected from template
+        if (instEl) instEl.textContent = 'BAN PDM PROVINSI NUSA TENGGARA TIMUR';
         document.getElementById('verifyLoading').style.display = 'block';
         document.getElementById('verifyValid').style.display = 'none';
         document.getElementById('verifyInvalid').style.display = 'none';

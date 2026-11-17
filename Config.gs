@@ -12,8 +12,8 @@ const CONFIG = {
   // ID Google Drive Folder untuk menyimpan arsip PDF resmi
   DRIVE_FOLDER_ID: "1-sdC6uaHqA88CT4U4YdgWgpTsYpYeys_",
   
-  // URL Web App Resmi (opsional, jika dikosongkan akan otomatis dideteksi saat deployment)
-  WEB_APP_URL: "",
+  // URL Web App Resmi Portal e-TTE (Vercel Frontend Mandiri)
+  WEB_APP_URL: "https://ebanpdmntt.vercel.app",
   
   // Identitas & Pengaturan Instansi (Format Kop Surat BAN PDM)
   APP_NAME: "e-TTE Signature Portal",

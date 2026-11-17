@@ -387,7 +387,8 @@
                 try {
                     var sp = new URLSearchParams(window.location.search);
                     sp.forEach(function (v, k) {
-                        if (!params[k]) params[k] = v;
+                        var lk = (k || "").toLowerCase();
+                        params[lk] = v;
                     });
                 } catch (e) { }
             }
