@@ -833,6 +833,179 @@
         }
     }
 
+    /* ====================================================================
+       NOTIFIKASI MODAL GAGAL LOGIN GOOGLE (SWEETALERT-STYLE PREMIUM)
+       ==================================================================== */
+    .swal-custom-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999999;
+        padding: 16px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.22s ease, visibility 0.22s ease;
+        box-sizing: border-box;
+    }
+
+    .swal-custom-overlay.swal-show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .swal-custom-card {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.04);
+        width: 100%;
+        max-width: 380px;
+        padding: 36px 28px 30px;
+        text-align: center;
+        transform: scale(0.68);
+        transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        position: relative;
+        box-sizing: border-box;
+    }
+
+    .swal-custom-overlay.swal-show .swal-custom-card {
+        transform: scale(1);
+    }
+
+    .swal-custom-overlay.swal-closing {
+        opacity: 0;
+    }
+
+    .swal-custom-overlay.swal-closing .swal-custom-card {
+        transform: scale(0.85);
+        transition: transform 0.18s ease-in;
+    }
+
+    .swal-error-icon-box {
+        width: 86px;
+        height: 86px;
+        margin: 0 auto 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .swal-error-svg {
+        width: 86px;
+        height: 86px;
+        display: block;
+    }
+
+    .swal-error-circle {
+        stroke-dasharray: 240;
+        stroke-dashoffset: 240;
+        transform-origin: center;
+    }
+
+    .swal-custom-overlay.swal-show .swal-error-circle {
+        animation: swalCircleStroke 0.45s ease-out 0.1s forwards;
+    }
+
+    .swal-error-line {
+        stroke-dasharray: 45;
+        stroke-dashoffset: 45;
+    }
+
+    .swal-custom-overlay.swal-show .swal-line-left {
+        animation: swalLineStroke 0.3s ease-out 0.32s forwards;
+    }
+
+    .swal-custom-overlay.swal-show .swal-line-right {
+        animation: swalLineStroke 0.3s ease-out 0.4s forwards;
+    }
+
+    .swal-custom-overlay.swal-show .swal-error-icon-box {
+        animation: swalIconShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) 0.58s both;
+    }
+
+    @keyframes swalCircleStroke {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @keyframes swalLineStroke {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @keyframes swalIconShake {
+        0%, 100% {
+            transform: translateX(0);
+        }
+        20%, 60% {
+            transform: translateX(-4px) rotate(-1deg);
+        }
+        40%, 80% {
+            transform: translateX(4px) rotate(1deg);
+        }
+    }
+
+    .swal-custom-title {
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 10px 0;
+        letter-spacing: -0.01em;
+    }
+
+    .swal-custom-text {
+        font-size: 0.95rem;
+        color: #475569;
+        line-height: 1.5;
+        margin: 0 0 26px 0;
+        word-break: break-word;
+    }
+
+    .swal-custom-actions {
+        display: flex;
+        justify-content: center;
+    }
+
+    .swal-custom-btn-ok {
+        background: #7066e0;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.98rem;
+        font-weight: 600;
+        padding: 10px 36px;
+        min-width: 95px;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(112, 102, 224, 0.4);
+        transition: all 0.18s ease;
+        outline: none;
+    }
+
+    .swal-custom-btn-ok:hover {
+        background: #5f54d4;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(112, 102, 224, 0.55);
+    }
+
+    .swal-custom-btn-ok:active {
+        transform: translateY(1px);
+        box-shadow: 0 2px 8px rgba(112, 102, 224, 0.35);
+    }
+
+    .swal-custom-btn-ok:focus-visible {
+        box-shadow: 0 0 0 3px rgba(112, 102, 224, 0.45);
+    }
+
     /* Modal Preview Surat — Ukuran besar & tampilan seolah PDF Print Preview */
     .modal-box-preview {
         width: 95vw;
@@ -2952,6 +3125,24 @@
             <a id="btnLupaPassWa" href="https://wa.me/6282302014000?text=Halo%20Admin%20BAN%20PDM%20NTT,%20mohon%20bantuan%20reset%20kata%20sandi%20akun%20e-TTE." target="_blank" class="btn-wa-helpdesk" style="text-decoration:none;">
                 💬 Bantuan Admin WA
             </a>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL 3: NOTIFIKASI GAGAL LOGIN GOOGLE (SWEETALERT-STYLE PREMIUM) ==================== -->
+<div id="modalGoogleLoginError" class="swal-custom-overlay" style="display:none;" onclick="if(event.target === this) closeGoogleLoginErrorModal()">
+    <div class="swal-custom-card" role="dialog" aria-modal="true" aria-labelledby="swalGoogleTitle">
+        <div class="swal-error-icon-box">
+            <svg class="swal-error-svg" viewBox="0 0 88 88" aria-hidden="true">
+                <circle class="swal-error-circle" cx="44" cy="44" r="38" fill="none" stroke="#f87171" stroke-width="4.5" />
+                <line class="swal-error-line swal-line-left" x1="30" y1="30" x2="58" y2="58" stroke="#ef4444" stroke-width="5" stroke-linecap="round" />
+                <line class="swal-error-line swal-line-right" x1="58" y1="30" x2="30" y2="58" stroke="#ef4444" stroke-width="5" stroke-linecap="round" />
+            </svg>
+        </div>
+        <h2 id="swalGoogleTitle" class="swal-custom-title">Gagal</h2>
+        <p id="swalGoogleMessage" class="swal-custom-text">Akun Google Anda tidak terdaftar di sistem.</p>
+        <div class="swal-custom-actions">
+            <button type="button" id="btnSwalGoogleOk" class="swal-custom-btn-ok" onclick="closeGoogleLoginErrorModal()">OK</button>
         </div>
     </div>
 </div>
@@ -7231,6 +7422,58 @@
     }
 
     /**
+     * Menampilkan Modal Notifikasi Gagal Login Google (SweetAlert-style Premium)
+     * Desain identik foto: Ikon silang merah SVG teranimasi, Judul 'Gagal', Pesan, & Tombol Ungu 'OK'
+     */
+    function showGoogleLoginErrorModal(message) {
+        var modal = document.getElementById('modalGoogleLoginError');
+        var msgEl = document.getElementById('swalGoogleMessage');
+        var btnOk = document.getElementById('btnSwalGoogleOk');
+        if (!modal) return;
+
+        if (msgEl) {
+            msgEl.textContent = message || 'Akun Google Anda tidak terdaftar di sistem.';
+        }
+
+        modal.style.display = 'flex';
+        // Paksa reflow browser agar animasi transisi CSS terpicu sempurna
+        void modal.offsetWidth;
+        modal.classList.remove('swal-closing');
+        modal.classList.add('swal-show');
+
+        if (btnOk) {
+            setTimeout(function () {
+                try { btnOk.focus(); } catch (e) { }
+            }, 80);
+        }
+
+        document.addEventListener('keydown', handleSwalEscKey);
+    }
+
+    function closeGoogleLoginErrorModal() {
+        var modal = document.getElementById('modalGoogleLoginError');
+        if (!modal) return;
+
+        modal.classList.remove('swal-show');
+        modal.classList.add('swal-closing');
+        document.removeEventListener('keydown', handleSwalEscKey);
+
+        setTimeout(function () {
+            modal.style.display = 'none';
+            modal.classList.remove('swal-closing');
+        }, 220);
+    }
+
+    function handleSwalEscKey(e) {
+        if (e.key === 'Escape' || e.key === 'Enter') {
+            closeGoogleLoginErrorModal();
+        }
+    }
+
+    window.showGoogleLoginErrorModal = showGoogleLoginErrorModal;
+    window.closeGoogleLoginErrorModal = closeGoogleLoginErrorModal;
+
+    /**
      * Memproses verifikasi email Google ke backend e-TTE
      */
     function verifyGoogleEmailWithBackend(googleEmail, googleName, idToken) {
@@ -7244,17 +7487,24 @@
                 if (res && res.success) {
                     handleAuthSuccess(res);
                 } else {
+                    var msg = (res && res.message) ? res.message : 'Akun Google Anda tidak terdaftar di sistem.';
+                    if (msg.indexOf('belum terdaftar') !== -1 || msg.indexOf('tidak terdaftar') !== -1) {
+                        msg = 'Akun Google Anda tidak terdaftar di sistem.';
+                    }
+                    showGoogleLoginErrorModal(msg);
                     if (errEl) {
                         errEl.style.display = 'block';
-                        errEl.textContent = (res && res.message) || ('Akun Google (' + googleEmail + ') belum terdaftar di sistem e-TTE.');
+                        errEl.textContent = msg;
                     }
                 }
             })
             .withFailureHandler(function (err) {
                 setGoogleLoginLoading(false);
+                var errMsg = 'Gagal terhubung ke server: ' + (err && err.message ? err.message : err);
+                showGoogleLoginErrorModal(errMsg);
                 if (errEl) {
                     errEl.style.display = 'block';
-                    errEl.textContent = 'Gagal terhubung ke server: ' + (err && err.message ? err.message : err);
+                    errEl.textContent = errMsg;
                 }
             })
             .apiLoginWithGoogle(googleEmail, googleName || '', idToken || '');
@@ -7282,9 +7532,11 @@
             };
             script.onerror = function () {
                 setGoogleLoginLoading(false);
+                var msg = 'Gagal memuat pustaka Google Sign-In. Periksa koneksi internet Anda.';
+                showGoogleLoginErrorModal(msg);
                 if (errEl) {
                     errEl.style.display = 'block';
-                    errEl.textContent = 'Gagal memuat pustaka Google Sign-In. Periksa koneksi internet Anda.';
+                    errEl.textContent = msg;
                 }
             };
             document.head.appendChild(script);
@@ -7315,17 +7567,21 @@
                                     verifyGoogleEmailWithBackend(userInfo.email, userInfo.name || '');
                                 } else {
                                     setGoogleLoginLoading(false);
+                                    var msg = 'Gagal membaca alamat email dari akun Google Anda.';
+                                    showGoogleLoginErrorModal(msg);
                                     if (errEl) {
                                         errEl.style.display = 'block';
-                                        errEl.textContent = 'Gagal membaca alamat email dari akun Google Anda.';
+                                        errEl.textContent = msg;
                                     }
                                 }
                             })
                             .catch(function (fetchErr) {
                                 setGoogleLoginLoading(false);
+                                var msg = 'Gagal mengambil profil Google: ' + fetchErr.message;
+                                showGoogleLoginErrorModal(msg);
                                 if (errEl) {
                                     errEl.style.display = 'block';
-                                    errEl.textContent = 'Gagal mengambil profil Google: ' + fetchErr.message;
+                                    errEl.textContent = msg;
                                 }
                             });
                         } else if (tokenResponse && tokenResponse.error) {
@@ -7358,9 +7614,11 @@
                 google.accounts.id.prompt();
             } catch (gisErr) {
                 console.warn('GIS id.initialize error:', gisErr);
+                var msg = 'Gagal menginisialisasi login Google: ' + (gisErr.message || gisErr);
+                showGoogleLoginErrorModal(msg);
                 if (errEl) {
                     errEl.style.display = 'block';
-                    errEl.textContent = 'Gagal menginisialisasi login Google: ' + (gisErr.message || gisErr);
+                    errEl.textContent = msg;
                 }
             }
         }
@@ -7369,18 +7627,22 @@
     function handleGoogleCredentialResponse(response) {
         var errEl = document.getElementById('loginError');
         if (!response || !response.credential) {
+            var msg = 'Gagal memperoleh kredensial akun Google.';
+            showGoogleLoginErrorModal(msg);
             if (errEl) {
                 errEl.style.display = 'block';
-                errEl.textContent = 'Gagal memperoleh kredensial akun Google.';
+                errEl.textContent = msg;
             }
             return;
         }
 
         var payload = parseJwt(response.credential);
         if (!payload || !payload.email) {
+            var msg = 'Gagal membaca identitas Google.';
+            showGoogleLoginErrorModal(msg);
             if (errEl) {
                 errEl.style.display = 'block';
-                errEl.textContent = 'Gagal membaca identitas Google.';
+                errEl.textContent = msg;
             }
             return;
         }

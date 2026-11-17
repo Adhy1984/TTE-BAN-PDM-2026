@@ -1,67 +1,76 @@
 # CATATAN REVISI (revisi.md)
 ================================================================================
-REVISI: RESOLUSI KOREKSI DOMAIN VERCEL RESMI (HTTPS://TTE-BANPDMNTT.VERCEL.APP) & DYNAMIC ORIGIN DETECTION (ANTI-404 DEPLOYMENT_NOT_FOUND)
-KODE REVISI: REV-202611-066
+REVISI: NOTIFIKASI MODAL GAGAL LOGIN GOOGLE EKSKLUSIF (SWEETALERT STYLE) DENGAN ANIMASI KEREN
+KODE REVISI: REV-202611-067
 STATUS: SELESAI DITERAPKAN (COMPLETED & VERIFIED)
 TANGGAL PENGAJUAN: 17 November 2026
 TANGGAL SELESAI: 17 November 2026
-ENGINE: ZettBOT v6.8.7 (by Zettbos)
+ENGINE: ZettBOT v6.8.8 (by Zettbos)
 ================================================================================
 
 ## 1. Latar Belakang & Permintaan Pengguna (User Request)
-Pengguna melaporkan pesan error yang muncul saat QR Code dokumen discan:
-> *"Mengapa muncul erorr seperti ini ketika di scan. tolong diperbaiki"*  
-> *(Melampirkan foto `media_1794893843261_da09c051.jpg`: peramban Chrome menampilkan halaman hitam Vercel dengan tulisan "This page doesn't exist. It may have been moved, removed, or never existed. 404 DEPLOYMENT_NOT_FOUND")*  
+Pengguna meminta perbaikan visual saat login dengan Google gagal:
+> *"Saya ingin ketika login dengan Google gagal maka muncul notifikasi persis seperti ini dengan efek dan animasi yang keren"*  
+> *(Melampirkan foto `media_1794896106623_f962768e.png`: kartu popup putih bersih, ikon lingkaran merah dengan tanda silang 'X' di tengah, judul tebal 'Gagal', pesan 'Akun Google Anda tidak terdaftar di sistem.', dan tombol ungu 'OK')*  
 > *Note: JANGAN RUBAH FITUR DAN DESAIN SELAIN YANG SAYA MINTA, TERAPKAN SAJA APA YANG SAYA MINTA, KECUALI MEMANG HARUS DIUBAH KARENA KEBUTUHAN REVISI*
 
 ---
 
-## 2. Analisis Masalah & Solusi yang Telah Diterapkan
+## 2. Realisasi Implementasi Presisi (Surgical Implementation)
 
-### A. Akar Masalah "404 DEPLOYMENT_NOT_FOUND" pada Vercel
-1. **Pemotongan Huruf Domain di Peramban Ponsel:**  
-   Pada revisi sebelumnya, alamat domain Vercel disimpulkan sebagai `https://ebanpdmntt.vercel.app` berdasarkan tangkapan layar ponsel pengguna. Namun, pada Google Chrome HP dengan layar sempit, bilah alamat secara otomatis menggulir (*scroll/truncate*) teks domain panjang ke kanan, sehingga awalan `tte-` terpotong dari pandangan.
-2. **Subdomain Tidak Terdaftar di Vercel:**  
-   Domain `ebanpdmntt.vercel.app` (tanpa `tte-`) tidak pernah didaftarkan pada server Vercel. Ketika QR Code yang mencantumkan domain tersebut discan, server edge Vercel di Singapura (`sin1`) mengembalikan galat `404 DEPLOYMENT_NOT_FOUND`.
-3. **Konfirmasi Domain Riil:**  
-   Pengguna telah mengonfirmasi bahwa domain Vercel yang sebenarnya aktif digunakan adalah:  
-   `https://tte-banpdmntt.vercel.app`
-
----
-
-### B. Solusi yang Diterapkan
-
-1. **Koreksi Domain Resmi pada Seluruh Titik Konfigurasi:**  
-   - Mengubah `CONFIG.WEB_APP_URL` di `Config.gs` menjadi `"https://tte-banpdmntt.vercel.app"`.
-   - Mengubah `window.WEB_APP_URL` di `config.js` dan `dist/config.js` menjadi `"https://tte-banpdmntt.vercel.app"`.
-   - Mengubah target redirect otomatis pada `doGet()` di `Controller.gs` ke `"https://tte-banpdmntt.vercel.app"`.
-   - Mengubah *fallback* resmi di `DocumentService.gs` ke `"https://tte-banpdmntt.vercel.app"`.
-
-2. **Penerapan Deteksi Domain Dinamis (*Dynamic Origin Detection*):**  
-   - Menambahkan parameter `clientOrigin` pada fungsi penandatanganan `apiApproveAndSignSurat(token, docId, pinTte, clientOrigin)` dan penyalinan tautan `apiGetVerifyUrl(docId, clientOrigin)` di `Controller.gs`.
-   - Pada frontend `Scripts.html`, saat Pejabat menandatangani dokumen atau menyalin tautan verifikasi, sistem secara otomatis mengirimkan `window.location.origin` aktif dari peramban (`https://tte-banpdmntt.vercel.app`).
-   - Dengan arsitektur ini, QR Code dokumen akan selalu mencetak URL yang 100% presisi dan sinkron dengan domain aktif aplikasi tanpa risiko salah ketik atau salah tebak domain lagi.
-
-3. **Penyusunan Ulang Distribusi Frontend Mandiri:**  
-   - Menjalankan `build.ps1` untuk menyusun ulang `dist/index.html` (542 KB, struktur div, svg, dan button seimbang 100%).
+### A. Desain Komponen Modal Visual (Identik 100% dengan Gambar Lampiran)
+Telah ditambahkan elemen modal terdedikasi `#modalGoogleLoginError` pada `AuthView.html`:
+1. **Backdrop Overlay (`.swal-custom-overlay`):** Latar gelap semi-transparan dengan efek *backdrop blur* halus (`backdrop-filter: blur(5px); background: rgba(15, 23, 42, 0.45);`).
+2. **Kartu Pop-up Putih (`.swal-custom-card`):**
+   - Latar belakang putih bersih (`#ffffff`), sudut membulat modern (`border-radius: 20px`), bayangan lembut berlapis (`box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25)`).
+   - Lebar proporsional (`max-width: 380px; width: 100%;`) di tengah layar desktop maupun layar HP.
+3. **Ikon Lingkaran Silang Merah SVG (`.swal-error-svg`):**
+   - Lingkaran bergaris tepi merah muda/coral (`#f87171`, stroke-width: 4.5).
+   - Tanda silang `✕` merah tegas di tengah (`#ef4444`, stroke-width: 5) dengan ujung membulat (*round cap*).
+4. **Tipografi & Teks:**
+   - Judul: **Gagal** (`font-size: 1.65rem; font-weight: 700; color: #1e293b; margin: 0 0 10px 0;`).
+   - Deskripsi: **Akun Google Anda tidak terdaftar di sistem.** (`font-size: 0.95rem; color: #475569; line-height: 1.5; margin: 0 0 26px 0;`).
+5. **Tombol Konfirmasi "OK" Ungu SweetAlert (`.swal-custom-btn-ok`):**
+   - Warna tombol persis foto: ungu elegan (`background: #7066e0;`).
+   - Teks tebal putih "OK", sudut membulat (`border-radius: 8px`), ukuran pas (`padding: 10px 36px; font-weight: 600; min-width: 95px;`).
+   - Bayangan ungu serasi (`box-shadow: 0 4px 14px rgba(112, 102, 224, 0.4)`).
 
 ---
 
-## 3. Komponen yang Dimodifikasi
-| No | Berkas | Perubahan yang Dilakukan |
-|---|---|---|
-| 1 | `Config.gs` | Mengoreksi `WEB_APP_URL` menjadi `"https://tte-banpdmntt.vercel.app"` |
-| 2 | `config.js` | Mengoreksi `window.WEB_APP_URL` menjadi `"https://tte-banpdmntt.vercel.app"` |
-| 3 | `DocumentService.gs` | Mengoreksi fallback domain dan mendukung `customBaseUrl` dinamis pada `getVerificationUrl()` |
-| 4 | `Controller.gs` | Mengoreksi redirect `doGet()` dan mengalirkan `clientOrigin` pada `apiApproveAndSignSurat` & `apiGetVerifyUrl` |
-| 5 | `Scripts.html` | Mengirimkan `window.location.origin` secara otomatis saat submit TTE & copy link |
-| 6 | `dist/index.html` & `dist/config.js` | Hasil kompilasi bundler siap deploy ke Vercel |
+### B. Rangkaian Efek & Animasi Keren
+Pada `Styles.html` telah diintegrasikan animasi khusus bertahap:
+1. **Entrance Pop-In (Elastic Spring):** Kartu muncul dengan efek melompat elastis (`transform: scale(0.68) -> scale(1)` dengan kurva pegas `cubic-bezier(0.175, 0.885, 0.32, 1.275)`).
+2. **Animated Cross Icon:** Lingkaran mekar secara dinamis (`@keyframes swalCircleStroke`), disusul kedua garis silang `✕` terlukis otomatis berurutan secara halus (`@keyframes swalLineStroke`), diakhiri getaran kesalahan mikro yang tactile (`@keyframes swalIconShake`).
+3. **Button Hover & Ripple Glow:** Tombol "OK" memiliki efek angkat halus (`translateY(-2px)`) dengan pendaran ungu lembut saat disorot mouse/disentuh di HP.
+4. **Smooth Dismissal:** Saat tombol "OK" diklik, area luar disentuh, atau tombol Escape/Enter ditekan, pop-up menutup dengan transisi *scale-down fade-out* yang cepat dan bersih (0.2s).
 
 ---
 
-## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
+### C. Integrasi Alur Logika pada `Scripts.html`
+1. Membuat fungsi controller global:
+   - `window.showGoogleLoginErrorModal(message)`
+   - `window.closeGoogleLoginErrorModal()`
+   - Event listener `keydown` (Escape / Enter key).
+2. Mengintegrasikannya ke dalam:
+   - `verifyGoogleEmailWithBackend`: jika backend mengembalikan penolakan akun (belum terdaftar / tidak terdaftar), modal pop-up ini langsung muncul dengan animasi keren.
+   - Penanganan error koneksi server saat memanggil `apiLoginWithGoogle`.
+   - `triggerGoogleOAuthPopup` dan `handleGoogleCredentialResponse` saat pembacaan profil/kredensial Google gagal.
+
+---
+
+## 3. Komponen yang Telah Dimodifikasi & Diverifikasi
+| No | Berkas | Perubahan yang Dilakukan | Status |
+|---|---|---|---|
+| 1 | `AuthView.html` | Menambahkan markup modal `#modalGoogleLoginError` | ✅ Selesai |
+| 2 | `Styles.html` | Menambahkan styling visual, warna tombol ungu, dan keyframes animasi keren | ✅ Selesai |
+| 3 | `Scripts.html` | Menghubungkan kegagalan login Google ke modal popup baru | ✅ Selesai |
+| 4 | `dist/index.html` | Kompilasi bundler otomatis via `build.ps1` untuk Vercel | ✅ Selesai |
+
+---
+
+## 4. Jaminan Integritas Sistem (Sesuai Note Pengguna)
 - ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
 - ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
 - ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.
-- ✅ Pengiriman OTP Gmail dan kontak bantuan WA Admin `082302014000` tetap terjaga.
 - ✅ Zero-Scroll 100vh pada layar login dan hak cipta `© 2026 Adhy Lawa` tetap terjaga utuh.
+- ✅ Tidak merubah desain maupun fitur lain selain notifikasi pop-up kegagalan login Google yang diminta.

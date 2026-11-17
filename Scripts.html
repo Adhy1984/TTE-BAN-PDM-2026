@@ -605,6 +605,58 @@
     }
 
     /**
+     * Menampilkan Modal Notifikasi Gagal Login Google (SweetAlert-style Premium)
+     * Desain identik foto: Ikon silang merah SVG teranimasi, Judul 'Gagal', Pesan, & Tombol Ungu 'OK'
+     */
+    function showGoogleLoginErrorModal(message) {
+        var modal = document.getElementById('modalGoogleLoginError');
+        var msgEl = document.getElementById('swalGoogleMessage');
+        var btnOk = document.getElementById('btnSwalGoogleOk');
+        if (!modal) return;
+
+        if (msgEl) {
+            msgEl.textContent = message || 'Akun Google Anda tidak terdaftar di sistem.';
+        }
+
+        modal.style.display = 'flex';
+        // Paksa reflow browser agar animasi transisi CSS terpicu sempurna
+        void modal.offsetWidth;
+        modal.classList.remove('swal-closing');
+        modal.classList.add('swal-show');
+
+        if (btnOk) {
+            setTimeout(function () {
+                try { btnOk.focus(); } catch (e) { }
+            }, 80);
+        }
+
+        document.addEventListener('keydown', handleSwalEscKey);
+    }
+
+    function closeGoogleLoginErrorModal() {
+        var modal = document.getElementById('modalGoogleLoginError');
+        if (!modal) return;
+
+        modal.classList.remove('swal-show');
+        modal.classList.add('swal-closing');
+        document.removeEventListener('keydown', handleSwalEscKey);
+
+        setTimeout(function () {
+            modal.style.display = 'none';
+            modal.classList.remove('swal-closing');
+        }, 220);
+    }
+
+    function handleSwalEscKey(e) {
+        if (e.key === 'Escape' || e.key === 'Enter') {
+            closeGoogleLoginErrorModal();
+        }
+    }
+
+    window.showGoogleLoginErrorModal = showGoogleLoginErrorModal;
+    window.closeGoogleLoginErrorModal = closeGoogleLoginErrorModal;
+
+    /**
      * Memproses verifikasi email Google ke backend e-TTE
      */
     function verifyGoogleEmailWithBackend(googleEmail, googleName, idToken) {
@@ -618,17 +670,24 @@
                 if (res && res.success) {
                     handleAuthSuccess(res);
                 } else {
+                    var msg = (res && res.message) ? res.message : 'Akun Google Anda tidak terdaftar di sistem.';
+                    if (msg.indexOf('belum terdaftar') !== -1 || msg.indexOf('tidak terdaftar') !== -1) {
+                        msg = 'Akun Google Anda tidak terdaftar di sistem.';
+                    }
+                    showGoogleLoginErrorModal(msg);
                     if (errEl) {
                         errEl.style.display = 'block';
-                        errEl.textContent = (res && res.message) || ('Akun Google (' + googleEmail + ') belum terdaftar di sistem e-TTE.');
+                        errEl.textContent = msg;
                     }
                 }
             })
             .withFailureHandler(function (err) {
                 setGoogleLoginLoading(false);
+                var errMsg = 'Gagal terhubung ke server: ' + (err && err.message ? err.message : err);
+                showGoogleLoginErrorModal(errMsg);
                 if (errEl) {
                     errEl.style.display = 'block';
-                    errEl.textContent = 'Gagal terhubung ke server: ' + (err && err.message ? err.message : err);
+                    errEl.textContent = errMsg;
                 }
             })
             .apiLoginWithGoogle(googleEmail, googleName || '', idToken || '');
@@ -656,9 +715,11 @@
             };
             script.onerror = function () {
                 setGoogleLoginLoading(false);
+                var msg = 'Gagal memuat pustaka Google Sign-In. Periksa koneksi internet Anda.';
+                showGoogleLoginErrorModal(msg);
                 if (errEl) {
                     errEl.style.display = 'block';
-                    errEl.textContent = 'Gagal memuat pustaka Google Sign-In. Periksa koneksi internet Anda.';
+                    errEl.textContent = msg;
                 }
             };
             document.head.appendChild(script);
@@ -689,17 +750,21 @@
                                     verifyGoogleEmailWithBackend(userInfo.email, userInfo.name || '');
                                 } else {
                                     setGoogleLoginLoading(false);
+                                    var msg = 'Gagal membaca alamat email dari akun Google Anda.';
+                                    showGoogleLoginErrorModal(msg);
                                     if (errEl) {
                                         errEl.style.display = 'block';
-                                        errEl.textContent = 'Gagal membaca alamat email dari akun Google Anda.';
+                                        errEl.textContent = msg;
                                     }
                                 }
                             })
                             .catch(function (fetchErr) {
                                 setGoogleLoginLoading(false);
+                                var msg = 'Gagal mengambil profil Google: ' + fetchErr.message;
+                                showGoogleLoginErrorModal(msg);
                                 if (errEl) {
                                     errEl.style.display = 'block';
-                                    errEl.textContent = 'Gagal mengambil profil Google: ' + fetchErr.message;
+                                    errEl.textContent = msg;
                                 }
                             });
                         } else if (tokenResponse && tokenResponse.error) {
@@ -732,9 +797,11 @@
                 google.accounts.id.prompt();
             } catch (gisErr) {
                 console.warn('GIS id.initialize error:', gisErr);
+                var msg = 'Gagal menginisialisasi login Google: ' + (gisErr.message || gisErr);
+                showGoogleLoginErrorModal(msg);
                 if (errEl) {
                     errEl.style.display = 'block';
-                    errEl.textContent = 'Gagal menginisialisasi login Google: ' + (gisErr.message || gisErr);
+                    errEl.textContent = msg;
                 }
             }
         }
@@ -743,18 +810,22 @@
     function handleGoogleCredentialResponse(response) {
         var errEl = document.getElementById('loginError');
         if (!response || !response.credential) {
+            var msg = 'Gagal memperoleh kredensial akun Google.';
+            showGoogleLoginErrorModal(msg);
             if (errEl) {
                 errEl.style.display = 'block';
-                errEl.textContent = 'Gagal memperoleh kredensial akun Google.';
+                errEl.textContent = msg;
             }
             return;
         }
 
         var payload = parseJwt(response.credential);
         if (!payload || !payload.email) {
+            var msg = 'Gagal membaca identitas Google.';
+            showGoogleLoginErrorModal(msg);
             if (errEl) {
                 errEl.style.display = 'block';
-                errEl.textContent = 'Gagal membaca identitas Google.';
+                errEl.textContent = msg;
             }
             return;
         }
