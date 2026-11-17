@@ -9,8 +9,16 @@ const CONFIG = {
   // ID Google Spreadsheet database yang diberikan oleh pengguna
   SPREADSHEET_ID: "1Vgz-BTW3Mx-veAWfeDST4IAm9XUWldXW6_wSWvY8BGY",
   
-  // ID Google Drive Folder untuk menyimpan arsip PDF resmi
-  DRIVE_FOLDER_ID: "1-sdC6uaHqA88CT4U4YdgWgpTsYpYeys_",
+  // ID Google Drive Folder Khusus Surat-Surat Keluar (Draf & Dokumen TTE Resmi)
+  // Link: https://drive.google.com/drive/folders/137Lku729WYjPyazCdz3hMb5bTMy-nNqX
+  DRIVE_FOLDER_SURAT_KELUAR: "137Lku729WYjPyazCdz3hMb5bTMy-nNqX",
+
+  // ID Google Drive Folder Khusus Surat-Surat Masuk (Berkas Arsip & Lampiran Masuk)
+  // Link: https://drive.google.com/drive/folders/10LBAIyUE37eKPoV2RZFC3gkOJIrXumu5
+  DRIVE_FOLDER_SURAT_MASUK: "10LBAIyUE37eKPoV2RZFC3gkOJIrXumu5",
+
+  // ID Google Drive Folder Default / Fallback (Backward Compatibility)
+  DRIVE_FOLDER_ID: "137Lku729WYjPyazCdz3hMb5bTMy-nNqX",
   
   // URL Web App Resmi Portal e-TTE (Vercel Frontend Mandiri)
   WEB_APP_URL: "https://e-ttebanpdmntt.vercel.app",
@@ -40,6 +48,7 @@ const CONFIG = {
   SHEET_SURAT: "surat",
   SHEET_SURAT_MASUK: "surat_masuk",
   SHEET_LOG: "log_verifikasi",
+  SHEET_LOG_LOGIN: "log_login",
   SHEET_SETTINGS: "pengaturan",
   
   // Konfigurasi QR Code & TTE

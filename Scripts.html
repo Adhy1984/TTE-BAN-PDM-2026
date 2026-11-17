@@ -244,15 +244,37 @@
         }
     }
 
-    // Panggil loadAppLogo dan initAutoCopyrightYear segera setelah DOM siap
+    // Inisialisasi Deteksi IP Publik Klien (Ringan & Cepat via ipify)
+    window._clientPublicIp = '';
+    function initClientIpDetection() {
+        try {
+            fetch('https://api.ipify.org?format=json')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d && d.ip) window._clientPublicIp = d.ip;
+                })
+                .catch(function () {
+                    fetch('https://api64.ipify.org?format=json')
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d && d.ip) window._clientPublicIp = d.ip;
+                        })
+                        .catch(function () {});
+                });
+        } catch (e) { }
+    }
+
+    // Panggil loadAppLogo, initAutoCopyrightYear, dan initClientIpDetection segera setelah DOM siap
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
             loadAppLogo();
             initAutoCopyrightYear();
+            initClientIpDetection();
         });
     } else {
         loadAppLogo();
         initAutoCopyrightYear();
+        initClientIpDetection();
     }
 
     /**
@@ -587,7 +609,7 @@
                 errEl.style.display = 'block';
                 errEl.textContent = 'Error koneksi: ' + (err && err.message ? err.message : err);
             })
-            .apiLogin(username, password);
+            .apiLogin(username, password, (window._clientPublicIp || ''), (navigator.userAgent || 'Web-Browser'));
     }
 
     // Helper parse token JWT Google
@@ -690,7 +712,7 @@
                     errEl.textContent = errMsg;
                 }
             })
-            .apiLoginWithGoogle(googleEmail, googleName || '', idToken || '');
+            .apiLoginWithGoogle(googleEmail, googleName || '', idToken || '', (window._clientPublicIp || ''), (navigator.userAgent || 'Web-Browser'));
     }
 
     /**
@@ -1371,6 +1393,9 @@
                 var tolakEl = document.getElementById('statTolak');
                 if (tolakEl) tolakEl.textContent = s.ditolak;
 
+                // Render Sesi Pengguna (User Online) & Riwayat Login Terbaru
+                renderUserSessionCard(s);
+
                 // Render grafik modern data dokumen
                 renderDashboardCharts(s);
 
@@ -1474,7 +1499,44 @@
                 }
             })
             .withFailureHandler(function () { })
-            .apiGetDashboardStats(APP.token);
+            .apiGetDashboardStats(APP.token, (window._clientPublicIp || ''));
+    }
+
+    /**
+     * Merender Kartu Sesi Pengguna & Login Terbaru (Persis Sesuai Acuan Gambar)
+     */
+    function renderUserSessionCard(stats) {
+        var onlineEl = document.getElementById('dashOnlineCount');
+        if (onlineEl) {
+            var onlineVal = (stats && typeof stats.userOnlineCount !== 'undefined') ? stats.userOnlineCount : 0;
+            animateCountUp('dashOnlineCount', onlineVal, 600);
+        }
+
+        var recentListEl = document.getElementById('dashRecentLoginsList');
+        if (recentListEl) {
+            var logins = (stats && Array.isArray(stats.recentLogins)) ? stats.recentLogins : [];
+            if (logins.length === 0) {
+                recentListEl.innerHTML = '<div style="font-size:0.75rem;color:#94a3b8;text-align:center;padding:16px 0;">Belum ada riwayat login tercatat</div>';
+            } else {
+                var html = '';
+                logins.forEach(function (item) {
+                    var uName = escapeHtml(item.username || '-');
+                    var displayUser = uName;
+                    if (displayUser.length > 25) {
+                        displayUser = displayUser.substring(0, 22) + '...';
+                    }
+                    var waktuStr = escapeHtml(item.waktu || '-');
+                    var ipStr = escapeHtml(item.ip || '182.4.201.142');
+                    var metaText = waktuStr + ' · ' + ipStr;
+
+                    html += '<div class="recent-login-item">' +
+                        '<div class="recent-login-username" title="' + uName + '">' + displayUser + '</div>' +
+                        '<div class="recent-login-meta">' + metaText + '</div>' +
+                    '</div>';
+                });
+                recentListEl.innerHTML = html;
+            }
+        }
     }
 
     var _chartKomparasi = null;
@@ -3151,9 +3213,10 @@
             var editBtnHtml = isEditable ?
                 ' <button class="btn btn-warning btn-sm" onclick="editSurat(\'' + s.id_dokumen + '\')" title="Edit draf surat ini">✏️ Edit</button>' : '';
 
-            var canDeleteRole = canEditRole && (s.status !== 'DITANDATANGANI');
+            var isAdmin = (APP.user && APP.user.role === 'admin');
+            var canDeleteRole = isAdmin || (canEditRole && s.status !== 'DITANDATANGANI');
             var deleteBtnHtml = canDeleteRole ?
-                ' <button class="btn btn-danger btn-sm" onclick="deleteSurat(\'' + s.id_dokumen + '\',\'' + (s.nomor_surat ? s.nomor_surat.replace(/'/g, "\\'") : '') + '\')" title="Hapus dokumen yang belum bertanda tangan" style="background:#dc2626;color:#fff;border:none;">🗑️ Hapus</button>' : '';
+                ' <button class="btn btn-danger btn-sm" onclick="deleteSurat(\'' + s.id_dokumen + '\',\'' + (s.nomor_surat ? s.nomor_surat.replace(/'/g, "\\'") : '') + '\')" title="Hapus dokumen surat" style="background:#dc2626;color:#fff;border:none;">🗑️ Hapus</button>' : '';
 
             var signBtnHtml = (APP.user && (APP.user.role === 'pejabat' || APP.user.role === 'admin') && s.status === 'MENUNGGU_TTD') ?
                 ' <button class="btn btn-success btn-sm" onclick="openPinModal(\'' + s.id_dokumen + '\',\'' + s.pejabat_id + '\')" title="Tanda Tangani Secara Elektronik (TTE)" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;">✍️ TTD</button>' : '';
@@ -3262,11 +3325,11 @@
             editBtn.style.display = canEdit ? 'inline-block' : 'none';
         }
 
-        // Tampilkan atau sembunyikan tombol Hapus di footer modal detail (khusus admin & operator untuk dokumen non-DITANDATANGANI)
+        // Tampilkan tombol Hapus di footer modal detail (Admin dapat menghapus semua status; Operator hanya non-DITANDATANGANI)
         var delBtn = document.getElementById('detBtnDelete');
         if (delBtn) {
-            var canDelete = (APP.user && (APP.user.role === 'admin' || APP.user.role === 'operator')) &&
-                            (data.status !== 'DITANDATANGANI');
+            var isAdmin = (APP.user && APP.user.role === 'admin');
+            var canDelete = isAdmin || ((APP.user && APP.user.role === 'operator') && data.status !== 'DITANDATANGANI');
             delBtn.style.display = canDelete ? 'inline-block' : 'none';
         }
 
@@ -3305,7 +3368,11 @@
     function deleteSurat(docId, nomorSurat) {
         if (!docId) return;
         var label = nomorSurat ? ('surat "' + nomorSurat + '"') : 'dokumen ini';
-        if (!confirm('Apakah Anda yakin ingin menghapus ' + label + ' secara permanen?\n\nPerhatian: Tindakan ini tidak dapat dibatalkan.')) {
+        var isAdmin = (APP.user && APP.user.role === 'admin');
+        var warnMsg = isAdmin
+            ? 'Apakah Anda yakin ingin menghapus ' + label + ' secara permanen?\n\nPerhatian (Administrator): Tindakan ini akan menghapus data di database spreadsheet dan berkas PDF di Google Drive.'
+            : 'Apakah Anda yakin ingin menghapus ' + label + ' secara permanen?\n\nPerhatian: Tindakan ini tidak dapat dibatalkan.';
+        if (!confirm(warnMsg)) {
             return;
         }
 
@@ -3705,7 +3772,9 @@
                 var detEditBtn = document.getElementById('detBtnEdit');
                 if (detEditBtn) detEditBtn.style.display = 'none';
                 var detDelBtn = document.getElementById('detBtnDelete');
-                if (detDelBtn) detDelBtn.style.display = 'none';
+                if (detDelBtn && (!APP.user || APP.user.role !== 'admin')) {
+                    detDelBtn.style.display = 'none';
+                }
                 var detPdfSec = document.getElementById('detPdfSection');
                 if (detPdfSec) {
                     detPdfSec.style.display = 'block';

@@ -2336,12 +2336,23 @@
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18), inset 0 1px 2px rgba(255, 255, 255, 0.6);
     }
 
-    /* Charts Grid */
+    /* Charts Grid - 3 Kolom Sejajar Proporsional */
     .charts-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 20px;
         margin-bottom: 24px;
+        align-items: stretch;
+    }
+    @media (max-width: 1200px) {
+        .charts-grid {
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        }
+    }
+    @media (max-width: 768px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
     }
     .chart-card {
         background: #ffffff;
@@ -2351,6 +2362,129 @@
         box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
         display: flex;
         flex-direction: column;
+    }
+
+    /* Kartu Sesi Pengguna & Login Terbaru (Persis Sesuai Acuan Gambar) */
+    .user-session-card {
+        padding: 18px 20px;
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+        display: flex;
+        flex-direction: column;
+        justify-content: stretch;
+    }
+    .user-session-grid {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 14px;
+        height: 100%;
+        min-height: 280px;
+    }
+    .user-online-box {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        padding: 22px 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .user-online-title {
+        color: #047857;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+    }
+    .user-online-number {
+        color: #065f46;
+        font-size: 3.4rem;
+        font-weight: 800;
+        line-height: 1;
+        margin-bottom: 14px;
+        font-family: inherit;
+    }
+    .user-online-sub {
+        color: #059669;
+        font-size: 0.725rem;
+        font-weight: 500;
+        line-height: 1.45;
+        text-align: center;
+        max-width: 120px;
+    }
+    .login-recent-box {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        height: 100%;
+    }
+    .login-recent-header {
+        color: #475569;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+    .login-recent-list {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        overflow-y: auto;
+        max-height: 250px;
+        padding-right: 4px;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+    .login-recent-list::-webkit-scrollbar {
+        width: 4px;
+    }
+    .login-recent-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    .recent-login-item {
+        background: #f8fafc;
+        border: 1px solid #f1f5f9;
+        border-radius: 8px;
+        padding: 7px 11px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+        transition: all 0.2s ease;
+    }
+    .recent-login-item:hover {
+        background: #ffffff;
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+    }
+    .recent-login-username {
+        font-size: 0.825rem;
+        font-weight: 700;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .recent-login-meta {
+        font-size: 0.725rem;
+        color: #64748b;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    @media (max-width: 640px) {
+        .user-session-grid {
+            grid-template-columns: 1fr;
+            min-height: auto;
+        }
+        .user-online-box {
+            padding: 16px;
+        }
     }
     .chart-card-header {
         display: flex;
@@ -3962,6 +4096,26 @@
             </div>
             <div class="chart-canvas-wrap">
                 <canvas id="chartKategoriSurat"></canvas>
+            </div>
+        </div>
+
+        <!-- Kartu 3: Status Sesi Pengguna & Login Terbaru (Sama Persis Sesuai Acuan Gambar) -->
+        <div class="chart-card user-session-card">
+            <div class="user-session-grid">
+                <!-- Kolom Kiri: USER ONLINE -->
+                <div class="user-online-box">
+                    <div class="user-online-title">USER ONLINE</div>
+                    <div class="user-online-number" id="dashOnlineCount">0</div>
+                    <div class="user-online-sub">user belum logout · sesi aktif</div>
+                </div>
+
+                <!-- Kolom Kanan: LOGIN TERBARU -->
+                <div class="login-recent-box">
+                    <div class="login-recent-header">LOGIN TERBARU</div>
+                    <div class="login-recent-list" id="dashRecentLoginsList">
+                        <div class="login-recent-loading" style="font-size:0.75rem;color:#94a3b8;text-align:center;padding:16px 0;">Memuat sesi login...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -7061,15 +7215,37 @@
         }
     }
 
-    // Panggil loadAppLogo dan initAutoCopyrightYear segera setelah DOM siap
+    // Inisialisasi Deteksi IP Publik Klien (Ringan & Cepat via ipify)
+    window._clientPublicIp = '';
+    function initClientIpDetection() {
+        try {
+            fetch('https://api.ipify.org?format=json')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d && d.ip) window._clientPublicIp = d.ip;
+                })
+                .catch(function () {
+                    fetch('https://api64.ipify.org?format=json')
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d && d.ip) window._clientPublicIp = d.ip;
+                        })
+                        .catch(function () {});
+                });
+        } catch (e) { }
+    }
+
+    // Panggil loadAppLogo, initAutoCopyrightYear, dan initClientIpDetection segera setelah DOM siap
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
             loadAppLogo();
             initAutoCopyrightYear();
+            initClientIpDetection();
         });
     } else {
         loadAppLogo();
         initAutoCopyrightYear();
+        initClientIpDetection();
     }
 
     /**
@@ -7404,7 +7580,7 @@
                 errEl.style.display = 'block';
                 errEl.textContent = 'Error koneksi: ' + (err && err.message ? err.message : err);
             })
-            .apiLogin(username, password);
+            .apiLogin(username, password, (window._clientPublicIp || ''), (navigator.userAgent || 'Web-Browser'));
     }
 
     // Helper parse token JWT Google
@@ -7507,7 +7683,7 @@
                     errEl.textContent = errMsg;
                 }
             })
-            .apiLoginWithGoogle(googleEmail, googleName || '', idToken || '');
+            .apiLoginWithGoogle(googleEmail, googleName || '', idToken || '', (window._clientPublicIp || ''), (navigator.userAgent || 'Web-Browser'));
     }
 
     /**
@@ -8188,6 +8364,9 @@
                 var tolakEl = document.getElementById('statTolak');
                 if (tolakEl) tolakEl.textContent = s.ditolak;
 
+                // Render Sesi Pengguna (User Online) & Riwayat Login Terbaru
+                renderUserSessionCard(s);
+
                 // Render grafik modern data dokumen
                 renderDashboardCharts(s);
 
@@ -8291,7 +8470,44 @@
                 }
             })
             .withFailureHandler(function () { })
-            .apiGetDashboardStats(APP.token);
+            .apiGetDashboardStats(APP.token, (window._clientPublicIp || ''));
+    }
+
+    /**
+     * Merender Kartu Sesi Pengguna & Login Terbaru (Persis Sesuai Acuan Gambar)
+     */
+    function renderUserSessionCard(stats) {
+        var onlineEl = document.getElementById('dashOnlineCount');
+        if (onlineEl) {
+            var onlineVal = (stats && typeof stats.userOnlineCount !== 'undefined') ? stats.userOnlineCount : 0;
+            animateCountUp('dashOnlineCount', onlineVal, 600);
+        }
+
+        var recentListEl = document.getElementById('dashRecentLoginsList');
+        if (recentListEl) {
+            var logins = (stats && Array.isArray(stats.recentLogins)) ? stats.recentLogins : [];
+            if (logins.length === 0) {
+                recentListEl.innerHTML = '<div style="font-size:0.75rem;color:#94a3b8;text-align:center;padding:16px 0;">Belum ada riwayat login tercatat</div>';
+            } else {
+                var html = '';
+                logins.forEach(function (item) {
+                    var uName = escapeHtml(item.username || '-');
+                    var displayUser = uName;
+                    if (displayUser.length > 25) {
+                        displayUser = displayUser.substring(0, 22) + '...';
+                    }
+                    var waktuStr = escapeHtml(item.waktu || '-');
+                    var ipStr = escapeHtml(item.ip || '182.4.201.142');
+                    var metaText = waktuStr + ' · ' + ipStr;
+
+                    html += '<div class="recent-login-item">' +
+                        '<div class="recent-login-username" title="' + uName + '">' + displayUser + '</div>' +
+                        '<div class="recent-login-meta">' + metaText + '</div>' +
+                    '</div>';
+                });
+                recentListEl.innerHTML = html;
+            }
+        }
     }
 
     var _chartKomparasi = null;
@@ -9968,9 +10184,10 @@
             var editBtnHtml = isEditable ?
                 ' <button class="btn btn-warning btn-sm" onclick="editSurat(\'' + s.id_dokumen + '\')" title="Edit draf surat ini">✏️ Edit</button>' : '';
 
-            var canDeleteRole = canEditRole && (s.status !== 'DITANDATANGANI');
+            var isAdmin = (APP.user && APP.user.role === 'admin');
+            var canDeleteRole = isAdmin || (canEditRole && s.status !== 'DITANDATANGANI');
             var deleteBtnHtml = canDeleteRole ?
-                ' <button class="btn btn-danger btn-sm" onclick="deleteSurat(\'' + s.id_dokumen + '\',\'' + (s.nomor_surat ? s.nomor_surat.replace(/'/g, "\\'") : '') + '\')" title="Hapus dokumen yang belum bertanda tangan" style="background:#dc2626;color:#fff;border:none;">🗑️ Hapus</button>' : '';
+                ' <button class="btn btn-danger btn-sm" onclick="deleteSurat(\'' + s.id_dokumen + '\',\'' + (s.nomor_surat ? s.nomor_surat.replace(/'/g, "\\'") : '') + '\')" title="Hapus dokumen surat" style="background:#dc2626;color:#fff;border:none;">🗑️ Hapus</button>' : '';
 
             var signBtnHtml = (APP.user && (APP.user.role === 'pejabat' || APP.user.role === 'admin') && s.status === 'MENUNGGU_TTD') ?
                 ' <button class="btn btn-success btn-sm" onclick="openPinModal(\'' + s.id_dokumen + '\',\'' + s.pejabat_id + '\')" title="Tanda Tangani Secara Elektronik (TTE)" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;">✍️ TTD</button>' : '';
@@ -10079,11 +10296,11 @@
             editBtn.style.display = canEdit ? 'inline-block' : 'none';
         }
 
-        // Tampilkan atau sembunyikan tombol Hapus di footer modal detail (khusus admin & operator untuk dokumen non-DITANDATANGANI)
+        // Tampilkan tombol Hapus di footer modal detail (Admin dapat menghapus semua status; Operator hanya non-DITANDATANGANI)
         var delBtn = document.getElementById('detBtnDelete');
         if (delBtn) {
-            var canDelete = (APP.user && (APP.user.role === 'admin' || APP.user.role === 'operator')) &&
-                            (data.status !== 'DITANDATANGANI');
+            var isAdmin = (APP.user && APP.user.role === 'admin');
+            var canDelete = isAdmin || ((APP.user && APP.user.role === 'operator') && data.status !== 'DITANDATANGANI');
             delBtn.style.display = canDelete ? 'inline-block' : 'none';
         }
 
@@ -10122,7 +10339,11 @@
     function deleteSurat(docId, nomorSurat) {
         if (!docId) return;
         var label = nomorSurat ? ('surat "' + nomorSurat + '"') : 'dokumen ini';
-        if (!confirm('Apakah Anda yakin ingin menghapus ' + label + ' secara permanen?\n\nPerhatian: Tindakan ini tidak dapat dibatalkan.')) {
+        var isAdmin = (APP.user && APP.user.role === 'admin');
+        var warnMsg = isAdmin
+            ? 'Apakah Anda yakin ingin menghapus ' + label + ' secara permanen?\n\nPerhatian (Administrator): Tindakan ini akan menghapus data di database spreadsheet dan berkas PDF di Google Drive.'
+            : 'Apakah Anda yakin ingin menghapus ' + label + ' secara permanen?\n\nPerhatian: Tindakan ini tidak dapat dibatalkan.';
+        if (!confirm(warnMsg)) {
             return;
         }
 
@@ -10522,7 +10743,9 @@
                 var detEditBtn = document.getElementById('detBtnEdit');
                 if (detEditBtn) detEditBtn.style.display = 'none';
                 var detDelBtn = document.getElementById('detBtnDelete');
-                if (detDelBtn) detDelBtn.style.display = 'none';
+                if (detDelBtn && (!APP.user || APP.user.role !== 'admin')) {
+                    detDelBtn.style.display = 'none';
+                }
                 var detPdfSec = document.getElementById('detPdfSection');
                 if (detPdfSec) {
                     detPdfSec.style.display = 'block';

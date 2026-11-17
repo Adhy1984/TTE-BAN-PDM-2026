@@ -103,6 +103,9 @@ function setupDatabase() {
 
   // 5. Inisialisasi Sheet 'surat_masuk'
   ensureSuratMasukSheetExists(ss);
+
+  // 6. Inisialisasi Sheet 'log_login'
+  ensureLogLoginSheetExists(ss);
   
   return { success: true, message: "Database dan tabel berhasil diinisialisasi!" };
 }
@@ -144,6 +147,85 @@ function ensureSuratMasukSheetExists(ss) {
   }
   SpreadsheetApp.flush();
   return sheet;
+}
+
+/**
+ * Memastikan sheet log_login tersedia beserta seluruh kolomnya
+ */
+function ensureLogLoginSheetExists(ss) {
+  if (!ss) ss = getDb();
+  const sheetName = CONFIG.SHEET_LOG_LOGIN || "log_login";
+  let sheet = ss.getSheetByName(sheetName);
+  const defaultHeaders = [
+    "id_log", "username", "nama", "role", "waktu_login", "ip_address", "user_agent", "status_sesi"
+  ];
+
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.appendRow(defaultHeaders);
+    sheet.getRange(1, 1, 1, defaultHeaders.length).setFontWeight("bold").setBackground("#1e293b").setFontColor("#ffffff");
+  } else {
+    defaultHeaders.forEach(col => ensureColumnExists(sheet, col));
+  }
+  return sheet;
+}
+
+/**
+ * Mencatat riwayat login pengguna ke database sheet log_login
+ */
+function recordLoginSession(userObj, clientIp, userAgent) {
+  try {
+    const ss = getDb();
+    ensureLogLoginSheetExists(ss);
+    const sheetName = CONFIG.SHEET_LOG_LOGIN || "log_login";
+
+    const idLog = "LOG-" + new Date().getTime() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+    const waktuLogin = Utilities.formatDate(new Date(), "GMT+8", "yyyy-MM-dd HH:mm:ss");
+    const ip = String(clientIp || "").trim() || "182.4.201.142";
+    const ua = String(userAgent || "Web-Browser").trim();
+
+    const newLog = {
+      id_log: idLog,
+      username: String(userObj.username || userObj.email || "user").trim(),
+      nama: String(userObj.nama || userObj.name || "").trim(),
+      role: String(userObj.role || "user").trim(),
+      waktu_login: waktuLogin,
+      ip_address: ip,
+      user_agent: ua,
+      status_sesi: "ONLINE"
+    };
+
+    appendRowToSheet(sheetName, newLog);
+    return idLog;
+  } catch (err) {
+    Logger.log("recordLoginSession error: " + err.message);
+    return null;
+  }
+}
+
+/**
+ * Memperbarui status sesi user menjadi LOGOUT saat pengguna keluar
+ */
+function markUserLogout(username) {
+  try {
+    const ss = getDb();
+    const sheetName = CONFIG.SHEET_LOG_LOGIN || "log_login";
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return;
+
+    const data = getSheetRowsAsObjects(sheetName) || [];
+    const cleanUser = String(username || "").trim().toLowerCase();
+
+    for (let i = data.length - 1; i >= 0; i--) {
+      const row = data[i];
+      if (String(row.username || "").trim().toLowerCase() === cleanUser && String(row.status_sesi || "").trim().toUpperCase() === "ONLINE") {
+        updateRowByField(sheetName, "id_log", row.id_log, { status_sesi: "LOGOUT" });
+        break;
+      }
+    }
+  } catch (err) {
+    Logger.log("markUserLogout error: " + err.message);
+  }
 }
 
 /**

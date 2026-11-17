@@ -7,76 +7,71 @@
 
 /**
  * Mendapatkan folder Google Drive tujuan untuk arsip PDF
+ * Memisahkan penyimpanan antara Surat Keluar dan Surat Masuk sesuai konfigurasi resmi.
+ * @param {string} [folderType="SURAT_KELUAR"] - "SURAT_KELUAR" atau "SURAT_MASUK"
+ * @return {GoogleAppsScript.Drive.Folder}
  */
-function getTargetDriveFolder() {
+function getTargetDriveFolder(folderType) {
   try {
-    if (CONFIG.DRIVE_FOLDER_ID && CONFIG.DRIVE_FOLDER_ID.trim() !== "") {
-      return DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID.trim());
+    let folderId = "";
+    if (folderType === "SURAT_MASUK") {
+      folderId = (CONFIG.DRIVE_FOLDER_SURAT_MASUK || CONFIG.DRIVE_FOLDER_ID || "").trim();
+    } else {
+      folderId = (CONFIG.DRIVE_FOLDER_SURAT_KELUAR || CONFIG.DRIVE_FOLDER_ID || "").trim();
+    }
+
+    if (folderId && folderId !== "") {
+      return DriveApp.getFolderById(folderId);
     }
   } catch (err) {
-    Logger.log("Folder Google Drive tidak ditemukan dengan ID: " + CONFIG.DRIVE_FOLDER_ID + ", fallback ke Root: " + err.message);
+    Logger.log("Folder Google Drive (" + (folderType || "SURAT_KELUAR") + ") tidak ditemukan: " + err.message + ", fallback ke Root.");
   }
   return DriveApp.getRootFolder();
 }
 
 /**
+ * Helper khusus folder Google Drive Surat Keluar
+ */
+function getFolderSuratKeluar() {
+  return getTargetDriveFolder("SURAT_KELUAR");
+}
+
+/**
+ * Helper khusus folder Google Drive Surat Masuk
+ */
+function getFolderSuratMasuk() {
+  return getTargetDriveFolder("SURAT_MASUK");
+}
+
+/**
  * Alias fallback untuk getTargetDriveFolder
  */
-function getOrCreateStorageFolder() {
-  return getTargetDriveFolder();
+function getOrCreateStorageFolder(folderType) {
+  return getTargetDriveFolder(folderType);
 }
 
 /**
  * Menghasilkan URL Verifikasi Publik untuk dokumen
+ * Selalu mengarah langsung ke portal Vercel resmi (https://e-ttebanpdmntt.vercel.app)
+ * Memastikan verifikasi dokumen selalu terbuka di Vercel tanpa melalui script Google.
  */
 function getVerificationUrl(docId, customBaseUrl) {
-  let baseUrl = (CONFIG.WEB_APP_URL || "").trim();
+  const cleanDocId = encodeURIComponent(String(docId || "").trim());
+  let baseUrl = (CONFIG.WEB_APP_URL || "https://e-ttebanpdmntt.vercel.app").trim();
+
   if (customBaseUrl && customBaseUrl.indexOf("vercel.app") !== -1) {
     baseUrl = customBaseUrl.trim();
   }
-  if (!baseUrl) {
-    try {
-      baseUrl = ScriptApp.getService().getUrl() || "";
-    } catch (e) {
-      baseUrl = "";
-    }
-  }
-  
-  // Hapus trailing slash jika ada agar penambahan path/query konsisten
-  baseUrl = (baseUrl || "").trim().replace(/\/+$/, "");
-  
-  // Jika URL mengarah ke /dev (versi test Google Script), ubah otomatis ke /exec agar dapat dibuka publik tanpa login
-  if (baseUrl.endsWith("/dev")) {
-    baseUrl = baseUrl.substring(0, baseUrl.length - 4) + "/exec";
-  }
-  
-  // Fallback resmi ke domain portal Vercel BAN PDM NTT
-  if (!baseUrl) {
+
+  // Hapus trailing slash jika ada agar penambahan /?p=verify&id= konsisten dan rapi
+  baseUrl = baseUrl.replace(/\/+$/, "");
+
+  // Pastikan URL selalu mengarah ke Vercel resmi
+  if (baseUrl.indexOf("vercel.app") === -1) {
     baseUrl = "https://e-ttebanpdmntt.vercel.app";
   }
-  
-  const cleanDocId = encodeURIComponent(String(docId || "").trim());
 
-  // Pastikan URL selalu memiliki root slash '/' sebelum query parameter '?p=verify&id=' (Sesuai RFC 3986)
-  // Contoh: 'https://e-ttebanpdmntt.vercel.app' -> 'https://e-ttebanpdmntt.vercel.app/?p=verify&id=...'
-  // PENTING: Tanpa '/' setelah domain, pemindai barcode / kamera HP (MIUI/Xiaomi Scanner, Lens, dll.)
-  // tidak mengenali format sebagai Web URL (TYPE_URL) dan salah membacanya sebagai teks biasa (Teks -> Cari / Salin teks).
-  let separator = "/?";
-  if (baseUrl.indexOf("?") !== -1) {
-    separator = "&";
-  } else if (baseUrl.endsWith("/")) {
-    separator = "?";
-  } else {
-    // Periksa apakah URL sudah memiliki sub-path seperti /exec
-    const afterProtocol = baseUrl.replace(/^https?:\/\/[^\/]+/, "");
-    if (afterProtocol.length > 0) {
-      separator = "?";
-    } else {
-      separator = "/?";
-    }
-  }
-
-  return baseUrl + separator + "p=verify&id=" + cleanDocId;
+  return baseUrl + "/?p=verify&id=" + cleanDocId;
 }
 
 /**
@@ -219,7 +214,7 @@ function generateOfficialSignedPdf(suratData, pejabatData, customBaseUrl) {
   const docId        = suratData.id_dokumen;
   const verifyUrl    = getVerificationUrl(docId, customBaseUrl);
   const qrBlob       = fetchQrCodeBlob(verifyUrl);
-  const targetFolder = getTargetDriveFolder();
+  const targetFolder = getTargetDriveFolder("SURAT_KELUAR");
 
   // =========================================================
   // 1. PENGAMBILAN GAMBAR (LOGO & QR CODE) KE BASE64

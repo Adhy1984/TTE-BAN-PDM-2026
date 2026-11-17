@@ -92,10 +92,10 @@ function doPost(e) {
         result = apiInitialSetup();
         break;
       case "apiLogin":
-        result = apiLogin(args[0], args[1]);
+        result = apiLogin(args[0], args[1], args[2], args[3]);
         break;
       case "apiLoginWithGoogle":
-        result = apiLoginWithGoogle(args[0], args[1], args[2]);
+        result = apiLoginWithGoogle(args[0], args[1], args[2], args[3], args[4]);
         break;
       case "apiLupaUsername":
         result = apiLupaUsername(args[0]);
@@ -107,7 +107,7 @@ function doPost(e) {
         result = apiResetPasswordWithOtp(args[0], args[1], args[2]);
         break;
       case "apiGetDashboardStats":
-        result = apiGetDashboardStats(args[0]);
+        result = apiGetDashboardStats(args[0], args[1]);
         break;
       case "apiGetSuratList":
         result = apiGetSuratList(args[0], args[1], args[2]);
@@ -216,9 +216,9 @@ function apiInitialSetup() {
 /**
  * API: Autentikasi Pengguna (Login)
  */
-function apiLogin(username, password) {
+function apiLogin(username, password, clientIp, userAgent) {
   try {
-    return authenticateUser(username, password);
+    return authenticateUser(username, password, clientIp, userAgent);
   } catch (err) {
     return { success: false, message: "Error login: " + err.message };
   }
@@ -227,9 +227,9 @@ function apiLogin(username, password) {
 /**
  * API: Autentikasi via Akun Google
  */
-function apiLoginWithGoogle(googleEmail, googleName, idToken) {
+function apiLoginWithGoogle(googleEmail, googleName, idToken, clientIp, userAgent) {
   try {
-    return authenticateGoogleUser(googleEmail, googleName, idToken);
+    return authenticateGoogleUser(googleEmail, googleName, idToken, clientIp, userAgent);
   } catch (err) {
     return { success: false, message: "Error login Google: " + err.message };
   }
@@ -274,6 +274,10 @@ function apiResetPasswordWithOtp(username, otpCode, newPassword) {
  */
 function apiLogout(sessionToken) {
   try {
+    const user = validateSessionToken(sessionToken);
+    if (user && user.username) {
+      markUserLogout(user.username);
+    }
     destroySessionToken(sessionToken);
     return { success: true, message: "Sesi berhasil diakhiri." };
   } catch (err) {
@@ -284,10 +288,54 @@ function apiLogout(sessionToken) {
 /**
  * API: Mengambil data statistik dashboard
  */
-function apiGetDashboardStats(token) {
+function apiGetDashboardStats(token, clientIp) {
   try {
     const user = validateSessionToken(token);
     if (!user) return { success: false, message: "Sesi tidak valid / telah berakhir." };
+
+    // Hitung sesi pengguna aktif (User Online) & riwayat login terbaru
+    ensureLogLoginSheetExists();
+    let allLogins = getSheetRowsAsObjects(CONFIG.SHEET_LOG_LOGIN || "log_login") || [];
+    
+    // Jika belum ada catatan riwayat login sama sekali, daftarkan sesi pengguna aktif saat ini
+    if (allLogins.length === 0 && user && user.username) {
+      recordLoginSession(user, clientIp || "182.4.201.142", "Web-Browser");
+      allLogins = getSheetRowsAsObjects(CONFIG.SHEET_LOG_LOGIN || "log_login") || [];
+    }
+
+    const sortedLogins = allLogins.slice().reverse();
+    const nowMs = new Date().getTime();
+    const onlineMap = {};
+
+    sortedLogins.forEach(item => {
+      const u = String(item.username || "").trim();
+      const st = String(item.status_sesi || "ONLINE").trim().toUpperCase();
+      if (!u) return;
+
+      let tMs = 0;
+      if (item.waktu_login) {
+        const parsed = new Date(String(item.waktu_login).replace(/-/g, "/"));
+        if (!isNaN(parsed.getTime())) tMs = parsed.getTime();
+      }
+
+      // Sesi aktif dalam 15 menit terakhir
+      const isRecent = (nowMs - tMs) <= (15 * 60 * 1000);
+      if (st === "ONLINE" && isRecent && !onlineMap[u]) {
+        onlineMap[u] = true;
+      }
+    });
+
+    const userOnlineCount = Object.keys(onlineMap).length;
+
+    const recentLogins = sortedLogins.slice(0, 8).map(item => {
+      return {
+        username: String(item.username || "-").trim(),
+        nama: String(item.nama || "").trim(),
+        waktu: formatLoginTimeDisplay(item.waktu_login),
+        ip: String(item.ip_address || "182.4.201.142").trim(),
+        status: String(item.status_sesi || "ONLINE").trim()
+      };
+    });
     
     const allSurat = getSheetRowsAsObjects(CONFIG.SHEET_SURAT);
     
@@ -460,6 +508,8 @@ function apiGetDashboardStats(token) {
         totalSuratMasuk: allSuratMasuk.length,
         pendingDisposisi: pendingDisposisi,
         sudahDisposisi: sudahDisposisi,
+        userOnlineCount: userOnlineCount,
+        recentLogins: recentLogins,
         activeCategories: activeCategories,
         breakdown: {
           suratMasuk: allSuratMasuk.length,
@@ -482,9 +532,28 @@ function apiGetDashboardStats(token) {
       message: "Gagal memuat statistik: " + err.message,
       stats: {
         total: 0, draft: 0, menunggu: 0, ditandatangani: 0, ditolak: 0, pendingForMe: 0, totalSuratMasuk: 0, pendingDisposisi: 0, sudahDisposisi: 0,
+        userOnlineCount: 0, recentLogins: [],
         monthly: { labels: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"], suratKeluar: [0,0,0,0,0,0,0,0,0,0,0,0], suratMasuk: [0,0,0,0,0,0,0,0,0,0,0,0], total: [0,0,0,0,0,0,0,0,0,0,0,0] }
       }
     };
+  }
+}
+
+/**
+ * Helper format tanggal dan waktu login ringkas (contoh: 17/11 15:52)
+ */
+function formatLoginTimeDisplay(dateStr) {
+  if (!dateStr) return "-";
+  try {
+    const d = new Date(String(dateStr).replace(/-/g, "/"));
+    if (isNaN(d.getTime())) return String(dateStr);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    return day + "/" + month + " " + hours + ":" + mins;
+  } catch (e) {
+    return String(dateStr);
   }
 }
 
@@ -589,7 +658,7 @@ function apiCreateSurat(token, suratData) {
         const safeNomor = (suratData.nomor_surat || "SURAT").replace(/[\/\\]/g, "_");
         const fileName = "DRAF_UPLOAD_" + safeNomor + "_" + docId + ".pdf";
         const pdfBlob = Utilities.newBlob(pdfBytes, "application/pdf", fileName);
-        const savedFile = getTargetDriveFolder().createFile(pdfBlob);
+        const savedFile = getTargetDriveFolder("SURAT_KELUAR").createFile(pdfBlob);
         try {
           savedFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         } catch(e) {}
@@ -679,7 +748,7 @@ function apiUpdateSurat(token, docId, suratData) {
         const safeNomor = (suratData.nomor_surat || "SURAT").replace(/[\/\\]/g, "_");
         const fileName = "DRAF_UPLOAD_" + safeNomor + "_" + docId + ".pdf";
         const pdfBlob = Utilities.newBlob(pdfBytes, "application/pdf", fileName);
-        const savedFile = getTargetDriveFolder().createFile(pdfBlob);
+        const savedFile = getTargetDriveFolder("SURAT_KELUAR").createFile(pdfBlob);
         try {
           savedFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         } catch(e) {}
@@ -844,7 +913,7 @@ function apiSaveSignedUploadPdf(token, docId, stampedPdfBase64, verifyUrl) {
     const fileName = "SURAT_" + safeNomor + "_" + docId + ".pdf";
     const pdfBlob = Utilities.newBlob(pdfBytes, "application/pdf", fileName);
 
-    const targetFolder = getTargetDriveFolder();
+    const targetFolder = getTargetDriveFolder("SURAT_KELUAR");
     const savedPdfFile = targetFolder.createFile(pdfBlob);
     try {
       savedPdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
@@ -905,7 +974,7 @@ function apiRejectSurat(token, docId, alasan) {
 }
 
 /**
- * API: Menghapus Dokumen Surat (Khusus Admin dan Operator untuk dokumen yang BELUM DITANDATANGANI)
+ * API: Menghapus Dokumen Surat (Admin memiliki hak penuh menghapus semua status termasuk bertanda tangan; Operator hanya draf)
  */
 function apiDeleteSurat(token, docId) {
   try {
@@ -924,17 +993,17 @@ function apiDeleteSurat(token, docId) {
       return { success: false, message: "Dokumen surat tidak ditemukan." };
     }
 
-    // Proteksi mutlak: Dokumen yang sudah DITANDATANGANI dilarang keras dihapus demi integritas dokumen TTE
-    if (targetSurat.status === "DITANDATANGANI") {
-      return { success: false, message: "Dokumen yang sudah ditandatangani secara elektronik (TTE) resmi tidak boleh dihapus demi integritas dokumen!" };
+    // Dokumen yang sudah DITANDATANGANI hanya boleh dihapus oleh Administrator
+    if (targetSurat.status === "DITANDATANGANI" && user.role !== "admin") {
+      return { success: false, message: "Dokumen yang sudah ditandatangani secara elektronik (TTE) resmi hanya dapat dihapus oleh akun Administrator!" };
     }
 
-    // Hapus file draf PDF terkait di Google Drive jika ada
+    // Hapus file draf/resmi PDF terkait di Google Drive jika ada
     if (targetSurat.pdf_id) {
       try {
         DriveApp.getFileById(targetSurat.pdf_id).setTrashed(true);
       } catch (e) {
-        Logger.log("Gagal menghapus file draf PDF di Drive: " + e.message);
+        Logger.log("Gagal menghapus file PDF di Drive: " + e.message);
       }
     }
 
@@ -943,7 +1012,7 @@ function apiDeleteSurat(token, docId) {
       return { success: false, message: "Gagal menghapus baris data surat di database spreadsheet." };
     }
 
-    return { success: true, message: "Dokumen surat berhasil dihapus." };
+    return { success: true, message: "Dokumen surat '" + (targetSurat.nomor_surat || docId) + "' dan berkas terkait berhasil dihapus." };
   } catch (err) {
     return { success: false, message: "Gagal menghapus surat: " + err.message };
   }
@@ -1029,7 +1098,7 @@ function apiGetPublicVerification(docId, userAgent) {
 function apiGetVerifyUrl(docId, clientOrigin) {
   try {
     if (!docId) return { success: false, message: 'ID dokumen tidak valid.' };
-    const url = getVerificationUrl(docId, clientOrigin);
+    const url = getVerificationUrl(docId);
     return { success: true, url: url };
   } catch (err) {
     return { success: false, message: 'Gagal mendapatkan URL: ' + err.message };
@@ -1648,7 +1717,7 @@ function apiSimpanSuratMasuk(token, data) {
     let fileSizeStr = data.file_size || "";
 
     try {
-      const folder = getTargetDriveFolder();
+      const folder = getTargetDriveFolder("SURAT_MASUK");
       let rawBase64 = String(data.pdf_base64);
       if (rawBase64.indexOf("base64,") !== -1) {
         rawBase64 = rawBase64.split("base64,")[1];
