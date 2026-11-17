@@ -29,8 +29,8 @@ function getOrCreateStorageFolder() {
 /**
  * Menghasilkan URL Verifikasi Publik untuk dokumen
  */
-function getVerificationUrl(docId) {
-  let baseUrl = (CONFIG.WEB_APP_URL || "").trim();
+function getVerificationUrl(docId, customBaseUrl) {
+  let baseUrl = (customBaseUrl || CONFIG.WEB_APP_URL || "").trim();
   if (!baseUrl) {
     try {
       baseUrl = ScriptApp.getService().getUrl() || "";
@@ -47,9 +47,9 @@ function getVerificationUrl(docId) {
     baseUrl = baseUrl.substring(0, baseUrl.length - 4) + "/exec";
   }
   
-  // Fallback resmi ke domain portal Vercel
+  // Fallback resmi ke domain portal Vercel BAN PDM NTT
   if (!baseUrl) {
-    baseUrl = "https://ebanpdmntt.vercel.app";
+    baseUrl = "https://tte-banpdmntt.vercel.app";
   }
   
   return baseUrl + (baseUrl.indexOf("?") === -1 ? "?" : "&") + "p=verify&id=" + encodeURIComponent(docId);
@@ -191,9 +191,9 @@ function getAppLogoBase64() {
  * Menggunakan HtmlService.createTemplateFromFile('TemplateSurat') persis seperti
  * sertifikat-dakwah-digital-mui-kaltim agar CSS/layout/gambar ter-render sempurna.
  */
-function generateOfficialSignedPdf(suratData, pejabatData) {
+function generateOfficialSignedPdf(suratData, pejabatData, customBaseUrl) {
   const docId        = suratData.id_dokumen;
-  const verifyUrl    = getVerificationUrl(docId);
+  const verifyUrl    = getVerificationUrl(docId, customBaseUrl);
   const qrBlob       = fetchQrCodeBlob(verifyUrl);
   const targetFolder = getTargetDriveFolder();
 

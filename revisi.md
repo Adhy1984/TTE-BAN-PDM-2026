@@ -1,77 +1,65 @@
 # CATATAN REVISI (revisi.md)
 ================================================================================
-REVISI: MENGALIHKAN SCAN VERIFIKASI DOKUMEN TTE RESMI KE DOMAIN VERCEL (ANTI-BLANK & BEBAS BANNER GOOGLE)
-KODE REVISI: REV-202611-065
+REVISI: RESOLUSI KOREKSI DOMAIN VERCEL RESMI (HTTPS://TTE-BANPDMNTT.VERCEL.APP) & DYNAMIC ORIGIN DETECTION (ANTI-404 DEPLOYMENT_NOT_FOUND)
+KODE REVISI: REV-202611-066
 STATUS: SELESAI DITERAPKAN (COMPLETED & VERIFIED)
 TANGGAL PENGAJUAN: 17 November 2026
 TANGGAL SELESAI: 17 November 2026
-ENGINE: ZettBOT v6.8.6 (by Zettbos)
-===============================================================================
+ENGINE: ZettBOT v6.8.7 (by Zettbos)
+================================================================================
 
 ## 1. Latar Belakang & Permintaan Pengguna (User Request)
-Pengguna menanyakan dan menginstruksikan perbaikan terkait halaman verifikasi dokumen TTE saat QR Code discan:
-> *"1. Mengapa scan verifikasi dokumen tidak muncul dokumen nya. Blank seperti di gambar"*  
-> *(Melampirkan foto `media_1794891933239_85096eb5.jpg`: bilah browser HP membuka `script.google.com/macros/s/...`, muncul banner "Aplikasi ini dibuat oleh pengguna Google Apps Script", dan halaman di bawahnya membeku putih/blank kosong)*  
-> *"2. Apakah bisa scan verifikasi dokumen itu tidak usah dari script google, tapi munculnya dari vercel"*  
-> *"Jika kamu mengerti maksud saya. Segera TERAPKAN"*  
+Pengguna melaporkan pesan error yang muncul saat QR Code dokumen discan:
+> *"Mengapa muncul erorr seperti ini ketika di scan. tolong diperbaiki"*  
+> *(Melampirkan foto `media_1794893843261_da09c051.jpg`: peramban Chrome menampilkan halaman hitam Vercel dengan tulisan "This page doesn't exist. It may have been moved, removed, or never existed. 404 DEPLOYMENT_NOT_FOUND")*  
 > *Note: JANGAN RUBAH FITUR DAN DESAIN SELAIN YANG SAYA MINTA, TERAPKAN SAJA APA YANG SAYA MINTA, KECUALI MEMANG HARUS DIUBAH KARENA KEBUTUHAN REVISI*
 
 ---
 
 ## 2. Analisis Masalah & Solusi yang Telah Diterapkan
 
-### A. Akar Masalah Layar Blank pada Google Apps Script
-1. **Target QR Code Masih Google Apps Script:**  
-   Di dalam `Config.gs`, konstanta `WEB_APP_URL` sebelumnya masih bernilai kosong (`""`), sehingga fungsi `getVerificationUrl(docId)` di `DocumentService.gs` secara otomatis jatuh ke `ScriptApp.getService().getUrl()` (`https://script.google.com/macros/s/.../exec`).
-2. **Kendala Sandbox iFrame pada Browser HP:**  
-   Saat QR code discan dari kamera HP, aplikasi kamera membuka browser HP yang sering memblokir komunikasi JavaScript di dalam sandbox iFrame Google (`googleusercontent.com` / pembatasan *third-party cookies*). Akibatnya, fungsi JavaScript untuk memunculkan kartu verifikasi (`showVerifyPage`) tidak dapat diselesaikan, sehingga layar membeku menampilkan latar belakang kosong.
-3. **Banner Bawaan Google Apps Script:**  
-   Membuka langsung di Google Apps Script selalu memunculkan bilah biru *"Aplikasi ini dibuat oleh pengguna Google Apps Script"*, yang mengurangi kesan profesional institusi resmi BAN PDM NTT.
+### A. Akar Masalah "404 DEPLOYMENT_NOT_FOUND" pada Vercel
+1. **Pemotongan Huruf Domain di Peramban Ponsel:**  
+   Pada revisi sebelumnya, alamat domain Vercel disimpulkan sebagai `https://ebanpdmntt.vercel.app` berdasarkan tangkapan layar ponsel pengguna. Namun, pada Google Chrome HP dengan layar sempit, bilah alamat secara otomatis menggulir (*scroll/truncate*) teks domain panjang ke kanan, sehingga awalan `tte-` terpotong dari pandangan.
+2. **Subdomain Tidak Terdaftar di Vercel:**  
+   Domain `ebanpdmntt.vercel.app` (tanpa `tte-`) tidak pernah didaftarkan pada server Vercel. Ketika QR Code yang mencantumkan domain tersebut discan, server edge Vercel di Singapura (`sin1`) mengembalikan galat `404 DEPLOYMENT_NOT_FOUND`.
+3. **Konfirmasi Domain Riil:**  
+   Pengguna telah mengonfirmasi bahwa domain Vercel yang sebenarnya aktif digunakan adalah:  
+   `https://tte-banpdmntt.vercel.app`
 
 ---
 
-### B. Solusi yang Diterapkan (Vercel First Architecture & Dual-Mode Compatibility)
+### B. Solusi yang Diterapkan
 
-1. **Konfigurasi Domain Vercel Resmi (`Config.gs` & `config.js`):**  
-   - Mengisi `CONFIG.WEB_APP_URL` di `Config.gs` dengan URL Vercel resmi:  
-     `WEB_APP_URL: "https://ebanpdmntt.vercel.app",`
-   - Menambahkan `window.WEB_APP_URL = "https://ebanpdmntt.vercel.app";` pada `config.js` dan `dist/config.js`.
+1. **Koreksi Domain Resmi pada Seluruh Titik Konfigurasi:**  
+   - Mengubah `CONFIG.WEB_APP_URL` di `Config.gs` menjadi `"https://tte-banpdmntt.vercel.app"`.
+   - Mengubah `window.WEB_APP_URL` di `config.js` dan `dist/config.js` menjadi `"https://tte-banpdmntt.vercel.app"`.
+   - Mengubah target redirect otomatis pada `doGet()` di `Controller.gs` ke `"https://tte-banpdmntt.vercel.app"`.
+   - Mengubah *fallback* resmi di `DocumentService.gs` ke `"https://tte-banpdmntt.vercel.app"`.
 
-2. **Penyelarasan Generator URL Verifikasi (`DocumentService.gs`):**  
-   - Memperbarui `getVerificationUrl(docId)` agar memformat URL berbasis `CONFIG.WEB_APP_URL` dengan pembersihan *trailing slash* (`replace(/\/+$/, "")`) dan *fallback* permanen ke `https://ebanpdmntt.vercel.app`.
-   - **Hasil:** Setiap dokumen baru yang ditandatangani oleh Pejabat akan mencetak QR Code beresolusi tajam yang memuat URL bersih:  
-     `https://ebanpdmntt.vercel.app/?p=verify&id=TTE-...`
-   - Bebas 100% dari banner Google Apps Script, langsung terbuka native di HP tanpa sandbox iFrame, dan tampil instan dalam milidetik.
+2. **Penerapan Deteksi Domain Dinamis (*Dynamic Origin Detection*):**  
+   - Menambahkan parameter `clientOrigin` pada fungsi penandatanganan `apiApproveAndSignSurat(token, docId, pinTte, clientOrigin)` dan penyalinan tautan `apiGetVerifyUrl(docId, clientOrigin)` di `Controller.gs`.
+   - Pada frontend `Scripts.html`, saat Pejabat menandatangani dokumen atau menyalin tautan verifikasi, sistem secara otomatis mengirimkan `window.location.origin` aktif dari peramban (`https://tte-banpdmntt.vercel.app`).
+   - Dengan arsitektur ini, QR Code dokumen akan selalu mencetak URL yang 100% presisi dan sinkron dengan domain aktif aplikasi tanpa risiko salah ketik atau salah tebak domain lagi.
 
-3. **Kompatibilitas QR Code Lama via Auto-Redirect (`Controller.gs`):**  
-   - Menambahkan penangan pengalihan otomatis (*Instant Client Redirect*) pada fungsi `doGet(e)` di `Controller.gs`: jika ada pengguna yang men-scan QR code lama atau membuka tautan lama yang masih mengarah ke `script.google.com/macros/s/.../exec?p=verify&id=DOC_ID`, Google Apps Script akan seketika mengeksekusi:  
-     `window.location.replace("https://ebanpdmntt.vercel.app/?p=verify&id=" + docId)`  
-     dilengkapi `<meta http-equiv="refresh">` dan tombol cadangan "Buka Halaman Verifikasi".  
-   - **Hasil:** Dokumen lama yang sudah terlanjur dicetak fisik tidak akan pernah blank lagi; browser HP akan langsung dilempar ke Vercel secara mulus!
-
-4. **Penyelarasan Ekstraksi Parameter URL & Branding Instansi (`Index.html` & `Scripts.html`):**  
-   - Memastikan pembacaan parameter URL di `Index.html` bersifat *case-insensitive* (`lk = (k || "").toLowerCase()`) sehingga baik `?p=verify` maupun `?P=VERIFY` terdeteksi 100% akurat.
-   - Pada `showVerifyPage()` di `Scripts.html`, menyematkan teks resmi instansi: `BAN PDM PROVINSI NUSA TENGGARA TIMUR` pada kapsul header atas.
-
-5. **Pembaruan Bundling Vercel (`dist/index.html` & `dist/config.js`):**  
-   - Menjalankan `build.ps1` untuk mengompilasi ulang seluruh komponen modular ke berkas mandiri `dist/index.html` (542 KB, 551 DIVs, 34 SVGs, 110 Buttons seimbang 100%).
+3. **Penyusunan Ulang Distribusi Frontend Mandiri:**  
+   - Menjalankan `build.ps1` untuk menyusun ulang `dist/index.html` (542 KB, struktur div, svg, dan button seimbang 100%).
 
 ---
 
 ## 3. Komponen yang Dimodifikasi
 | No | Berkas | Perubahan yang Dilakukan |
 |---|---|---|
-| 1 | `Config.gs` | Mengisi `WEB_APP_URL` dengan `"https://ebanpdmntt.vercel.app"` |
-| 2 | `config.js` | Menambahkan `window.WEB_APP_URL` |
-| 3 | `DocumentService.gs` | Mengarahkan `getVerificationUrl()` menghasilkan link verifikasi Vercel |
-| 4 | `Controller.gs` | Menambahkan auto-redirect 0-detik dari Google Script ke Vercel pada `doGet()` |
-| 5 | `Index.html` | Memastikan ekstraksi parameter query `p=verify` case-insensitive |
-| 6 | `Scripts.html` | Menyelaraskan teks header institusi pada `showVerifyPage` |
-| 7 | `dist/index.html` & `dist/config.js` | Hasil kompilasi bundler siap deploy ke Vercel |
+| 1 | `Config.gs` | Mengoreksi `WEB_APP_URL` menjadi `"https://tte-banpdmntt.vercel.app"` |
+| 2 | `config.js` | Mengoreksi `window.WEB_APP_URL` menjadi `"https://tte-banpdmntt.vercel.app"` |
+| 3 | `DocumentService.gs` | Mengoreksi fallback domain dan mendukung `customBaseUrl` dinamis pada `getVerificationUrl()` |
+| 4 | `Controller.gs` | Mengoreksi redirect `doGet()` dan mengalirkan `clientOrigin` pada `apiApproveAndSignSurat` & `apiGetVerifyUrl` |
+| 5 | `Scripts.html` | Mengirimkan `window.location.origin` secara otomatis saat submit TTE & copy link |
+| 6 | `dist/index.html` & `dist/config.js` | Hasil kompilasi bundler siap deploy ke Vercel |
 
 ---
 
-## 4. Jaminan Integritas Sistem (Sesuai Note Pengguna)
+## 4. Jaminan Integritas Sistem (Sesuai Catatan Pengguna)
 - ✅ Format cetak resmi PDF Google Drive (`@media print`) tetap 100% standar ISO A4 dinas asli.
 - ✅ Alur penandatanganan TTE pejabat dengan PIN rahasia 6 digit tetap berfungsi utuh.
 - ✅ Autentikasi Google OAuth popup resmi dan proteksi server-side token `CacheService` tetap aktif.

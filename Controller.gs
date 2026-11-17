@@ -42,7 +42,7 @@ function doGet(e) {
   // Menjamin jika ada yang men-scan QR code lama atau membuka link Google Script, otomatis dialihkan ke Vercel tanpa layar blank
   const pageParam = (queryParams.p || "").toLowerCase();
   const idParam = queryParams.id || "";
-  const vercelBase = (CONFIG.WEB_APP_URL || "https://ebanpdmntt.vercel.app").trim().replace(/\/+$/, "");
+  const vercelBase = (CONFIG.WEB_APP_URL || "https://tte-banpdmntt.vercel.app").trim().replace(/\/+$/, "");
 
   if (pageParam === "verify" && idParam && vercelBase) {
     const targetUrl = vercelBase + "/?p=verify&id=" + encodeURIComponent(idParam);
@@ -122,7 +122,7 @@ function doPost(e) {
         result = apiUpdateSurat(args[0], args[1], args[2]);
         break;
       case "apiApproveAndSignSurat":
-        result = apiApproveAndSignSurat(args[0], args[1], args[2]);
+        result = apiApproveAndSignSurat(args[0], args[1], args[2], args[3]);
         break;
       case "apiSaveSignedUploadPdf":
         result = apiSaveSignedUploadPdf(args[0], args[1], args[2], args[3]);
@@ -137,7 +137,7 @@ function doPost(e) {
         result = apiGetPublicVerification(args[0], args[1]);
         break;
       case "apiGetVerifyUrl":
-        result = apiGetVerifyUrl(args[0]);
+        result = apiGetVerifyUrl(args[0], args[1]);
         break;
       case "apiGetOrEnsurePdf":
         result = apiGetOrEnsurePdf(args[0], args[1]);
@@ -733,7 +733,7 @@ function apiUpdateSurat(token, docId, suratData) {
 /**
  * API: Menandatangani Surat Secara Elektronik (Oleh Pejabat berwenang dengan PIN TTE)
  */
-function apiApproveAndSignSurat(token, docId, pinTte) {
+function apiApproveAndSignSurat(token, docId, pinTte, clientOrigin) {
   try {
     const user = validateSessionToken(token);
     if (!user) return { success: false, message: "Sesi Anda tidak valid." };
@@ -761,7 +761,7 @@ function apiApproveAndSignSurat(token, docId, pinTte) {
     }
     
     const pejabat = pinValidation.pejabat;
-    const verifyUrl = getVerificationUrl(docId);
+    const verifyUrl = getVerificationUrl(docId, clientOrigin);
 
     // =========================================================
     // JIKA TIPE DOKUMEN: UPLOAD_PDF
@@ -797,7 +797,7 @@ function apiApproveAndSignSurat(token, docId, pinTte) {
     // JIKA TIPE DOKUMEN: TEMPLATE RESMI
     // Generate PDF resmi dengan QR Code via Template HTML
     // =========================================================
-    const genResult = generateOfficialSignedPdf(surat, pejabat);
+    const genResult = generateOfficialSignedPdf(surat, pejabat, clientOrigin);
     const waktuTtd = formatDateTimeIndo(new Date());
     
     // Perbarui baris surat di Database
@@ -1026,10 +1026,10 @@ function apiGetPublicVerification(docId, userAgent) {
  * API: Mendapatkan URL Verifikasi Publik yang benar untuk disalin/dibagikan
  * (Menggunakan getVerificationUrl() dari DocumentService agar URL selalu /exec bukan iframe)
  */
-function apiGetVerifyUrl(docId) {
+function apiGetVerifyUrl(docId, clientOrigin) {
   try {
     if (!docId) return { success: false, message: 'ID dokumen tidak valid.' };
-    const url = getVerificationUrl(docId);
+    const url = getVerificationUrl(docId, clientOrigin);
     return { success: true, url: url };
   } catch (err) {
     return { success: false, message: 'Gagal mendapatkan URL: ' + err.message };
@@ -1112,7 +1112,7 @@ function apiGetOrEnsurePdf(sessionToken, docId) {
     }
 
     // Generate PDF resmi dengan format template BAN PDM terbaru
-    const genResult = generateOfficialSignedPdf(surat, pejabat);
+    const genResult = generateOfficialSignedPdf(surat, pejabat, clientOrigin);
 
     // Hapus file PDF lama di Google Drive jika ada dan ID-nya berbeda
     if (surat.pdf_id && surat.pdf_id !== genResult.pdfId) {

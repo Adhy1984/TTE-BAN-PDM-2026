@@ -3424,7 +3424,7 @@
         // Tampilkan loading sementara
         showToast('Menyiapkan link verifikasi...', 'info');
 
-        // Minta URL yang benar dari server (bukan window.location.href yang merupakan URL iframe internal)
+        var clientOrigin = (window.location && window.location.origin) ? window.location.origin : 'https://tte-banpdmntt.vercel.app';
         google.script.run
             .withSuccessHandler(function (res) {
                 if (res && res.success && res.url) {
@@ -3445,7 +3445,7 @@
             .withFailureHandler(function (err) {
                 showToast('❌ Error koneksi: ' + (err && err.message ? err.message : err), 'error');
             })
-            .apiGetVerifyUrl(docId);
+            .apiGetVerifyUrl(docId, clientOrigin);
     }
 
     /** Fallback copy ke clipboard via textarea (untuk browser yang tidak support Clipboard API) */
@@ -3587,6 +3587,7 @@
         var btnEl = document.querySelector('#modalPinTte .btn-success');
         btnEl.disabled = true;
         btnEl.textContent = '⏳ Memproses TTE...';
+        var clientOrigin = (window.location && window.location.origin) ? window.location.origin : 'https://tte-banpdmntt.vercel.app';
 
         google.script.run
             .withSuccessHandler(function (res) {
@@ -3623,7 +3624,7 @@
                 showToast('❌ Error: ' + (err && err.message ? err.message : err), 'error');
                 document.getElementById('modalPinTte').style.display = 'flex';
             })
-            .apiApproveAndSignSurat(APP.token, APP.currentDocId, pin);
+            .apiApproveAndSignSurat(APP.token, APP.currentDocId, pin, clientOrigin);
     }
 
     /**
